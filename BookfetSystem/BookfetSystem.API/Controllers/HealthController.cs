@@ -14,7 +14,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet("test-OK")]
-        public IActionResult CheckHealth()
+        public IActionResult CheckOKHealth()
         {
             return Ok(new { status = "OK" });
         }
