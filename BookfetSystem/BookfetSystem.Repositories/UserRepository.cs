@@ -40,7 +40,7 @@ namespace BookfetSystem.Repositories
 
         public async Task<User?> GetUserByUsernameOrEmailAsync(string usernameOrEmail)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.UserName == usernameOrEmail || u.Email == usernameOrEmail);
+            return await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserName == usernameOrEmail || u.Email == usernameOrEmail);
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
