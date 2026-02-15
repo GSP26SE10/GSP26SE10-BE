@@ -28,135 +28,187 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS role CASCADE;
 
 -- =========================================
--- CREATE TABLES
+-- CREATE TABLES (theo thứ tự dependency)
 -- =========================================
 
+-- Bảng độc lập (không có FK)
 CREATE TABLE role (
     role_id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
-);
-
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100),
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255),
-    role_id INT REFERENCES role(role_id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role_name VARCHAR(50) UNIQUE NOT NULL
 );
 
 CREATE TABLE party_category (
     party_category_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    party_category_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    status VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    number_of_guests INT,
+    image_url VARCHAR(255)
 );
 
 CREATE TABLE dish_category (
     dish_category_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
-);
-
-CREATE TABLE dish (
-    dish_id SERIAL PRIMARY KEY,
-    name VARCHAR(150) NOT NULL,
-    price NUMERIC(12,2),
-    dish_category_id INT REFERENCES dish_category(dish_category_id)
+    dish_category_name VARCHAR(100) NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE ingredient (
     ingredient_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    description TEXT,
+    ingredient_name VARCHAR(100) NOT NULL,
+    img VARCHAR(255)
 );
 
-CREATE TABLE dish_detail (
-    dish_id INT REFERENCES dish(dish_id) ON DELETE CASCADE,
-    ingredient_id INT REFERENCES ingredient(ingredient_id) ON DELETE CASCADE,
-    PRIMARY KEY (dish_id, ingredient_id)
+-- Bảng phụ thuộc level 1
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    status VARCHAR(50),
+    password_hash VARCHAR(255),
+    user_name VARCHAR(100) UNIQUE,
+    address TEXT,
+    role_id INT REFERENCES role(role_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE dish (
+    dish_id SERIAL PRIMARY KEY,
+    note TEXT,
+    dish_name VARCHAR(150) NOT NULL,
+    price NUMERIC(12,2),
+    description TEXT,
+    status VARCHAR(50),
+    img VARCHAR(255),
+    dish_category_id INT REFERENCES dish_category(dish_category_id)
 );
 
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
-    name VARCHAR(150),
-    price NUMERIC(12,2)
-);
-
-CREATE TABLE menu_dish (
-    menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
-    dish_id INT REFERENCES dish(dish_id) ON DELETE CASCADE,
-    PRIMARY KEY (menu_id, dish_id)
-);
-
-CREATE TABLE party_category_menu (
-    party_category_id INT REFERENCES party_category(party_category_id) ON DELETE CASCADE,
-    menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
-    PRIMARY KEY (party_category_id, menu_id)
+    menu_name VARCHAR(150),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    base_price NUMERIC(12,2),
+    img_url VARCHAR(255),
+    status VARCHAR(50)
 );
 
 CREATE TABLE service (
     service_id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    price NUMERIC(12,2)
+    service_name VARCHAR(100),
+    description TEXT,
+    base_price NUMERIC(12,2),
+    status VARCHAR(50),
+    img VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bảng phụ thuộc level 2
+CREATE TABLE dish_detail (
+    dish_detail_id SERIAL PRIMARY KEY,
+    dish_id INT REFERENCES dish(dish_id) ON DELETE CASCADE,
+    ingredient_id INT REFERENCES ingredient(ingredient_id) ON DELETE CASCADE,
+    quantity NUMERIC(10,2),
+    unit VARCHAR(50)
+);
+
+CREATE TABLE menu_dish (
+    menu_dish_id SERIAL PRIMARY KEY,
+    menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
+    dish_id INT REFERENCES dish(dish_id) ON DELETE CASCADE,
+    UNIQUE(menu_id, dish_id)
+);
+
+CREATE TABLE party_category_menu (
+    party_category_menu_id SERIAL PRIMARY KEY,
+    party_category_id INT REFERENCES party_category(party_category_id) ON DELETE CASCADE,
+    menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
+    UNIQUE(party_category_id, menu_id)
+);
+
+-- Staff Group phải được tạo TRƯỚC order_detail
+CREATE TABLE staff_group (
+    staff_group_id SERIAL PRIMARY KEY,
+    staff_group_name VARCHAR(100),
+    status VARCHAR(50),
+    leader_id INT REFERENCES users(user_id)
 );
 
 CREATE TABLE orders (
     order_id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(user_id),
-    party_category_id INT REFERENCES party_category(party_category_id),
+    customer_id INT REFERENCES users(user_id),
     status VARCHAR(50),
+    total_price NUMERIC(12,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Bảng phụ thuộc level 3
 CREATE TABLE order_detail (
     order_detail_id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
     address TEXT,
     number_of_guests INT,
+    status VARCHAR(50),
+    total_price NUMERIC(12,2),
+    type VARCHAR(50), -- 'Order' or 'Custom Order'
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    status VARCHAR(50)
-);
-
-CREATE TABLE order_detail_custom (
-    custom_id SERIAL PRIMARY KEY,
-    order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
-    custom_name VARCHAR(150),
-    custom_price NUMERIC(12,2)
-);
-
-CREATE TABLE order_service (
-    order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
-    service_id INT REFERENCES service(service_id),
-    PRIMARY KEY (order_id, service_id)
-);
-
-CREATE TABLE staff_group (
-    staff_group_id SERIAL PRIMARY KEY,
-    name VARCHAR(100)
+    staff_group_id INT REFERENCES staff_group(staff_group_id),
+    party_category_id INT REFERENCES party_category(party_category_id),
+    menu_id INT REFERENCES menu(menu_id)
 );
 
 CREATE TABLE staff_group_member (
+    staff_group_member_id SERIAL PRIMARY KEY,
     staff_group_id INT REFERENCES staff_group(staff_group_id) ON DELETE CASCADE,
-    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
-    PRIMARY KEY (staff_group_id, user_id)
+    staff_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    status VARCHAR(50),
+    UNIQUE(staff_group_id, staff_id)
+);
+
+-- Bảng phụ thuộc level 4
+CREATE TABLE order_detail_custom (
+    order_detail_custom_id SERIAL PRIMARY KEY,
+    order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
+    dish_id INT REFERENCES dish(dish_id),
+    quantity INT,
+    total_amount NUMERIC(12,2)
+);
+
+CREATE TABLE order_service (
+    order_service_id SERIAL PRIMARY KEY,
+    order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
+    service_id INT REFERENCES service(service_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    quantity INT
 );
 
 CREATE TABLE order_detail_staff_task (
     task_id SERIAL PRIMARY KEY,
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
-    staff_group_id INT REFERENCES staff_group(staff_group_id),
-    description TEXT
+    staff_id INT REFERENCES users(user_id),
+    task_name VARCHAR(255),
+    task_status VARCHAR(50),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    note TEXT
 );
 
 CREATE TABLE payment (
     payment_id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(order_id),
     amount NUMERIC(12,2),
-    status VARCHAR(50),
+    payment_type VARCHAR(50), -- 'Deposit' or 'Full'
+    payment_method VARCHAR(50),
+    payment_status VARCHAR(50),
     paid_at TIMESTAMP
 );
 
 CREATE TABLE feedback (
     feedback_id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(order_id),
+    customer_id INT REFERENCES users(user_id),
     rating INT,
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -182,126 +234,138 @@ CREATE TABLE message (
 -- =========================================
 
 -- ROLE
-INSERT INTO role (name) VALUES
+INSERT INTO role (role_name) VALUES
 ('ADMIN'),
 ('GROUP_LEADER'),
 ('STAFF'),
 ('USER');
 
 -- USERS
-INSERT INTO users (full_name, email, password, role_id) VALUES
-('System Administrator', 'admin@buffet.vn', '123', 1),
-('Team Leader Nguyen', 'leader@buffet.vn', '123', 2),
-('Staff Member A', 'staff@buffet.vn', '123', 3),
-('Nguyen Van A', 'user@buffet.vn', '123', 4);
+INSERT INTO users (full_name, email, password_hash, user_name, phone, address, status, role_id) VALUES
+('System Administrator', 'admin@buffet.vn', '123', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
+('Team Leader Nguyen', 'leader@buffet.vn', '123', 'leader', '0901234568', '456 Leader St', 'ACTIVE', 2),
+('Staff Member A', 'staff@buffet.vn', '123', 'staff', '0901234569', '789 Staff St', 'ACTIVE', 3),
+('Nguyen Van A', 'user@buffet.vn', '123', 'user', '0901234570', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
-INSERT INTO party_category (name) VALUES
-('Wedding Party'),
-('Birthday Party'),
-('Corporate Event');
+INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
+('Wedding Party', 'Elegant wedding celebrations', 'ACTIVE', 200, '/images/wedding.jpg'),
+('Birthday Party', 'Fun birthday celebrations', 'ACTIVE', 50, '/images/birthday.jpg'),
+('Corporate Event', 'Professional corporate gatherings', 'ACTIVE', 100, '/images/corporate.jpg');
 
 -- DISH CATEGORY
-INSERT INTO dish_category (name) VALUES
-('Main Course'),
-('Dessert'),
-('Beverage');
+INSERT INTO dish_category (dish_category_name, description) VALUES
+('Main Course', 'Main dishes and entrees'),
+('Dessert', 'Sweet treats and desserts'),
+('Beverage', 'Drinks and beverages');
 
 -- DISH
-INSERT INTO dish (name, price, dish_category_id) VALUES
-('Honey Grilled Chicken', 150000, 1),
-('Beef Steak', 200000, 1),
-('Coconut Ice Cream', 50000, 2),
-('Fresh Orange Juice', 30000, 3);
+INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
+('Honey Grilled Chicken', 150000, 'Tender chicken grilled with honey', 'AVAILABLE', '/images/chicken.jpg', 1, 'Spicy option available'),
+('Beef Steak', 200000, 'Premium beef steak', 'AVAILABLE', '/images/steak.jpg', 1, 'Cooked to order'),
+('Coconut Ice Cream', 50000, 'Fresh coconut ice cream', 'AVAILABLE', '/images/icecream.jpg', 2, 'Contains dairy'),
+('Fresh Orange Juice', 30000, 'Freshly squeezed orange juice', 'AVAILABLE', '/images/juice.jpg', 3, 'No added sugar');
 
 -- INGREDIENT
-INSERT INTO ingredient (name) VALUES
-('Chicken'),
-('Beef'),
-('Milk'),
-('Orange');
+INSERT INTO ingredient (ingredient_name, description, img) VALUES
+('Chicken', 'Fresh chicken meat', '/images/ing_chicken.jpg'),
+('Beef', 'Premium beef', '/images/ing_beef.jpg'),
+('Milk', 'Fresh milk', '/images/ing_milk.jpg'),
+('Orange', 'Fresh oranges', '/images/ing_orange.jpg');
 
 -- DISH DETAIL
-INSERT INTO dish_detail VALUES
-(1,1),
-(2,2),
-(3,3),
-(4,4);
+INSERT INTO dish_detail (dish_id, ingredient_id, quantity, unit) VALUES
+(1, 1, 500, 'g'),
+(2, 2, 300, 'g'),
+(3, 3, 200, 'ml'),
+(4, 4, 3, 'pieces');
 
 -- MENU
-INSERT INTO menu (name, price) VALUES
-('Standard Menu', 300000),
-('Premium Menu', 500000);
+INSERT INTO menu (menu_name, base_price, img_url, status) VALUES
+('Standard Menu', 300000, '/images/menu_standard.jpg', 'ACTIVE'),
+('Premium Menu', 500000, '/images/menu_premium.jpg', 'ACTIVE');
 
 -- MENU - DISH
-INSERT INTO menu_dish VALUES
-(1,1),
-(1,3),
-(1,4),
-(2,1),
-(2,2),
-(2,3),
-(2,4);
+INSERT INTO menu_dish (menu_id, dish_id) VALUES
+(1, 1),
+(1, 3),
+(1, 4),
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 4);
 
 -- PARTY CATEGORY - MENU
-INSERT INTO party_category_menu VALUES
-(1,1),
-(1,2),
-(2,1),
-(3,2);
+INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
+(1, 1),
+(1, 2),
+(2, 1),
+(3, 2);
 
 -- SERVICE
-INSERT INTO service (name, price) VALUES
-('Stage Decoration', 2000000),
-('Sound & Lighting System', 1500000),
-('MC Service', 1000000);
+INSERT INTO service (service_name, description, base_price, status, img) VALUES
+('Stage Decoration', 'Professional stage setup and decoration', 2000000, 'AVAILABLE', '/images/service_stage.jpg'),
+('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', '/images/service_sound.jpg'),
+('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', '/images/service_mc.jpg');
+
+-- STAFF GROUP (phải tạo trước order_detail)
+INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES 
+('Service Team A', 'ACTIVE', 2);
 
 -- ORDER
-INSERT INTO orders (user_id, party_category_id, status)
-VALUES (4,1,'PENDING');
+INSERT INTO orders (customer_id, status, total_price)
+VALUES (4, 'PENDING', 7500000);
 
 -- ORDER DETAIL
 INSERT INTO order_detail 
-(order_id, address, number_of_guests, start_time, end_time, status)
+(order_id, address, number_of_guests, start_time, end_time, status, total_price, type, staff_group_id, party_category_id, menu_id)
 VALUES 
 (1,
 '123 Nguyen Trai, District 1, Ho Chi Minh City',
 150,
 NOW(),
 NOW() + INTERVAL '5 hours',
-'PENDING');
+'PENDING',
+7500000,
+'Order',
+1,
+1,
+1);
 
 -- ORDER SERVICE
-INSERT INTO order_service VALUES (1,1);
-INSERT INTO order_service VALUES (1,2);
-
--- STAFF GROUP
-INSERT INTO staff_group (name) VALUES ('Service Team A');
+INSERT INTO order_service (order_detail_id, service_id, quantity) VALUES 
+(1, 1, 1),
+(1, 2, 1);
 
 -- STAFF GROUP MEMBER
-INSERT INTO staff_group_member VALUES (1,2); -- Group Leader
-INSERT INTO staff_group_member VALUES (1,3); -- Staff
+INSERT INTO staff_group_member (staff_group_id, staff_id, status) VALUES 
+(1, 2, 'ACTIVE'), -- Group Leader
+(1, 3, 'ACTIVE'); -- Staff
 
 -- STAFF TASK
 INSERT INTO order_detail_staff_task 
-(order_detail_id, staff_group_id, description)
+(order_detail_id, staff_id, task_name, task_status, start_time, end_time, note)
 VALUES 
-(1,1,'Setup tables and serve guests');
+(1, 3, 'Setup tables and serve guests', 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
+
+-- ORDER DETAIL CUSTOM
+INSERT INTO order_detail_custom (order_detail_id, dish_id, quantity, total_amount) VALUES
+(1, 1, 2, 300000);
 
 -- PAYMENT
-INSERT INTO payment (order_id, amount, status)
-VALUES (1, 7500000, 'UNPAID');
+INSERT INTO payment (order_id, amount, payment_type, payment_method, payment_status)
+VALUES (1, 7500000, 'Full', 'BANK_TRANSFER', 'UNPAID');
 
 -- FEEDBACK
-INSERT INTO feedback (order_id, rating, comment)
-VALUES (1,5,'Excellent and professional service!');
+INSERT INTO feedback (order_id, customer_id, rating, comment)
+VALUES (1, 4, 5, 'Excellent and professional service!');
 
 -- CONVERSATION
 INSERT INTO conversation (customer_id, owner_id)
-VALUES (4,2);
+VALUES (4, 2);
 
 -- MESSAGE
 INSERT INTO message (conversation_id, sender_id, content)
 VALUES 
-(1,4,'I would like to change the event time.'),
-(1,2,'Sure, please provide the new schedule.');
+(1, 4, 'I would like to change the event time.'),
+(1, 2, 'Sure, please provide the new schedule.');
