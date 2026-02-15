@@ -1,0 +1,134 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "GSP26SE10-DBContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "MinimumProductVersion": "2.6.1130",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Entities",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "BookfetSystem.Repositories",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "public.conversation",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.dish",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.dish_category",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.dish_detail",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.feedback",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.ingredient",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.menu",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.menu_dish",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.message",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.order_detail",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.order_detail_custom",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.order_detail_staff_task",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.order_service",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.orders",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.party_category",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.party_category_menu",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.payment",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.role",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.service",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.staff_group",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.staff_group_member",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.users",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
+}

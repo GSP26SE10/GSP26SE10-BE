@@ -1,0 +1,26 @@
+﻿using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Response;
+using Mapster;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Principal;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BookfetSystem.Services.Mappings
+{
+    public class UserMapping : IRegister
+    {
+        public void Register(TypeAdapterConfig config)
+        {
+            //filter request -> entity
+            config.NewConfig<UserFilterRequest, User>()
+                  .IgnoreNullValues(true);
+            config.NewConfig<User, UserResponse>()
+                    .Map(dest => dest.RoleName,
+           src => src.Role.RoleName);
+        }
+    }
+}
