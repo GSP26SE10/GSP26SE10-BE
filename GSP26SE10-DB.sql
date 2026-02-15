@@ -71,7 +71,7 @@ CREATE TABLE users (
     user_name VARCHAR(100) UNIQUE,
     address TEXT,
     role_id INT REFERENCES role(role_id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE dish (
@@ -88,7 +88,7 @@ CREATE TABLE dish (
 CREATE TABLE menu (
     menu_id SERIAL PRIMARY KEY,
     menu_name VARCHAR(150),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     base_price NUMERIC(12,2),
     img_url VARCHAR(255),
     status VARCHAR(50)
@@ -101,7 +101,7 @@ CREATE TABLE service (
     base_price NUMERIC(12,2),
     status VARCHAR(50),
     img VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Bảng phụ thuộc level 2
@@ -140,7 +140,7 @@ CREATE TABLE orders (
     customer_id INT REFERENCES users(user_id),
     status VARCHAR(50),
     total_price NUMERIC(12,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Bảng phụ thuộc level 3
@@ -152,8 +152,8 @@ CREATE TABLE order_detail (
     status VARCHAR(50),
     total_price NUMERIC(12,2),
     type VARCHAR(50), -- 'Order' or 'Custom Order'
-    start_time TIMESTAMP,
-    end_time TIMESTAMP,
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
     staff_group_id INT REFERENCES staff_group(staff_group_id),
     party_category_id INT REFERENCES party_category(party_category_id),
     menu_id INT REFERENCES menu(menu_id)
@@ -180,7 +180,7 @@ CREATE TABLE order_service (
     order_service_id SERIAL PRIMARY KEY,
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
     service_id INT REFERENCES service(service_id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     quantity INT
 );
 
@@ -190,8 +190,8 @@ CREATE TABLE order_detail_staff_task (
     staff_id INT REFERENCES users(user_id),
     task_name VARCHAR(255),
     task_status VARCHAR(50),
-    start_time TIMESTAMP,
-    end_time TIMESTAMP,
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
     note TEXT
 );
 
@@ -202,7 +202,7 @@ CREATE TABLE payment (
     payment_type VARCHAR(50), -- 'Deposit' or 'Full'
     payment_method VARCHAR(50),
     payment_status VARCHAR(50),
-    paid_at TIMESTAMP
+    paid_at TIMESTAMPTZ
 );
 
 CREATE TABLE feedback (
@@ -211,14 +211,14 @@ CREATE TABLE feedback (
     customer_id INT REFERENCES users(user_id),
     rating INT,
     comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE conversation (
     conversation_id SERIAL PRIMARY KEY,
     customer_id INT REFERENCES users(user_id),
     owner_id INT REFERENCES users(user_id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE message (
@@ -226,7 +226,7 @@ CREATE TABLE message (
     conversation_id INT REFERENCES conversation(conversation_id) ON DELETE CASCADE,
     sender_id INT REFERENCES users(user_id),
     content TEXT,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================================
@@ -242,10 +242,10 @@ INSERT INTO role (role_name) VALUES
 
 -- USERS
 INSERT INTO users (full_name, email, password_hash, user_name, phone, address, status, role_id) VALUES
-('System Administrator', 'admin@buffet.vn', '123', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
-('Team Leader Nguyen', 'leader@buffet.vn', '123', 'leader', '0901234568', '456 Leader St', 'ACTIVE', 2),
-('Staff Member A', 'staff@buffet.vn', '123', 'staff', '0901234569', '789 Staff St', 'ACTIVE', 3),
-('Nguyen Van A', 'user@buffet.vn', '123', 'user', '0901234570', '321 User St', 'ACTIVE', 4);
+('System Administrator', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
+('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', '456 Leader St', 'ACTIVE', 2),
+('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', '789 Staff St', 'ACTIVE', 3),
+('Nguyen Van A', 'user@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
