@@ -1,0 +1,52 @@
+using BookfetSystem.Repositories.Basic;
+using BookfetSystem.Repositories.DBContext;
+using BookfetSystem.Repositories.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace BookfetSystem.Repositories
+{
+    public class StaffGroupRepository : GenericRepository<StaffGroup>
+    {
+        public StaffGroupRepository(GSP26SE10DBContext context) : base(context)
+        {
+        }
+
+        public IQueryable<StaffGroup> GetAllStaffGroupFiltered(StaffGroup filter)
+        {
+            var query = _context.StaffGroups
+                .Include(sg => sg.Leader)
+                .AsQueryable();
+
+            if (filter.StaffGroupId != 0)
+            {
+                query = query.Where(sg => sg.StaffGroupId == filter.StaffGroupId);
+            }
+
+            if (!string.IsNullOrEmpty(filter.StaffGroupName))
+            {
+                query = query.Where(sg => sg.StaffGroupName.Contains(filter.StaffGroupName));
+            }
+
+            if (!string.IsNullOrEmpty(filter.Status))
+            {
+                query = query.Where(sg => sg.Status.Contains(filter.Status));
+            }
+
+            if (filter.LeaderId != null)
+            {
+                query = query.Where(sg => sg.LeaderId == filter.LeaderId);
+            }
+
+            return query.OrderBy(sg => sg.StaffGroupName);
+        }
+
+        public async Task<bool> HasOrderDetailsAsync(int staffGroupId)
+        {
+            return await _context.OrderDetails
+                .AnyAsync(od => od.StaffGroupId == staffGroupId);
+        }
+    }
+}
+
