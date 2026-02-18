@@ -51,8 +51,10 @@ MapsterConfig.RegisterMappings();
 
 // DI for services and repositories
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<RoleRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
