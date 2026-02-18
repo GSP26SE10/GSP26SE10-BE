@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Http;
@@ -19,75 +19,44 @@ namespace BookfetSystem.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetAllUsersFiltered([FromQuery] UserFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var accounts = await _userService.GetAllUserFilteredAsync(filter, page, pageSize);
-                return Ok(accounts);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var accounts = await _userService.GetAllUserFilteredAsync(filter, page, pageSize);
+            return Ok(accounts);
         }
+
         [HttpPost]
         public async Task<ActionResult> CreateUser([FromBody] UserCreateRequest request)
         {
-            try
+            var result = await _userService.CreateAsync(request);
+            if (result.Success)
             {
-                var result = await _userService.CreateAsync(request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
-                else
-                {
-                    return BadRequest(result);
-                }
+                return Ok(result);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+
+            return BadRequest(result);
         }
+
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateRequest request)
         {
-            try
+            var result = await _userService.UpdateAsync(id, request);
+            if (result.Success)
             {
-                var result = await _userService.UpdateAsync(id, request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
-                else
-                {
-                    return BadRequest(result);
-                }
+                return Ok(result);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+
+            return BadRequest(result);
         }
+
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteUser(int id)
         {
-            try
+            var result = await _userService.DeleteAsync(id);
+            if (result.Success)
             {
-                var result = await _userService.DeleteAsync(id);
-                if (result.Success)
-                {
-                    return NoContent();
-                }
-                else
-                {
-                    return NotFound(result);
-                }
+                return NoContent();
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+
+            return NotFound(result);
         }
     }
 }

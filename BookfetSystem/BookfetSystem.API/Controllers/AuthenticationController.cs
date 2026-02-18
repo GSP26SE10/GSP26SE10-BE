@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Microsoft.AspNetCore.Http;
@@ -18,22 +18,13 @@ namespace BookfetSystem.API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            try
+            var result = await _authenticationService.Login(loginRequest);
+            if (result.Success)
             {
-                var result = await _authenticationService.Login(loginRequest);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
-                else
-                {
-                    return Unauthorized(result);
-                }
+                return Ok(result);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+
+            return Unauthorized(result);
         }
     }
 }
