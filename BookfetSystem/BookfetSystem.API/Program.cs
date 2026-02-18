@@ -3,6 +3,7 @@ using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Mappings;
+using BookfetSystem.API.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -131,6 +132,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseGlobalException();
 
 app.UseSwagger();
 app.UseSwaggerUI();

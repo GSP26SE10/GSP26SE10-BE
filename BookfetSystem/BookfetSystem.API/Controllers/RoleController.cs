@@ -21,72 +21,44 @@ namespace BookfetSystem.API.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAllRolesFiltered([FromQuery] RoleFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var roles = await _roleService.GetAllRoleFilteredAsync(filter, page, pageSize);
-                return Ok(roles);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var roles = await _roleService.GetAllRoleFilteredAsync(filter, page, pageSize);
+            return Ok(roles);
         }
 
         [HttpPost]
         public async Task<ActionResult> CreateRole([FromBody] RoleCreateRequest request)
         {
-            try
+            var result = await _roleService.CreateAsync(request);
+            if (result.Success)
             {
-                var result = await _roleService.CreateAsync(request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
+                return Ok(result);
+            }
 
-                return BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateRole(int id, [FromBody] RoleUpdateRequest request)
         {
-            try
+            var result = await _roleService.UpdateAsync(id, request);
+            if (result.Success)
             {
-                var result = await _roleService.UpdateAsync(id, request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
+                return Ok(result);
+            }
 
-                return BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteRole(int id)
         {
-            try
+            var result = await _roleService.DeleteAsync(id);
+            if (result.Success)
             {
-                var result = await _roleService.DeleteAsync(id);
-                if (result.Success)
-                {
-                    return NoContent();
-                }
+                return NoContent();
+            }
 
-                return NotFound(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return NotFound(result);
         }
     }
 }
