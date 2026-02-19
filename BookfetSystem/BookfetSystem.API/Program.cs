@@ -55,11 +55,15 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RoleRepository>();
 builder.Services.AddScoped<StaffGroupRepository>();
 builder.Services.AddScoped<StaffGroupMemberRepository>();
+builder.Services.AddScoped<ConversationRepository>();
+builder.Services.AddScoped<MessageRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IStaffGroupService, StaffGroupService>();
 builder.Services.AddScoped<IStaffGroupMemberService, StaffGroupMemberService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
