@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Repositories.Basic;
+using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -59,5 +59,11 @@ namespace BookfetSystem.Repositories
                 .AnyAsync(r => r.RoleId == roleId);
         }
 
+        public async Task<User?> GetUserWithRoleByIdAsync(int userId)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
     }
 }

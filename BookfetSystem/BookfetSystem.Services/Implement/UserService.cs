@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
@@ -63,7 +63,8 @@ namespace BookfetSystem.Services.Implement
             var affected = await _userRepository.CreateAsync(entity);
             if (affected > 0)
             {
-                var response = entity.Adapt<UserResponse>();
+                var userWithRole = await _userRepository.GetUserWithRoleByIdAsync(entity.UserId);
+                var response = userWithRole!.Adapt<UserResponse>();
                 return new ApiResponse<UserResponse>
                 {
                     Success = true,
@@ -180,7 +181,8 @@ namespace BookfetSystem.Services.Implement
             var affected = await _userRepository.UpdateAsync(entity);
             if (affected > 0)
             {
-                var response = entity.Adapt<UserResponse>();
+                var userWithRole = await _userRepository.GetUserWithRoleByIdAsync(entity.UserId);
+                var response = userWithRole!.Adapt<UserResponse>();
                 return new ApiResponse<UserResponse>
                 {
                     Success = true,
