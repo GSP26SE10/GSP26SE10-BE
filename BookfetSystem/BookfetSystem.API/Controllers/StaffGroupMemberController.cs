@@ -1,7 +1,6 @@
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
@@ -20,72 +19,44 @@ namespace BookfetSystem.API.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAllStaffGroupMembersFiltered([FromQuery] StaffGroupMemberFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var members = await _staffGroupMemberService.GetAllStaffGroupMemberFilteredAsync(filter, page, pageSize);
-                return Ok(members);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var members = await _staffGroupMemberService.GetAllStaffGroupMemberFilteredAsync(filter, page, pageSize);
+            return Ok(members);
         }
 
         [HttpPost]
         public async Task<ActionResult> CreateStaffGroupMember([FromBody] StaffGroupMemberCreateRequest request)
         {
-            try
+            var result = await _staffGroupMemberService.CreateAsync(request);
+            if (result.Success)
             {
-                var result = await _staffGroupMemberService.CreateAsync(request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
+                return Ok(result);
+            }
 
-                return BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateStaffGroupMember(int id, [FromBody] StaffGroupMemberUpdateRequest request)
         {
-            try
+            var result = await _staffGroupMemberService.UpdateAsync(id, request);
+            if (result.Success)
             {
-                var result = await _staffGroupMemberService.UpdateAsync(id, request);
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
+                return Ok(result);
+            }
 
-                return BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteStaffGroupMember(int id)
         {
-            try
+            var result = await _staffGroupMemberService.DeleteAsync(id);
+            if (result.Success)
             {
-                var result = await _staffGroupMemberService.DeleteAsync(id);
-                if (result.Success)
-                {
-                    return NoContent();
-                }
+                return NoContent();
+            }
 
-                return NotFound(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return NotFound(result);
         }
     }
 }
