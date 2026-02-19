@@ -93,6 +93,16 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (await _staffGroupMemberRepository.IsStaffInAnyGroupAsync(request.StaffId))
+            {
+                return new ApiResponse<StaffGroupMemberResponse>
+                {
+                    Success = false,
+                    Message = "Staff can only belong to one group. Remove them from current group first.",
+                    Data = null
+                };
+            }
+
             var entity = new StaffGroupMember
             {
                 StaffGroupId = request.StaffGroupId,
@@ -180,6 +190,16 @@ namespace BookfetSystem.Services.Implement
                 {
                     Success = false,
                     Message = "Staff is already a member of this group.",
+                    Data = null
+                };
+            }
+
+            if (await _staffGroupMemberRepository.IsStaffInAnyGroupAsync(request.StaffId, id))
+            {
+                return new ApiResponse<StaffGroupMemberResponse>
+                {
+                    Success = false,
+                    Message = "Staff can only belong to one group. Remove them from current group first.",
                     Data = null
                 };
             }

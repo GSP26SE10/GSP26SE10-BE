@@ -54,5 +54,20 @@ namespace BookfetSystem.Repositories
 
             return await query.AnyAsync();
         }
+
+        /// <summary>
+        /// Check if staff is already a member of any group. Used to enforce "staff can only be in one group" rule.
+        /// </summary>
+        public async Task<bool> IsStaffInAnyGroupAsync(int staffId, int? excludeMemberId = null)
+        {
+            var query = _context.StaffGroupMembers.Where(m => m.StaffId == staffId);
+
+            if (excludeMemberId.HasValue)
+            {
+                query = query.Where(m => m.StaffGroupMemberId != excludeMemberId.Value);
+            }
+
+            return await query.AnyAsync();
+        }
     }
 }
