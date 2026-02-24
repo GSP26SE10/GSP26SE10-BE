@@ -32,7 +32,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet("google-login")]
-        public IActionResult GoogleLogin()
+        public IActionResult GoogleLogin([FromQuery] string? redirect)
         {
             var googleConfig = _configuration.GetSection("Google");
             var clientId = googleConfig["ClientId"];
@@ -45,20 +45,29 @@ namespace BookfetSystem.API.Controllers
             // Create the redirect URI for Google OAuth callback
             var redirectUri = $"{Request.Scheme}://{Request.Host}/api/authentication/google-callback";
 
-            // Google OAuth URL with required scopes and parameters
+            // state dùng để phân biệt web/mobile và mang theo deep link (nếu có)
+            var state = string.IsNullOrEmpty(redirect)
+                ? "web"
+                : Uri.EscapeDataString(redirect);
+
+            // Google OAuth URL với scopes và state
             var googleAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                 $"client_id={Uri.EscapeDataString(clientId)}&" +
                 $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
                 $"response_type=code&" +
                 $"scope={Uri.EscapeDataString("openid email profile")}&" +
                 $"access_type=offline&" +
-                $"prompt=consent";
+                $"prompt=consent&" +
+                $"state={state}";
 
             return Redirect(googleAuthUrl);
         }
 
         [HttpGet("google-callback")]
-        public async Task<IActionResult> GoogleCallback([FromQuery] string? code, [FromQuery] string? error)
+        public async Task<IActionResult> GoogleCallback(
+            [FromQuery] string? code,
+            [FromQuery] string? error,
+            [FromQuery] string? state)
         {
             // Get frontend URL from configuration 
             var corsOrigins = _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" };
@@ -83,8 +92,14 @@ namespace BookfetSystem.API.Controllers
 
             if (result.Success && result.Data != null)
             {
-                // Redirect to frontend with the token as query parameter
-                return Redirect($"{frontendUrl}/auth/callback?token={Uri.EscapeDataString(result.Data.AccessToken)}");
+                // Xác định URL đích cuối cùng:
+                // - Nếu state = "web" hoặc null -> redirect về frontend web
+                // - Nếu state khác "web"       -> coi là deep link (myapp://...) cho mobile
+                var target = !string.IsNullOrEmpty(state) && state != "web"
+                    ? Uri.UnescapeDataString(state)
+                    : $"{frontendUrl}/auth/callback";
+
+                return Redirect($"{target}?token={Uri.EscapeDataString(result.Data.AccessToken)}");
             }
 
             return Redirect($"{frontendUrl}/login?error=login_failed&message={Uri.EscapeDataString(result.Message ?? "Login failed")}");
