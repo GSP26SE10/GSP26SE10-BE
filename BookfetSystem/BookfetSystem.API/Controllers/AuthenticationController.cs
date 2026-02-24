@@ -42,8 +42,10 @@ namespace BookfetSystem.API.Controllers
                 return BadRequest("Google OAuth ClientId is not configured");
             }
 
-            // Create the redirect URI for Google OAuth callback
-            var redirectUri = $"{Request.Scheme}://{Request.Host}/api/authentication/google-callback";
+            // Create the redirect URI for Google OAuth callback (ép https nếu host nằm trong ForceHttpsHosts)
+            var forceHttpsHosts = _configuration.GetSection("ForceHttpsHosts").Get<string[]>() ?? Array.Empty<string>();
+            var scheme = forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" : Request.Scheme;
+            var redirectUri = $"{scheme}://{Request.Host}/api/authentication/google-callback";
 
             // state dùng để phân biệt web/mobile và mang theo deep link (nếu có)
             var state = string.IsNullOrEmpty(redirect)
@@ -84,8 +86,10 @@ namespace BookfetSystem.API.Controllers
                 return Redirect($"{frontendUrl}/login?error=no_code");
             }
 
-            // Create the redirect URI for Google OAuth callback (should match the one used in GoogleLogin)
-            var redirectUri = $"{Request.Scheme}://{Request.Host}/api/authentication/google-callback";
+            // Create the redirect URI for Google OAuth callback (ép https nếu host nằm trong ForceHttpsHosts)
+            var forceHttpsHosts = _configuration.GetSection("ForceHttpsHosts").Get<string[]>() ?? Array.Empty<string>();
+            var scheme = forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" : Request.Scheme;
+            var redirectUri = $"{scheme}://{Request.Host}/api/authentication/google-callback";
 
             // Call the authentication service to exchange the code for a token and log in the user
             var result = await _authenticationService.LoginGoogle(code, redirectUri);
