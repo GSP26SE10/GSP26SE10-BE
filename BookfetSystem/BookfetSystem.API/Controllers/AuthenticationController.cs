@@ -42,9 +42,14 @@ namespace BookfetSystem.API.Controllers
                 return BadRequest("Google OAuth ClientId is not configured");
             }
 
-            // Create the redirect URI for Google OAuth callback (ép https nếu host nằm trong ForceHttpsHosts)
+            // Create the redirect URI for Google OAuth callback
+            // Ưu tiên scheme do reverse proxy set (X-Forwarded-Proto), fallback về config ForceHttpsHosts
+            var forwardedProto = Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
             var forceHttpsHosts = _configuration.GetSection("ForceHttpsHosts").Get<string[]>() ?? Array.Empty<string>();
-            var scheme = forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" : Request.Scheme;
+            var scheme =
+                !string.IsNullOrEmpty(forwardedProto) ? forwardedProto :
+                forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" :
+                Request.Scheme;
             var redirectUri = $"{scheme}://{Request.Host}/api/authentication/google-callback";
 
             // state dùng để phân biệt web/mobile và mang theo deep link (nếu có)
@@ -86,9 +91,14 @@ namespace BookfetSystem.API.Controllers
                 return Redirect($"{frontendUrl}/login?error=no_code");
             }
 
-            // Create the redirect URI for Google OAuth callback (ép https nếu host nằm trong ForceHttpsHosts)
+            // Create the redirect URI for Google OAuth callback
+            // Ưu tiên scheme do reverse proxy set (X-Forwarded-Proto), fallback về config ForceHttpsHosts
+            var forwardedProto = Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
             var forceHttpsHosts = _configuration.GetSection("ForceHttpsHosts").Get<string[]>() ?? Array.Empty<string>();
-            var scheme = forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" : Request.Scheme;
+            var scheme =
+                !string.IsNullOrEmpty(forwardedProto) ? forwardedProto :
+                forceHttpsHosts.Contains(Request.Host.Host, StringComparer.OrdinalIgnoreCase) ? "https" :
+                Request.Scheme;
             var redirectUri = $"{scheme}://{Request.Host}/api/authentication/google-callback";
 
             // Call the authentication service to exchange the code for a token and log in the user

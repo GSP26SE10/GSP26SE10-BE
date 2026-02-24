@@ -5,6 +5,7 @@ using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Mappings;
 using BookfetSystem.API.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -145,6 +146,12 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Trust reverse proxy (Fly, Nginx, etc.) for scheme/host
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+});
 
 app.UseGlobalException();
 
