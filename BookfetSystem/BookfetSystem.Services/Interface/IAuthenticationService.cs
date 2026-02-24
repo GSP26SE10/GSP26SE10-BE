@@ -12,5 +12,6 @@ namespace BookfetSystem.Services.Interface
     public interface IAuthenticationService
     {
         Task<ApiResponse<LoginResponse>> Login(LoginRequest loginRequest);
+        Task<ApiResponse<LoginResponse>> LoginGoogle(string code, string redirectUri);
     }
 }
