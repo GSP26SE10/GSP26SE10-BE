@@ -123,21 +123,25 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add CORS
+// CORS configuration from appsettings
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        if (allowedOrigins is { Length: > 0 })
         {
             policy
-                .WithOrigins(
-                    "http://localhost:5173",   // Vite local
-                    "http://localhost:3000",   // React local
-                    "https://your-frontend-domain.com" // Production FE
-                )
+                .WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod();
-        });
+        }
+        else
+        {
+            throw new InvalidOperationException("CORS configuration is missing: 'Cors:AllowedOrigins' is not set for the current environment.");
+        }
+    });
 });
 
 var app = builder.Build();
