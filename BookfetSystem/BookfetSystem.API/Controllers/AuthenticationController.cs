@@ -80,14 +80,28 @@ namespace BookfetSystem.API.Controllers
             var corsOrigins = _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" };
             var frontendUrl = corsOrigins.FirstOrDefault() ?? "http://localhost:3000";
 
+            // Xác định xem đây là call từ mobile (deeplink) hay web
+            var isMobile = !string.IsNullOrEmpty(state) && state != "web";
+            var mobileTarget = isMobile ? Uri.UnescapeDataString(state!) : null;
+
             // Check for errors from Google OAuth
             if (!string.IsNullOrEmpty(error))
             {
+                if (isMobile && mobileTarget != null)
+                {
+                    return Redirect($"{mobileTarget}?error=access_denied");
+                }
+
                 return Redirect($"{frontendUrl}/login?error=access_denied");
             }
 
             if (string.IsNullOrEmpty(code))
             {
+                if (isMobile && mobileTarget != null)
+                {
+                    return Redirect($"{mobileTarget}?error=no_code");
+                }
+
                 return Redirect($"{frontendUrl}/login?error=no_code");
             }
 
@@ -107,16 +121,24 @@ namespace BookfetSystem.API.Controllers
             if (result.Success && result.Data != null)
             {
                 // Xác định URL đích cuối cùng:
-                // - Nếu state = "web" hoặc null -> redirect về frontend web
-                // - Nếu state khác "web"       -> coi là deep link (myapp://...) cho mobile
-                var target = !string.IsNullOrEmpty(state) && state != "web"
-                    ? Uri.UnescapeDataString(state)
+                // - Nếu web  -> redirect về frontend web
+                // - Nếu mobile -> redirect về deeplink (myapp://...)
+                var target = isMobile && mobileTarget != null
+                    ? mobileTarget
                     : $"{frontendUrl}/auth/callback";
 
                 return Redirect($"{target}?token={Uri.EscapeDataString(result.Data.AccessToken)}");
             }
 
-            return Redirect($"{frontendUrl}/login?error=login_failed&message={Uri.EscapeDataString(result.Message ?? "Login failed")}");
+            // Xử lý lỗi khi backend login thất bại
+            var encodedMessage = Uri.EscapeDataString(result.Message ?? "Login failed");
+
+            if (isMobile && mobileTarget != null)
+            {
+                return Redirect($"{mobileTarget}?error=login_failed&message={encodedMessage}");
+            }
+
+            return Redirect($"{frontendUrl}/login?error=login_failed&message={encodedMessage}");
         }
     }
 }
