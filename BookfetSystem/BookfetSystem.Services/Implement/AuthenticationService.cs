@@ -215,10 +215,10 @@ namespace BookfetSystem.Services.Implement
                     {
                         FullName = fullName,
                         Email = email,
-                        Phone = "0000000000",
+                        Phone = null,
                         Status = "ACTIVE",
                         UserName = email,
-                        Address = string.Empty,
+                        Address = null,
                         RoleId = 4, // default USER role
                         PasswordHash = BCrypt.Net.BCrypt.HashPassword(randomPassword),
                         CreatedAt = DateTime.UtcNow
