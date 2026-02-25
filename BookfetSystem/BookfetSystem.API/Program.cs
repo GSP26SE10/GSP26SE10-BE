@@ -60,6 +60,7 @@ builder.Services.AddScoped<ConversationRepository>();
 builder.Services.AddScoped<MessageRepository>();
 builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<OrderDetailStaffTaskRepository>();
+builder.Services.AddScoped<MenuRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -68,6 +69,7 @@ builder.Services.AddScoped<IStaffGroupMemberService, StaffGroupMemberService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IOrderDetailStaffTaskService, OrderDetailStaffTaskService>();
+builder.Services.AddScoped<IMenuService, MenuService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
