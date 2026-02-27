@@ -35,16 +35,9 @@ namespace BookfetSystem.Services.Implement
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .ProjectToType<MenuDishResponse>()
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(md => new MenuDishResponse
-                {
-                    MenuDishId = md.MenuDishId,
-                    MenuId = md.MenuId,
-                    DishId = md.DishId,
-                    MenuName = md.Menu != null ? md.Menu.MenuName : null,
-                    DishName = md.Dish != null ? md.Dish.DishName : null
-                })
                 .ToListAsync();
 
             return new PagedResponse<MenuDishResponse>
@@ -99,14 +92,10 @@ namespace BookfetSystem.Services.Implement
             var affected = await _menuDishRepository.CreateAsync(entity);
             if (affected > 0)
             {
-                var response = new MenuDishResponse
-                {
-                    MenuDishId = entity.MenuDishId,
-                    MenuId = entity.MenuId,
-                    DishId = entity.DishId,
-                    MenuName = menu.MenuName,
-                    DishName = dish.DishName
-                };
+                var response = await _menuDishRepository
+                    .GetAllMenuDishFiltered(new MenuDish { MenuDishId = entity.MenuDishId })
+                    .ProjectToType<MenuDishResponse>()
+                    .FirstOrDefaultAsync();
 
                 return new ApiResponse<MenuDishResponse>
                 {
@@ -175,14 +164,10 @@ namespace BookfetSystem.Services.Implement
             var affected = await _menuDishRepository.UpdateAsync(entity);
             if (affected > 0)
             {
-                var response = new MenuDishResponse
-                {
-                    MenuDishId = entity.MenuDishId,
-                    MenuId = entity.MenuId,
-                    DishId = entity.DishId,
-                    MenuName = menu.MenuName,
-                    DishName = dish.DishName
-                };
+                var response = await _menuDishRepository
+                    .GetAllMenuDishFiltered(new MenuDish { MenuDishId = entity.MenuDishId })
+                    .ProjectToType<MenuDishResponse>()
+                    .FirstOrDefaultAsync();
 
                 return new ApiResponse<MenuDishResponse>
                 {

@@ -74,6 +74,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IOrderDetailStaffTaskService, OrderDetailStaffTaskService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<IDishService, DishService>();
+builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
 builder.Services.AddScoped<IMenuDishService, MenuDishService>();
 
 // JWT Authentication

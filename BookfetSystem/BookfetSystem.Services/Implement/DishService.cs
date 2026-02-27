@@ -30,20 +30,9 @@ namespace BookfetSystem.Services.Implement
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .ProjectToType<DishResponse>()
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(d => new DishResponse
-                {
-                    DishId = d.DishId,
-                    DishName = d.DishName,
-                    Price = d.Price,
-                    Description = d.Description,
-                    Note = d.Note,
-                    Status = d.Status,
-                    Img = d.Img,
-                    DishCategoryId = d.DishCategoryId,
-                    DishCategoryName = d.DishCategory != null ? d.DishCategory.DishCategoryName : null
-                })
                 .ToListAsync();
 
             return new PagedResponse<DishResponse>
@@ -112,18 +101,7 @@ namespace BookfetSystem.Services.Implement
             {
                 var response = await _dishRepository
                     .GetAllDishFiltered(new Dish { DishId = entity.DishId }, null, null)
-                    .Select(d => new DishResponse
-                    {
-                        DishId = d.DishId,
-                        DishName = d.DishName,
-                        Price = d.Price,
-                        Description = d.Description,
-                        Note = d.Note,
-                        Status = d.Status,
-                        Img = d.Img,
-                        DishCategoryId = d.DishCategoryId,
-                        DishCategoryName = d.DishCategory != null ? d.DishCategory.DishCategoryName : null
-                    })
+                    .ProjectToType<DishResponse>()
                     .FirstOrDefaultAsync();
 
                 return new ApiResponse<DishResponse>
@@ -211,18 +189,7 @@ namespace BookfetSystem.Services.Implement
             {
                 var response = await _dishRepository
                     .GetAllDishFiltered(new Dish { DishId = entity.DishId }, null, null)
-                    .Select(d => new DishResponse
-                    {
-                        DishId = d.DishId,
-                        DishName = d.DishName,
-                        Price = d.Price,
-                        Description = d.Description,
-                        Note = d.Note,
-                        Status = d.Status,
-                        Img = d.Img,
-                        DishCategoryId = d.DishCategoryId,
-                        DishCategoryName = d.DishCategory != null ? d.DishCategory.DishCategoryName : null
-                    })
+                    .ProjectToType<DishResponse>()
                     .FirstOrDefaultAsync();
 
                 return new ApiResponse<DishResponse>
