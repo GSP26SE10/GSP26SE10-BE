@@ -15,7 +15,10 @@ namespace BookfetSystem.Repositories
 
         public IQueryable<Menu> GetAllMenuFiltered(Menu filter, decimal? minBasePrice, decimal? maxBasePrice)
         {
-            var query = _context.Menus.AsQueryable();
+            var query = _context.Menus
+                .Include(m => m.PartyCategoryMenus)
+                .ThenInclude(pcm => pcm.PartyCategory)
+                .AsQueryable();
 
             if (filter.MenuId != 0)
             {
