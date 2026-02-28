@@ -65,6 +65,8 @@ builder.Services.AddScoped<DishRepository>();
 builder.Services.AddScoped<DishCategoryRepository>();
 builder.Services.AddScoped<IngredientRepository>();
 builder.Services.AddScoped<MenuDishRepository>();
+builder.Services.AddScoped<PartyCategoryRepository>();
+builder.Services.AddScoped<PartyCategoryMenuRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -78,6 +80,7 @@ builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IMenuDishService, MenuDishService>();
+builder.Services.AddScoped<IPartyCategoryMenuService, PartyCategoryMenuService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
