@@ -64,6 +64,7 @@ builder.Services.AddScoped<MenuRepository>();
 builder.Services.AddScoped<DishRepository>();
 builder.Services.AddScoped<DishCategoryRepository>();
 builder.Services.AddScoped<IngredientRepository>();
+builder.Services.AddScoped<DishDetailRepository>();
 builder.Services.AddScoped<MenuDishRepository>();
 builder.Services.AddScoped<PartyCategoryRepository>();
 builder.Services.AddScoped<PartyCategoryMenuRepository>();
@@ -79,6 +80,7 @@ builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<IDishDetailService, DishDetailService>();
 builder.Services.AddScoped<IMenuDishService, MenuDishService>();
 builder.Services.AddScoped<IPartyCategoryMenuService, PartyCategoryMenuService>();
 
