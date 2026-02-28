@@ -12,7 +12,12 @@ namespace BookfetSystem.Services.Mappings
             config.NewConfig<MenuFilterRequest, Menu>()
                   .IgnoreNullValues(true);
 
-            config.NewConfig<Menu, MenuResponse>();
+            config.NewConfig<Menu, MenuResponse>()
+                  .Map(dest => dest.PartyCategoryName,
+                       src => src.PartyCategoryMenus
+                           .OrderBy(pcm => pcm.PartyCategoryMenuId)
+                           .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.PartyCategoryName : null)
+                           .FirstOrDefault());
         }
     }
 }
