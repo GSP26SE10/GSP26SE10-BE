@@ -6,7 +6,8 @@ SET TIME ZONE 'Asia/Ho_Chi_Minh';
 
 DROP TABLE IF EXISTS message CASCADE;
 DROP TABLE IF EXISTS conversation CASCADE;
-DROP TABLE IF EXISTS feedback CASCADE;
+DROP TABLE IF EXISTS feedback_service CASCADE;
+DROP TABLE IF EXISTS feedback_menu CASCADE;
 DROP TABLE IF EXISTS payment CASCADE;
 DROP TABLE IF EXISTS order_detail_staff_task CASCADE;
 DROP TABLE IF EXISTS staff_group_member CASCADE;
@@ -19,6 +20,7 @@ DROP TABLE IF EXISTS service CASCADE;
 DROP TABLE IF EXISTS party_category_menu CASCADE;
 DROP TABLE IF EXISTS menu_dish CASCADE;
 DROP TABLE IF EXISTS menu CASCADE;
+DROP TABLE IF EXISTS menu_category CASCADE;
 DROP TABLE IF EXISTS dish_detail CASCADE;
 DROP TABLE IF EXISTS ingredient CASCADE;
 DROP TABLE IF EXISTS dish CASCADE;
@@ -51,6 +53,14 @@ CREATE TABLE dish_category (
     dish_category_id SERIAL PRIMARY KEY,
     dish_category_name VARCHAR(100) NOT NULL,
     description TEXT
+);
+
+CREATE TABLE menu_category (
+    menu_category_id SERIAL PRIMARY KEY,
+    menu_category_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    status VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE ingredient (
@@ -91,7 +101,8 @@ CREATE TABLE menu (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     base_price NUMERIC(12,2),
     img_url VARCHAR(255),
-    status VARCHAR(50)
+    status VARCHAR(50),
+    menu_category_id INT REFERENCES menu_category(menu_category_id)
 );
 
 CREATE TABLE service (
@@ -205,12 +216,23 @@ CREATE TABLE payment (
     paid_at TIMESTAMPTZ
 );
 
-CREATE TABLE feedback (
-    feedback_id SERIAL PRIMARY KEY,
-    order_id INT REFERENCES orders(order_id),
-    customer_id INT REFERENCES users(user_id),
-    rating INT,
+CREATE TABLE feedback_menu (
+    feedback_menu_id SERIAL PRIMARY KEY,
+    menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    rating INT NOT NULL,
     comment TEXT,
+    status VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE feedback_service (
+    feedback_service_id SERIAL PRIMARY KEY,
+    service_id INT REFERENCES service(service_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    rating INT NOT NULL,
+    comment TEXT,
+    status VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -280,27 +302,49 @@ INSERT INTO dish_detail (dish_id, ingredient_id, quantity, unit) VALUES
 (3, 3, 200, 'ml'),
 (4, 4, 3, 'pieces');
 
--- MENU
-INSERT INTO menu (menu_name, base_price, img_url, status) VALUES
-('Standard Menu', 300000, '/images/menu_standard.jpg', 'ACTIVE'),
-('Premium Menu', 500000, '/images/menu_premium.jpg', 'ACTIVE');
+-- MENU CATEGORY
+INSERT INTO menu_category (menu_category_name, description, status) VALUES
+('Buffet bò', 'Buffet các món bò cao cấp', 'AVAILABLE'),
+('Buffet hải sản', 'Buffet hải sản tươi sống đa dạng', 'AVAILABLE');
+
+-- MENU (Buffet bò: 1, Buffet hải sản: 2)
+INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
+('Combo Bò Úc', 350000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
+('Combo Bò Wagyu', 650000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
+('Combo Bò Việt', 280000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
+('Combo Hải Sản Tươi Sống', 450000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
+('Combo Hải Sản Cao Cấp', 550000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
+('Combo Hải Sản Đặc Sản', 750000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2);
 
 -- MENU - DISH
 INSERT INTO menu_dish (menu_id, dish_id) VALUES
 (1, 1),
+(1, 2),
 (1, 3),
 (1, 4),
 (2, 1),
 (2, 2),
-(2, 3),
-(2, 4);
+(3, 1),
+(3, 3),
+(3, 4),
+(4, 3),
+(4, 4),
+(5, 1),
+(5, 3),
+(5, 4),
+(6, 1),
+(6, 2),
+(6, 3),
+(6, 4);
 
 -- PARTY CATEGORY - MENU
 INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 (1, 1),
-(1, 2),
-(2, 1),
-(3, 2);
+(1, 4),
+(2, 2),
+(2, 5),
+(3, 3),
+(3, 6);
 
 -- SERVICE
 INSERT INTO service (service_name, description, base_price, status, img) VALUES
@@ -356,9 +400,16 @@ INSERT INTO order_detail_custom (order_detail_id, dish_id, quantity, total_amoun
 INSERT INTO payment (order_id, amount, payment_type, payment_method, payment_status)
 VALUES (1, 7500000, 'Full', 'BANK_TRANSFER', 'UNPAID');
 
--- FEEDBACK
-INSERT INTO feedback (order_id, customer_id, rating, comment)
-VALUES (1, 4, 5, 'Excellent and professional service!');
+-- FEEDBACK MENU (đánh giá menu từ khách hàng)
+INSERT INTO feedback_menu (menu_id, customer_id, rating, comment, status) VALUES
+(1, 4, 5, 'Menu Standard rất ngon và đa dạng!', 'ACTIVE'),
+(2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', 'ACTIVE');
+
+-- FEEDBACK SERVICE (đánh giá dịch vụ: bàn ghế, karaoke, MC...)
+INSERT INTO feedback_service (service_id, customer_id, rating, comment, status) VALUES
+(1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', 'ACTIVE'),
+(2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', 'ACTIVE'),
+(3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', 'ACTIVE');
 
 -- CONVERSATION
 INSERT INTO conversation (customer_id, owner_id)
