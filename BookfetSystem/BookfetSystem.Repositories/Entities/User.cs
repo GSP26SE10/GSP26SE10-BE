@@ -31,7 +31,9 @@ public partial class User
 
     public virtual ICollection<Conversation> ConversationOwners { get; set; } = new List<Conversation>();
 
-    public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+    public virtual ICollection<FeedbackMenu> FeedbackMenus { get; set; } = new List<FeedbackMenu>();
+
+    public virtual ICollection<FeedbackService> FeedbackServices { get; set; } = new List<FeedbackService>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 

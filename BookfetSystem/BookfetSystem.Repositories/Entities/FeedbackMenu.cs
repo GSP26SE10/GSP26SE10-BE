@@ -5,21 +5,23 @@ using System.Collections.Generic;
 
 namespace BookfetSystem.Repositories.Entities;
 
-public partial class Order
+public partial class FeedbackMenu
 {
-    public int OrderId { get; set; }
+    public int FeedbackMenuId { get; set; }
+
+    public int? MenuId { get; set; }
 
     public int? CustomerId { get; set; }
 
-    public string Status { get; set; }
+    public int Rating { get; set; }
 
-    public decimal? TotalPrice { get; set; }
+    public string Comment { get; set; }
+
+    public string Status { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
     public virtual User Customer { get; set; }
 
-    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
-
-    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    public virtual Menu Menu { get; set; }
 }
