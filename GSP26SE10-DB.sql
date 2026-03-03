@@ -4,6 +4,9 @@ SET TIME ZONE 'Asia/Ho_Chi_Minh';
 -- DROP TABLES
 -- =========================================
 
+DROP TABLE IF EXISTS post_block CASCADE;
+DROP TABLE IF EXISTS post CASCADE;
+DROP TABLE IF EXISTS blog_category CASCADE;
 DROP TABLE IF EXISTS message CASCADE;
 DROP TABLE IF EXISTS conversation CASCADE;
 DROP TABLE IF EXISTS feedback_service CASCADE;
@@ -252,6 +255,39 @@ CREATE TABLE message (
 );
 
 -- =========================================
+-- BLOG TABLES (độc lập, không quan hệ với các entity khác)
+-- =========================================
+
+CREATE TABLE blog_category (
+    blog_category_id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE post (
+    post_id SERIAL PRIMARY KEY,
+    blog_category_id INT NULL REFERENCES blog_category(blog_category_id),
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    excerpt TEXT,
+    cover_image_id INT NULL,
+    status VARCHAR(50) NOT NULL,
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE post_block (
+    post_block_id SERIAL PRIMARY KEY,
+    post_id INT NOT NULL REFERENCES post(post_id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    position INT NOT NULL,
+    data JSONB,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================
 -- SAMPLE DATA
 -- =========================================
 
@@ -307,14 +343,18 @@ INSERT INTO menu_category (menu_category_name, description, status) VALUES
 ('Buffet bò', 'Buffet các món bò cao cấp', 'AVAILABLE'),
 ('Buffet hải sản', 'Buffet hải sản tươi sống đa dạng', 'AVAILABLE');
 
--- MENU (Buffet bò: 1, Buffet hải sản: 2)
+-- MENU (Buffet bò: 1, Buffet hải sản: 2) - 5 món mỗi category
 INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
 ('Combo Bò Úc', 350000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
 ('Combo Bò Wagyu', 650000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
 ('Combo Bò Việt', 280000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
+('Combo Bò Premium', 420000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
+('Combo Bò Đặc Biệt', 520000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
 ('Combo Hải Sản Tươi Sống', 450000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
 ('Combo Hải Sản Cao Cấp', 550000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
-('Combo Hải Sản Đặc Sản', 750000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2);
+('Combo Hải Sản Đặc Sản', 750000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
+('Combo Hải Sản Premium', 620000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
+('Combo Hải Sản Đại Dương', 850000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2);
 
 -- MENU - DISH
 INSERT INTO menu_dish (menu_id, dish_id) VALUES
@@ -335,16 +375,32 @@ INSERT INTO menu_dish (menu_id, dish_id) VALUES
 (6, 1),
 (6, 2),
 (6, 3),
-(6, 4);
+(6, 4),
+(7, 1),
+(7, 2),
+(7, 4),
+(8, 1),
+(8, 2),
+(8, 3),
+(9, 3),
+(9, 4),
+(10, 1),
+(10, 2),
+(10, 3),
+(10, 4);
 
 -- PARTY CATEGORY - MENU
 INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 (1, 1),
 (1, 4),
+(1, 7),
 (2, 2),
 (2, 5),
+(2, 8),
 (3, 3),
-(3, 6);
+(3, 6),
+(3, 9),
+(3, 10);
 
 -- SERVICE
 INSERT INTO service (service_name, description, base_price, status, img) VALUES
