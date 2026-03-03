@@ -60,6 +60,14 @@ builder.Services.AddScoped<ConversationRepository>();
 builder.Services.AddScoped<MessageRepository>();
 builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<OrderDetailStaffTaskRepository>();
+builder.Services.AddScoped<MenuRepository>();
+builder.Services.AddScoped<DishRepository>();
+builder.Services.AddScoped<DishCategoryRepository>();
+builder.Services.AddScoped<IngredientRepository>();
+builder.Services.AddScoped<DishDetailRepository>();
+builder.Services.AddScoped<MenuDishRepository>();
+builder.Services.AddScoped<PartyCategoryRepository>();
+builder.Services.AddScoped<PartyCategoryMenuRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -68,10 +76,18 @@ builder.Services.AddScoped<IStaffGroupMemberService, StaffGroupMemberService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IOrderDetailStaffTaskService, OrderDetailStaffTaskService>();
+builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<IDishService, DishService>();
+builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<IDishDetailService, DishDetailService>();
+builder.Services.AddScoped<IMenuDishService, MenuDishService>();
+builder.Services.AddScoped<IPartyCategoryMenuService, PartyCategoryMenuService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+var jwtKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JwtConfig:Key is missing.");
+var key = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>
 {
