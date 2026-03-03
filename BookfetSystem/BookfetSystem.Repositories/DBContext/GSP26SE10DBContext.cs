@@ -14,6 +14,8 @@ public partial class GSP26SE10DBContext : DbContext
     {
     }
 
+    public virtual DbSet<BlogCategory> BlogCategories { get; set; }
+
     public virtual DbSet<Conversation> Conversations { get; set; }
 
     public virtual DbSet<Dish> Dishes { get; set; }
@@ -52,6 +54,10 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<Payment> Payments { get; set; }
 
+    public virtual DbSet<Post> Posts { get; set; }
+
+    public virtual DbSet<PostBlock> PostBlocks { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Service> Services { get; set; }
@@ -64,6 +70,25 @@ public partial class GSP26SE10DBContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<BlogCategory>(entity =>
+        {
+            entity.HasKey(e => e.BlogCategoryId).HasName("blog_category_pkey");
+
+            entity.ToTable("blog_category");
+
+            entity.HasIndex(e => e.Slug, "blog_category_slug_key").IsUnique();
+
+            entity.Property(e => e.BlogCategoryId).HasColumnName("blog_category_id");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(150)
+                .HasColumnName("name");
+            entity.Property(e => e.Slug)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("slug");
+        });
+
         modelBuilder.Entity<Conversation>(entity =>
         {
             entity.HasKey(e => e.ConversationId).HasName("conversation_pkey");
@@ -543,6 +568,71 @@ public partial class GSP26SE10DBContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.OrderId)
                 .HasConstraintName("payment_order_id_fkey");
+        });
+
+        modelBuilder.Entity<Post>(entity =>
+        {
+            entity.HasKey(e => e.PostId).HasName("post_pkey");
+
+            entity.ToTable("post");
+
+            entity.HasIndex(e => e.Slug, "post_slug_key").IsUnique();
+
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.BlogCategoryId).HasColumnName("blog_category_id");
+            entity.Property(e => e.CoverImageId).HasColumnName("cover_image_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Excerpt).HasColumnName("excerpt");
+            entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+            entity.Property(e => e.Slug)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("slug");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnName("status");
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("title");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.BlogCategory).WithMany(p => p.Posts)
+                .HasForeignKey(d => d.BlogCategoryId)
+                .HasConstraintName("post_blog_category_id_fkey");
+        });
+
+        modelBuilder.Entity<PostBlock>(entity =>
+        {
+            entity.HasKey(e => e.PostBlockId).HasName("post_block_pkey");
+
+            entity.ToTable("post_block");
+
+            entity.Property(e => e.PostBlockId).HasColumnName("post_block_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Data)
+                .HasColumnType("jsonb")
+                .HasColumnName("data");
+            entity.Property(e => e.Position).HasColumnName("position");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.Type)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnName("type");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Post).WithMany(p => p.PostBlocks)
+                .HasForeignKey(d => d.PostId)
+                .HasConstraintName("post_block_post_id_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>
