@@ -13,6 +13,8 @@ namespace BookfetSystem.Services.Mappings
                   .IgnoreNullValues(true);
 
             config.NewConfig<Menu, MenuResponse>()
+                  .Map(dest => dest.MenuCategoryName,
+                       src => src.MenuCategory != null ? src.MenuCategory.MenuCategoryName : null)
                   .Map(dest => dest.PartyCategoryName,
                        src => src.PartyCategoryMenus
                            .OrderBy(pcm => pcm.PartyCategoryMenuId)

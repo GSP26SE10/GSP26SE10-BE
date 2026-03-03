@@ -22,11 +22,15 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<DishDetail> DishDetails { get; set; }
 
-    public virtual DbSet<Feedback> Feedbacks { get; set; }
+    public virtual DbSet<FeedbackMenu> FeedbackMenus { get; set; }
+
+    public virtual DbSet<FeedbackService> FeedbackServices { get; set; }
 
     public virtual DbSet<Ingredient> Ingredients { get; set; }
 
     public virtual DbSet<Menu> Menus { get; set; }
+
+    public virtual DbSet<MenuCategory> MenuCategories { get; set; }
 
     public virtual DbSet<MenuDish> MenuDishes { get; set; }
 
@@ -152,28 +156,62 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasConstraintName("dish_detail_ingredient_id_fkey");
         });
 
-        modelBuilder.Entity<Feedback>(entity =>
+        modelBuilder.Entity<FeedbackMenu>(entity =>
         {
-            entity.HasKey(e => e.FeedbackId).HasName("feedback_pkey");
+            entity.HasKey(e => e.FeedbackMenuId).HasName("feedback_menu_pkey");
 
-            entity.ToTable("feedback");
+            entity.ToTable("feedback_menu");
 
-            entity.Property(e => e.FeedbackId).HasColumnName("feedback_id");
+            entity.Property(e => e.FeedbackMenuId).HasColumnName("feedback_menu_id");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
-            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
 
-            entity.HasOne(d => d.Customer).WithMany(p => p.Feedbacks)
+            entity.HasOne(d => d.Customer).WithMany(p => p.FeedbackMenus)
                 .HasForeignKey(d => d.CustomerId)
-                .HasConstraintName("feedback_customer_id_fkey");
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("feedback_menu_customer_id_fkey");
 
-            entity.HasOne(d => d.Order).WithMany(p => p.Feedbacks)
-                .HasForeignKey(d => d.OrderId)
-                .HasConstraintName("feedback_order_id_fkey");
+            entity.HasOne(d => d.Menu).WithMany(p => p.FeedbackMenus)
+                .HasForeignKey(d => d.MenuId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("feedback_menu_menu_id_fkey");
+        });
+
+        modelBuilder.Entity<FeedbackService>(entity =>
+        {
+            entity.HasKey(e => e.FeedbackServiceId).HasName("feedback_service_pkey");
+
+            entity.ToTable("feedback_service");
+
+            entity.Property(e => e.FeedbackServiceId).HasColumnName("feedback_service_id");
+            entity.Property(e => e.Comment).HasColumnName("comment");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.ServiceId).HasColumnName("service_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.FeedbackServices)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("feedback_service_customer_id_fkey");
+
+            entity.HasOne(d => d.Service).WithMany(p => p.FeedbackServices)
+                .HasForeignKey(d => d.ServiceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("feedback_service_service_id_fkey");
         });
 
         modelBuilder.Entity<Ingredient>(entity =>
@@ -209,9 +247,34 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.ImgUrl)
                 .HasMaxLength(255)
                 .HasColumnName("img_url");
+            entity.Property(e => e.MenuCategoryId).HasColumnName("menu_category_id");
             entity.Property(e => e.MenuName)
                 .HasMaxLength(150)
                 .HasColumnName("menu_name");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
+
+            entity.HasOne(d => d.MenuCategory).WithMany(p => p.Menus)
+                .HasForeignKey(d => d.MenuCategoryId)
+                .HasConstraintName("menu_menu_category_id_fkey");
+        });
+
+        modelBuilder.Entity<MenuCategory>(entity =>
+        {
+            entity.HasKey(e => e.MenuCategoryId).HasName("menu_category_pkey");
+
+            entity.ToTable("menu_category");
+
+            entity.Property(e => e.MenuCategoryId).HasColumnName("menu_category_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.MenuCategoryName)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnName("menu_category_name");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");

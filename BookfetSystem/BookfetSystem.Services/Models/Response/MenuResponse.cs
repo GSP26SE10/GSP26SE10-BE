@@ -10,6 +10,7 @@ namespace BookfetSystem.Services.Models.Response
         public decimal? BasePrice { get; set; }
         public string? ImgUrl { get; set; }
         public string? Status { get; set; }
+        public string? MenuCategoryName { get; set; }
         public string? PartyCategoryName { get; set; }
     }
 }

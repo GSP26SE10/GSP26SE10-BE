@@ -32,7 +32,11 @@
          "ObjectType": 0
       },
       {
-         "Name": "public.feedback",
+         "Name": "public.feedback_menu",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.feedback_service",
          "ObjectType": 0
       },
       {
@@ -41,6 +45,10 @@
       },
       {
          "Name": "public.menu",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.menu_category",
          "ObjectType": 0
       },
       {

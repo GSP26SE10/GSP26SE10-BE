@@ -21,5 +21,7 @@ public partial class Service
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<FeedbackService> FeedbackServices { get; set; } = new List<FeedbackService>();
+
     public virtual ICollection<OrderService> OrderServices { get; set; } = new List<OrderService>();
 }

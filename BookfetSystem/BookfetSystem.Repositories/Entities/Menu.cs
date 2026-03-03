@@ -19,6 +19,12 @@ public partial class Menu
 
     public string Status { get; set; }
 
+    public int? MenuCategoryId { get; set; }
+
+    public virtual ICollection<FeedbackMenu> FeedbackMenus { get; set; } = new List<FeedbackMenu>();
+
+    public virtual MenuCategory MenuCategory { get; set; }
+
     public virtual ICollection<MenuDish> MenuDishes { get; set; } = new List<MenuDish>();
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();

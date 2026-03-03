@@ -1,5 +1,6 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -14,10 +15,12 @@ namespace BookfetSystem.Services.Implement
     public class MenuService : IMenuService
     {
         private readonly MenuRepository _menuRepository;
+        private readonly MenuCategoryRepository _menuCategoryRepository;
 
-        public MenuService(MenuRepository menuRepository)
+        public MenuService(MenuRepository menuRepository, MenuCategoryRepository menuCategoryRepository)
         {
             _menuRepository = menuRepository;
+            _menuCategoryRepository = menuCategoryRepository;
         }
 
         public async Task<PagedResponse<MenuResponse>> GetAllMenuFilteredAsync(MenuFilterRequest request, int page, int pageSize)
@@ -55,6 +58,17 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var menuCategory = await _menuCategoryRepository.GetByIdAsync(request.MenuCategoryId);
+            if (menuCategory == null)
+            {
+                return new ApiResponse<MenuResponse>
+                {
+                    Success = false,
+                    Message = "MenuCategoryId does not exist.",
+                    Data = null
+                };
+            }
+
             var exists = await _menuRepository
                 .GetAllMenuFiltered(new Menu { MenuName = normalizedName }, null, null)
                 .AnyAsync(m => m.MenuName.ToLower() == normalizedName.ToLower());
@@ -72,9 +86,10 @@ namespace BookfetSystem.Services.Implement
             var entity = new Menu
             {
                 MenuName = normalizedName,
+                MenuCategoryId = request.MenuCategoryId,
                 BasePrice = request.BasePrice,
                 ImgUrl = request.ImgUrl?.Trim(),
-                Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper(),
+                Status = MenuStatus.AVAILABLE.ToString(),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -122,6 +137,17 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var menuCategory = await _menuCategoryRepository.GetByIdAsync(request.MenuCategoryId);
+            if (menuCategory == null)
+            {
+                return new ApiResponse<MenuResponse>
+                {
+                    Success = false,
+                    Message = "MenuCategoryId does not exist.",
+                    Data = null
+                };
+            }
+
             var exists = await _menuRepository
                 .GetAllMenuFiltered(new Menu { MenuName = normalizedName }, null, null)
                 .AnyAsync(m => m.MenuId != id && m.MenuName.ToLower() == normalizedName.ToLower());
@@ -137,12 +163,10 @@ namespace BookfetSystem.Services.Implement
             }
 
             entity.MenuName = normalizedName;
+            entity.MenuCategoryId = request.MenuCategoryId;
             entity.BasePrice = request.BasePrice;
             entity.ImgUrl = request.ImgUrl?.Trim();
-            if (!string.IsNullOrWhiteSpace(request.Status))
-            {
-                entity.Status = request.Status.Trim().ToUpper();
-            }
+            entity.Status = request.Status.ToString();
 
             var affected = await _menuRepository.UpdateAsync(entity);
             if (affected > 0)
