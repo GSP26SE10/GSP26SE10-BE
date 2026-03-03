@@ -16,6 +16,10 @@
    "T4TemplatePath": null,
    "Tables": [
       {
+         "Name": "public.blog_category",
+         "ObjectType": 0
+      },
+      {
          "Name": "public.conversation",
          "ObjectType": 0
       },
@@ -89,6 +93,14 @@
       },
       {
          "Name": "public.payment",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.post",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.post_block",
          "ObjectType": 0
       },
       {
