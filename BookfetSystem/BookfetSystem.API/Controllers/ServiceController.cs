@@ -1,68 +1,65 @@
-﻿using BookfetSystem.Services.Interface;
+﻿using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
 {
-    [Route("api/service")]
+    [Route("api/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
     {
-        private readonly IServiceService _serviceService;
+        private readonly IServiceService _service;
 
-        public ServiceController(IServiceService serviceService)
+        public ServiceController(IServiceService service)
         {
-            _serviceService = serviceService;
+            _service = service;
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllServices(
-            [FromQuery] ServiceFilterRequest filter,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] ServiceFilterRequest filter)
         {
-            var result = await _serviceService.GetAllServiceFilteredAsync(filter, page, pageSize);
+            var result = await _service.GetAll(filter);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _service.GetById(id);
+
+            if (result == null)
+                return NotFound();
+
             return Ok(result);
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateService([FromBody] ServiceCreateRequest request)
+        public async Task<IActionResult> Create(ServiceCreateRequest request)
         {
-            var result = await _serviceService.CreateAsync(request);
-
-            if ((bool)result.GetType().GetProperty("Success").GetValue(result))
-            {
-                return Ok(result);
-            }
-
-            return BadRequest(result);
+            var result = await _service.Create(request);
+            return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateService(int id, [FromBody] ServiceUpdateRequest request)
+        [HttpPut]
+        public async Task<IActionResult> Update(ServiceUpdateRequest request)
         {
-            var result = await _serviceService.UpdateAsync(id, request);
+            var result = await _service.Update(request);
 
-            if ((bool)result.GetType().GetProperty("Success").GetValue(result))
-            {
-                return Ok(result);
-            }
+            if (!result)
+                return NotFound();
 
-            return BadRequest(result);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteService(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = await _serviceService.DeleteAsync(id);
+            var result = await _service.Delete(id);
 
-            if ((bool)result.GetType().GetProperty("Success").GetValue(result))
-            {
-                return NoContent();
-            }
+            if (!result)
+                return NotFound();
 
-            return NotFound(result);
+            return Ok(result);
         }
     }
 }

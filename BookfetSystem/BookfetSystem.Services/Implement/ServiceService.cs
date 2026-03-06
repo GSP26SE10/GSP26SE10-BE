@@ -1,119 +1,104 @@
 ﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
-using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Models.Request;
-using Mapster;
-using Microsoft.EntityFrameworkCore;
-using System;
+using BookfetSystem.Services.Models.Response;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace BookfetSystem.Services.Implement
+namespace BookfetSystem.Services.Services
 {
     public class ServiceService : IServiceService
     {
-        private readonly ServiceRepository _serviceRepository;
+        private readonly ServiceRepository _repository;
 
-        public ServiceService(ServiceRepository serviceRepository)
+        public ServiceService(ServiceRepository repository)
         {
-            _serviceRepository = serviceRepository;
+            _repository = repository;
         }
 
-        public async Task<object> GetAllServiceFilteredAsync(ServiceFilterRequest filter, int page, int pageSize)
+        public async Task<List<ServiceResponse>> GetAll(ServiceFilterRequest filter)
         {
-            var serviceFilter = filter.Adapt<Service>();
-
-            var query = _serviceRepository.GetAllServiceFiltered(serviceFilter, null, null);
-
-            var total = await query.CountAsync();
-
-            var data = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return new
+            var entityFilter = new BookfetSystem.Repositories.Entities.Service
             {
-                Total = total,
-                Page = page,
-                PageSize = pageSize,
-                Data = data
+                ServiceId = filter.ServiceId ?? 0,
+                ServiceName = filter.ServiceName,
+                Status = filter.Status
+            };
+
+            var data = _repository.GetAllServiceFiltered(entityFilter).ToList();
+
+            return data.Select(x => new ServiceResponse
+            {
+                ServiceId = x.ServiceId,
+                ServiceName = x.ServiceName,
+                Description = x.Description,
+                BasePrice = x.BasePrice,
+                Status = x.Status,
+                Img = x.Img,
+                CreatedAt = x.CreatedAt
+            }).ToList();
+        }
+
+        public async Task<ServiceResponse?> GetById(int id)
+        {
+            var entity = await _repository.GetByIdWithRelationAsync(id);
+
+            if (entity == null) return null;
+
+            return new ServiceResponse
+            {
+                ServiceId = entity.ServiceId,
+                ServiceName = entity.ServiceName,
+                Description = entity.Description,
+                BasePrice = entity.BasePrice,
+                Status = entity.Status,
+                Img = entity.Img,
+                CreatedAt = entity.CreatedAt
             };
         }
 
-        public async Task<object> CreateAsync(ServiceCreateRequest request)
+        public async Task<bool> Create(ServiceCreateRequest request)
         {
-            var service = request.Adapt<Service>();
-
-            service.CreatedAt = DateTime.UtcNow;
-
-            await _serviceRepository.CreateAsync(service);
-            await _serviceRepository.SaveAsync();
-
-            return new
+            var entity = new BookfetSystem.Repositories.Entities.Service
             {
-                Success = true,
-                Message = "Service created successfully"
+                ServiceName = request.ServiceName,
+                Description = request.Description,
+                BasePrice = request.BasePrice,
+                Status = request.Status,
+                Img = request.Img,
+                CreatedAt = DateTime.Now
             };
+
+            await _repository.CreateAsync(entity);
+            return true;
         }
 
-        public async Task<object> UpdateAsync(int id, ServiceUpdateRequest request)
+        public async Task<bool> Update(ServiceUpdateRequest request)
         {
-            var service = await _serviceRepository.GetByIdAsync(id);
+            var entity = await _repository.GetByIdAsync(request.ServiceId);
 
-            if (service == null)
-            {
-                return new
-                {
-                    Success = false,
-                    Message = "Service not found"
-                };
-            }
+            if (entity == null) return false;
 
-            request.Adapt(service);
+            entity.ServiceName = request.ServiceName;
+            entity.Description = request.Description;
+            entity.BasePrice = request.BasePrice;
+            entity.Status = request.Status;
+            entity.Img = request.Img;
 
-            _serviceRepository.Update(service);
-            await _serviceRepository.SaveAsync();
+            await _repository.UpdateAsync(entity);
 
-            return new
-            {
-                Success = true,
-                Message = "Service updated successfully"
-            };
+            return true;
         }
 
-        public async Task<object> DeleteAsync(int id)
+        public async Task<bool> Delete(int id)
         {
-            var service = await _serviceRepository.GetByIdAsync(id);
+            var entity = await _repository.GetByIdAsync(id);
 
-            if (service == null)
-            {
-                return new
-                {
-                    Success = false,
-                    Message = "Service not found"
-                };
-            }
+            if (entity == null) return false;
 
-            var hasRelated = await _serviceRepository.HasRelatedDataAsync(id);
+            await _repository.RemoveAsync(entity);
 
-            if (hasRelated)
-            {
-                return new
-                {
-                    Success = false,
-                    Message = "Cannot delete service because it has related data"
-                };
-            }
-
-            _serviceRepository.Remove(service);
-            await _serviceRepository.SaveAsync();
-
-            return new
-            {
-                Success = true,
-                Message = "Service deleted successfully"
-            };
+            return true;
         }
     }
 }

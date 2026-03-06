@@ -1,6 +1,9 @@
 ﻿using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Request.BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
 {
@@ -8,53 +11,75 @@ namespace BookfetSystem.API.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly ICustomerOrderService _orderService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(ICustomerOrderService orderService)
         {
             _orderService = orderService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] OrderFilterRequest filter,
-                                                [FromQuery] int page = 1,
-                                                [FromQuery] int pageSize = 10)
+        public async Task<ActionResult> GetAllOrders([FromQuery] OrderFilterRequest filter)
         {
-            var result = await _orderService.GetAllFilteredAsync(filter, page, pageSize);
-            return Ok(result);
+            var orders = await _orderService.GetAll(filter);
+            return Ok(orders);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetOrderById(int id)
+        {
+            var order = await _orderService.GetById(id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(order);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(OrderCreateRequest request)
+        public async Task<ActionResult> CreateOrder([FromBody] OrderCreateRequest request)
         {
-            var result = await _orderService.CreateAsync(request);
+            var result = await _orderService.Create(request);
 
-            if (result.Success)
-                return Ok(result);
+            if (result)
+            {
+                return Ok("Order created successfully");
+            }
 
-            return BadRequest(result);
+            return BadRequest("Create order failed");
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, OrderUpdateRequest request)
+        public async Task<ActionResult> UpdateOrder(int id, [FromBody] OrderUpdateRequest request)
         {
-            var result = await _orderService.UpdateAsync(id, request);
+            if (id != request.OrderId)
+            {
+                return BadRequest("Id mismatch");
+            }
 
-            if (result.Success)
-                return Ok(result);
+            var result = await _orderService.Update(request);
 
-            return BadRequest(result);
+            if (result)
+            {
+                return Ok("Order updated successfully");
+            }
+
+            return BadRequest("Update order failed");
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<ActionResult> DeleteOrder(int id)
         {
-            var result = await _orderService.DeleteAsync(id);
+            var result = await _orderService.Delete(id);
 
-            if (result.Success)
+            if (result)
+            {
                 return NoContent();
+            }
 
-            return NotFound(result);
+            return NotFound();
         }
     }
 }

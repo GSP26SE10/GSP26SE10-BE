@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BookfetSystem.Repositories.Basic;
+﻿using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookfetSystem.Repositories
 {
@@ -16,39 +13,45 @@ namespace BookfetSystem.Repositories
         {
         }
 
-        public IQueryable<Order> GetAllFiltered(Order filter)
+        public IQueryable<Order> GetAllOrderFiltered(Order filter)
         {
             var query = _context.Orders
-                .Include(o => o.Customer)
+                .Include(x => x.Customer)
+                .Include(x => x.OrderDetails)
+                .Include(x => x.Payments)
                 .AsQueryable();
 
             if (filter.OrderId != 0)
-                query = query.Where(o => o.OrderId == filter.OrderId);
+            {
+                query = query.Where(x => x.OrderId == filter.OrderId);
+            }
 
-            if (filter.CustomerId != null)
-                query = query.Where(o => o.CustomerId == filter.CustomerId);
+            if (filter.CustomerId.HasValue && filter.CustomerId.Value != 0)
+            {
+                query = query.Where(x => x.CustomerId == filter.CustomerId);
+            }
 
-            if (!string.IsNullOrEmpty(filter.Status))
-                query = query.Where(o => o.Status.Contains(filter.Status));
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                query = query.Where(x => x.Status != null &&
+                x.Status.ToLower().Contains(filter.Status.ToLower()));
+            }
 
-            if (filter.CreatedAt != null)
-                query = query.Where(o => o.CreatedAt.Value.Date == filter.CreatedAt.Value.Date);
-
-            return query.OrderByDescending(o => o.CreatedAt);
+            return query.OrderByDescending(x => x.CreatedAt);
         }
 
-        public async Task<bool> CheckCustomerExist(int customerId)
-        {
-            return await _context.Users.AnyAsync(u => u.UserId == customerId);
-        }
-
-        public async Task<Order?> GetOrderWithDetailAsync(int id)
+        public async Task<Order?> GetByIdWithRelationAsync(int id)
         {
             return await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                .Include(o => o.Payments)
-                .FirstOrDefaultAsync(o => o.OrderId == id);
+                .Include(x => x.Customer)
+                .Include(x => x.OrderDetails)
+                .Include(x => x.Payments)
+                .FirstOrDefaultAsync(x => x.OrderId == id);
+        }
+
+        public Task<bool> HasRelatedDataAsync(int orderId)
+        {
+            return _context.OrderDetails.AnyAsync(x => x.OrderId == orderId);
         }
     }
 }
