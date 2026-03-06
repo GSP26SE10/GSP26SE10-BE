@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using BookfetSystem.Services.Interfaces;
+using BookfetSystem.Services.Services;
+using BookfetSystem.Services.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +78,12 @@ builder.Services.AddScoped<MenuDishRepository>();
 builder.Services.AddScoped<PartyCategoryRepository>();
 builder.Services.AddScoped<PartyCategoryMenuRepository>();
 builder.Services.AddScoped<ServiceRepository>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<ServiceRepository>();
+builder.Services.AddScoped<OrderDetailCustomRepository>();
+builder.Services.AddScoped<OrderDetailRepository>();
+builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -94,8 +103,15 @@ builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IDishDetailService, DishDetailService>();
+builder.Services.AddScoped<IPartyCategoryService, PartyCategoryService>();
 builder.Services.AddScoped<IMenuDishService, MenuDishService>();
 builder.Services.AddScoped<IPartyCategoryMenuService, PartyCategoryMenuService>();
+builder.Services.AddScoped<ICustomerOrderService, CustomerOrderService>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IOrderDetailCustomService, OrderDetailCustomService>();
+builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
