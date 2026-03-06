@@ -83,6 +83,7 @@ builder.Services.AddScoped<ServiceRepository>();
 builder.Services.AddScoped<OrderDetailCustomRepository>();
 builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -110,6 +111,7 @@ builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IOrderDetailCustomService, OrderDetailCustomService>();
 builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");

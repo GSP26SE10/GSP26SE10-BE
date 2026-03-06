@@ -91,7 +91,7 @@ namespace BookfetSystem.Services.Services
 
             if (entity == null) return false;
 
-            await _repository.DeleteAsync(entity);
+            await _repository.RemoveAsync(entity);
             return true;
         }
     }
