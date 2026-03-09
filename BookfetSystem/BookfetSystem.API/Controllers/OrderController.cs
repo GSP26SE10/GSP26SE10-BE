@@ -1,7 +1,6 @@
-﻿using BookfetSystem.Services.Interface;
-using BookfetSystem.Services.Interfaces;
+﻿using BookfetSystem.Services.Implement;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
-using BookfetSystem.Services.Models.Request.BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -19,9 +18,9 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllOrders([FromQuery] OrderFilterRequest filter)
+        public async Task<ActionResult> GetAllOrders([FromQuery] OrderFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var orders = await _orderService.GetAll(filter);
+            var orders = await _orderService.GetAllFilteredAsync(filter, page, pageSize);
             return Ok(orders);
         }
 
@@ -43,30 +42,24 @@ namespace BookfetSystem.API.Controllers
         {
             var result = await _orderService.Create(request);
 
-            if (result)
+            if (result.Success)
             {
-                return Ok("Order created successfully");
+                return Ok(result);
             }
 
-            return BadRequest("Create order failed");
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateOrder(int id, [FromBody] OrderUpdateRequest request)
         {
-            if (id != request.OrderId)
+            var result = await _orderService.Update(id, request);
+            if (result.Success)
             {
-                return BadRequest("Id mismatch");
+                return Ok(result);
             }
 
-            var result = await _orderService.Update(request);
-
-            if (result)
-            {
-                return Ok("Order updated successfully");
-            }
-
-            return BadRequest("Update order failed");
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
@@ -74,12 +67,17 @@ namespace BookfetSystem.API.Controllers
         {
             var result = await _orderService.Delete(id);
 
-            if (result)
+            if (result.Success)
             {
-                return NoContent();
+                return Ok(result);
             }
 
-            return NotFound();
+            if (result.Message == "Order not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }

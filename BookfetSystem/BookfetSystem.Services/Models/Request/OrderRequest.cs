@@ -1,41 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BookfetSystem.Services.Enum;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Models.Request
 {
-    namespace BookfetSystem.Services.Models.Request
+    public class OrderCreateRequest
     {
-        public class OrderCreateRequest
-        {
-            public int? CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
-            public string Status { get; set; }
+        public OrderStatus? Status { get; set; }
+        public decimal? TotalPrice { get; set; }
+    }
 
-            public decimal? TotalPrice { get; set; }
-        }
+    public class OrderUpdateRequest
+    {
+        public int? CustomerId { get; set; }
 
-        public class OrderUpdateRequest
-        {
-            public int OrderId { get; set; }
+        public OrderStatus? Status { get; set; }
 
-            public int? CustomerId { get; set; }
+        public decimal? TotalPrice { get; set; }
+    }
 
-            public string Status { get; set; }
-
-            public decimal? TotalPrice { get; set; }
-        }
-
-        public class OrderFilterRequest
-        {
-            public int? OrderId { get; set; }
-
-            public int? CustomerId { get; set; }
-
-            public string Status { get; set; }
-        }
+    public class OrderFilterRequest
+    {
+        public int? OrderId { get; set; }
+        public int? CustomerId { get; set; }
+        public string? Status { get; set; }
     }
 }

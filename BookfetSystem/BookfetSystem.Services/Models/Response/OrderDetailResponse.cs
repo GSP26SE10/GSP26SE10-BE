@@ -6,15 +6,15 @@
 
         public int? OrderId { get; set; }
 
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
         public int? NumberOfGuests { get; set; }
 
-        public string Status { get; set; }
+        public string? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
 
-        public string Type { get; set; }
+        public string? Type { get; set; }
 
         public DateTime? StartTime { get; set; }
 
@@ -26,8 +26,8 @@
 
         public int? MenuId { get; set; }
 
-        public string MenuName { get; set; }
+        public string? MenuName { get; set; }
 
-        public string PartyCategoryName { get; set; }
+        public string? PartyCategoryName { get; set; }
     }
 }

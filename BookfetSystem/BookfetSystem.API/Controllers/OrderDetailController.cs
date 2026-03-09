@@ -17,9 +17,9 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllOrderDetails([FromQuery] OrderDetailRequest filter)
+        public async Task<ActionResult> GetAllOrderDetails([FromQuery] OrderDetailFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var orderDetails = await _orderDetailService.GetAll(filter);
+            var orderDetails = await _orderDetailService.GetAllFilteredAsync(filter, page, pageSize);
             return Ok(orderDetails);
         }
 
@@ -37,34 +37,33 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateOrderDetail([FromBody] OrderDetailRequest request)
+        public async Task<ActionResult> CreateOrderDetail([FromBody] OrderDetailCreateRequest request)
         {
             var result = await _orderDetailService.Create(request);
 
-            if (result)
+            if (result.Success)
             {
-                return Ok("Order detail created successfully");
+                return Ok(result);
             }
 
-            return BadRequest("Create order detail failed");
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateOrderDetail(int id, [FromBody] OrderDetailRequest request)
+        public async Task<ActionResult> UpdateOrderDetail(int id, [FromBody] OrderDetailUpdateRequest request)
         {
-            if (id != request.OrderDetailId)
+            var result = await _orderDetailService.Update(id, request);
+            if (result.Success)
             {
-                return BadRequest("Id mismatch");
+                return Ok(result);
             }
 
-            var result = await _orderDetailService.Update(request);
-
-            if (result)
+            if (result.Message == "Order detail not found.")
             {
-                return Ok("Order detail updated successfully");
+                return NotFound(result);
             }
 
-            return BadRequest("Update order detail failed");
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
@@ -72,12 +71,17 @@ namespace BookfetSystem.API.Controllers
         {
             var result = await _orderDetailService.Delete(id);
 
-            if (result)
+            if (result.Success)
             {
-                return NoContent();
+                return Ok(result);
             }
 
-            return NotFound();
+            if (result.Message == "Order detail not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }

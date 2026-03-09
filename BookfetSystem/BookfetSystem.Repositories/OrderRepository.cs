@@ -49,9 +49,12 @@ namespace BookfetSystem.Repositories
                 .FirstOrDefaultAsync(x => x.OrderId == id);
         }
 
-        public Task<bool> HasRelatedDataAsync(int orderId)
+        public async Task<bool> HasRelatedDataAsync(int orderId)
         {
-            return _context.OrderDetails.AnyAsync(x => x.OrderId == orderId);
+            var hasOrderDetails = await _context.OrderDetails.AnyAsync(x => x.OrderId == orderId);
+            var hasPayments = await _context.Payments.AnyAsync(x => x.OrderId == orderId);
+
+            return hasOrderDetails || hasPayments;
         }
     }
 }

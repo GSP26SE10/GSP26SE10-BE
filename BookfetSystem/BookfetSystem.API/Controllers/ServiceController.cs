@@ -16,9 +16,9 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] ServiceFilterRequest filter)
+        public async Task<IActionResult> GetAll([FromQuery] ServiceFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _service.GetAll(filter);
+            var result = await _service.GetAllFilteredAsync(filter, page, pageSize);
             return Ok(result);
         }
 
@@ -37,18 +37,31 @@ namespace BookfetSystem.API.Controllers
         public async Task<IActionResult> Create(ServiceCreateRequest request)
         {
             var result = await _service.Create(request);
-            return Ok(result);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update(ServiceUpdateRequest request)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, ServiceUpdateRequest request)
         {
-            var result = await _service.Update(request);
+            var result = await _service.Update(id, request);
 
-            if (!result)
-                return NotFound();
+            if (result.Success)
+            {
+                return Ok(result);
+            }
 
-            return Ok(result);
+            if (result.Message == "Service not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
@@ -56,10 +69,17 @@ namespace BookfetSystem.API.Controllers
         {
             var result = await _service.Delete(id);
 
-            if (!result)
-                return NotFound();
+            if (result.Success)
+            {
+                return Ok(result);
+            }
 
-            return Ok(result);
+            if (result.Message == "Service not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }
