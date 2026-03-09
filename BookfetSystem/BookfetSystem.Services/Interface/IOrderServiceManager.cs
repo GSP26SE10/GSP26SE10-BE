@@ -1,18 +1,15 @@
-﻿using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using System.Threading.Tasks;
 
-namespace BookfetSystem.Services.Interfaces
+namespace BookfetSystem.Services.Interface
 {
     public interface IOrderServiceManager
     {
-        Task<List<OrderServiceResponse>> GetAll(OrderServiceFilterRequest filter);
-
-        Task<OrderServiceResponse?> GetById(int id);
-
-        Task<bool> Create(OrderServiceCreateRequest request);
-
-        Task<bool> Update(OrderServiceUpdateRequest request);
-
-        Task<bool> Delete(int id);
+        Task<PagedResponse<OrderServiceResponse>> GetAllOrderServiceFilteredAsync(OrderServiceFilterRequest request, int page, int pageSize);
+        Task<ApiResponse<OrderServiceResponse>> CreateAsync(OrderServiceCreateRequest request);
+        Task<ApiResponse<OrderServiceResponse>> UpdateAsync(int id, OrderServiceUpdateRequest request);
+        Task<ApiResponse<bool>> DeleteAsync(int id);
     }
 }

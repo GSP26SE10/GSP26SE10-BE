@@ -1,16 +1,15 @@
-﻿using BookfetSystem.Services.Models.Request;
-using static BookfetSystem.Services.Models.Request.PaymentRequest;
+using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Response;
+using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Interface
 {
     public interface IPaymentService
     {
-        Task<object> GetAllFilteredAsync(PaymentFilterRequest filter, int page, int pageSize);
-
-        Task<(bool Success, string Message)> CreateAsync(PaymentCreateRequest request);
-
-        Task<(bool Success, string Message)> UpdateAsync(int id, PaymentUpdateRequest request);
-
-        Task<(bool Success, string Message)> DeleteAsync(int id);
+        Task<PagedResponse<PaymentResponse>> GetAllPaymentFilteredAsync(PaymentFilterRequest request, int page, int pageSize);
+        Task<ApiResponse<PaymentResponse>> CreateAsync(PaymentCreateRequest request);
+        Task<ApiResponse<PaymentResponse>> UpdateAsync(int id, PaymentUpdateRequest request);
+        Task<ApiResponse<bool>> DeleteAsync(int id);
     }
 }

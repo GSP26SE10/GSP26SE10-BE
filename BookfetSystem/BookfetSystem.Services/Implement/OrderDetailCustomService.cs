@@ -1,63 +1,77 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
-using BookfetSystem.Services.Interfaces;
+using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
-using System.Linq;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
-namespace BookfetSystem.Services.Services
+namespace BookfetSystem.Services.Implement
 {
     public class OrderDetailCustomService : IOrderDetailCustomService
     {
-        private readonly OrderDetailCustomRepository _repository;
+        private readonly OrderDetailCustomRepository _orderDetailCustomRepository;
+        private readonly OrderDetailRepository _orderDetailRepository;
+        private readonly DishRepository _dishRepository;
 
-        public OrderDetailCustomService(OrderDetailCustomRepository repository)
+        public OrderDetailCustomService(
+            OrderDetailCustomRepository orderDetailCustomRepository,
+            OrderDetailRepository orderDetailRepository,
+            DishRepository dishRepository)
         {
-            _repository = repository;
+            _orderDetailCustomRepository = orderDetailCustomRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _dishRepository = dishRepository;
         }
 
-        public async Task<List<OrderDetailCustomResponse>> GetAll(OrderDetailCustomFilterRequest filter)
+        public async Task<PagedResponse<OrderDetailCustomResponse>> GetAllOrderDetailCustomFilteredAsync(OrderDetailCustomFilterRequest request, int page, int pageSize)
         {
-            var entityFilter = new OrderDetailCustom
+            var entityFilter = request.Adapt<OrderDetailCustom>();
+            var query = _orderDetailCustomRepository.GetAllOrderDetailCustomFiltered(entityFilter);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<OrderDetailCustomResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<OrderDetailCustomResponse>
             {
-                OrderDetailCustomId = filter.OrderDetailCustomId ?? 0,
-                OrderDetailId = filter.OrderDetailId,
-                DishId = filter.DishId,
-                Quantity = filter.Quantity
-            };
-
-            var data = _repository.GetAllOrderDetailCustomFiltered(entityFilter).ToList();
-
-            return data.Select(x => new OrderDetailCustomResponse
-            {
-                OrderDetailCustomId = x.OrderDetailCustomId,
-                OrderDetailId = x.OrderDetailId,
-                DishId = x.DishId,
-                Quantity = x.Quantity,
-                TotalAmount = x.TotalAmount,
-                DishName = x.Dish?.DishName
-            }).ToList();
-        }
-
-        public async Task<OrderDetailCustomResponse?> GetById(int id)
-        {
-            var entity = await _repository.GetByIdWithRelationAsync(id);
-
-            if (entity == null) return null;
-
-            return new OrderDetailCustomResponse
-            {
-                OrderDetailCustomId = entity.OrderDetailCustomId,
-                OrderDetailId = entity.OrderDetailId,
-                DishId = entity.DishId,
-                Quantity = entity.Quantity,
-                TotalAmount = entity.TotalAmount,
-                DishName = entity.Dish?.DishName
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
             };
         }
 
-        public async Task<bool> Create(OrderDetailCustomCreateRequest request)
+        public async Task<ApiResponse<OrderDetailCustomResponse>> CreateAsync(OrderDetailCustomCreateRequest request)
         {
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            var dish = await _dishRepository.GetByIdAsync(request.DishId);
+            if (dish == null)
+            {
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = false,
+                    Message = "Dish not found.",
+                    Data = null
+                };
+            }
+
             var entity = new OrderDetailCustom
             {
                 OrderDetailId = request.OrderDetailId,
@@ -66,33 +80,122 @@ namespace BookfetSystem.Services.Services
                 TotalAmount = request.TotalAmount
             };
 
-            await _repository.CreateAsync(entity);
-            return true;
+            var affected = await _orderDetailCustomRepository.CreateAsync(entity);
+            if (affected > 0)
+            {
+                entity.Dish = dish;
+                entity.OrderDetail = orderDetail;
+                var response = entity.Adapt<OrderDetailCustomResponse>();
+
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = true,
+                    Message = "Order detail custom created successfully.",
+                    Data = response
+                };
+            }
+
+            return new ApiResponse<OrderDetailCustomResponse>
+            {
+                Success = false,
+                Message = "Failed to create order detail custom.",
+                Data = null
+            };
         }
 
-        public async Task<bool> Update(OrderDetailCustomUpdateRequest request)
+        public async Task<ApiResponse<OrderDetailCustomResponse>> UpdateAsync(int id, OrderDetailCustomUpdateRequest request)
         {
-            var entity = await _repository.GetByIdAsync(request.OrderDetailCustomId);
+            var entity = await _orderDetailCustomRepository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = false,
+                    Message = "Order detail custom not found.",
+                    Data = null
+                };
+            }
 
-            if (entity == null) return false;
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            var dish = await _dishRepository.GetByIdAsync(request.DishId);
+            if (dish == null)
+            {
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = false,
+                    Message = "Dish not found.",
+                    Data = null
+                };
+            }
 
             entity.OrderDetailId = request.OrderDetailId;
             entity.DishId = request.DishId;
             entity.Quantity = request.Quantity;
             entity.TotalAmount = request.TotalAmount;
 
-            await _repository.UpdateAsync(entity);
-            return true;
+            var affected = await _orderDetailCustomRepository.UpdateAsync(entity);
+            if (affected > 0)
+            {
+                entity.Dish = dish;
+                entity.OrderDetail = orderDetail;
+                var response = entity.Adapt<OrderDetailCustomResponse>();
+
+                return new ApiResponse<OrderDetailCustomResponse>
+                {
+                    Success = true,
+                    Message = "Order detail custom updated successfully.",
+                    Data = response
+                };
+            }
+
+            return new ApiResponse<OrderDetailCustomResponse>
+            {
+                Success = false,
+                Message = "Failed to update order detail custom.",
+                Data = null
+            };
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<ApiResponse<bool>> DeleteAsync(int id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _orderDetailCustomRepository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Order detail custom not found.",
+                    Data = false
+                };
+            }
 
-            if (entity == null) return false;
+            var removed = await _orderDetailCustomRepository.RemoveAsync(entity);
+            if (removed)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Order detail custom deleted successfully.",
+                    Data = true
+                };
+            }
 
-            await _repository.RemoveAsync(entity);
-            return true;
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Failed to delete order detail custom.",
+                Data = false
+            };
         }
     }
 }

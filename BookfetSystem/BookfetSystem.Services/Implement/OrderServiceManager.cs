@@ -1,98 +1,201 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
-using BookfetSystem.Services.Interfaces;
+using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
-using System.Linq;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
 
-namespace BookfetSystem.Services.Services
+namespace BookfetSystem.Services.Implement
 {
     public class OrderServiceManager : IOrderServiceManager
     {
-        private readonly OrderServiceRepository _repository;
+        private readonly OrderServiceRepository _orderServiceRepository;
+        private readonly OrderDetailRepository _orderDetailRepository;
+        private readonly ServiceRepository _serviceRepository;
 
-        public OrderServiceManager(OrderServiceRepository repository)
+        public OrderServiceManager(
+            OrderServiceRepository orderServiceRepository,
+            OrderDetailRepository orderDetailRepository,
+            ServiceRepository serviceRepository)
         {
-            _repository = repository;
+            _orderServiceRepository = orderServiceRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _serviceRepository = serviceRepository;
         }
 
-        public async Task<List<OrderServiceResponse>> GetAll(OrderServiceFilterRequest filter)
+        public async Task<PagedResponse<OrderServiceResponse>> GetAllOrderServiceFilteredAsync(OrderServiceFilterRequest request, int page, int pageSize)
         {
-            var entityFilter = new OrderService
+            var entityFilter = request.Adapt<OrderService>();
+            var query = _orderServiceRepository.GetAllOrderServiceFiltered(entityFilter);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<OrderServiceResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<OrderServiceResponse>
             {
-                OrderServiceId = filter.OrderServiceId ?? 0,
-                OrderDetailId = filter.OrderDetailId,
-                ServiceId = filter.ServiceId
-            };
-
-            var data = _repository.GetAllOrderServiceFiltered(entityFilter).ToList();
-
-            return data.Select(x => new OrderServiceResponse
-            {
-                OrderServiceId = x.OrderServiceId,
-                OrderDetailId = x.OrderDetailId,
-                ServiceId = x.ServiceId,
-                ServiceName = x.Service?.ServiceName,
-                Quantity = x.Quantity,
-                CreatedAt = x.CreatedAt
-            }).ToList();
-        }
-
-        public async Task<OrderServiceResponse?> GetById(int id)
-        {
-            var entity = await _repository.GetByIdWithRelationAsync(id);
-
-            if (entity == null) return null;
-
-            return new OrderServiceResponse
-            {
-                OrderServiceId = entity.OrderServiceId,
-                OrderDetailId = entity.OrderDetailId,
-                ServiceId = entity.ServiceId,
-                ServiceName = entity.Service?.ServiceName,
-                Quantity = entity.Quantity,
-                CreatedAt = entity.CreatedAt
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
             };
         }
 
-        public async Task<bool> Create(OrderServiceCreateRequest request)
+        public async Task<ApiResponse<OrderServiceResponse>> CreateAsync(OrderServiceCreateRequest request)
         {
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            var service = await _serviceRepository.GetByIdAsync(request.ServiceId);
+            if (service == null)
+            {
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = false,
+                    Message = "Service not found.",
+                    Data = null
+                };
+            }
+
             var entity = new OrderService
             {
                 OrderDetailId = request.OrderDetailId,
                 ServiceId = request.ServiceId,
                 Quantity = request.Quantity,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
-            await _repository.CreateAsync(entity);
-            return true;
+            var affected = await _orderServiceRepository.CreateAsync(entity);
+            if (affected > 0)
+            {
+                entity.Service = service;
+                entity.OrderDetail = orderDetail;
+                var response = entity.Adapt<OrderServiceResponse>();
+
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = true,
+                    Message = "Order service created successfully.",
+                    Data = response
+                };
+            }
+
+            return new ApiResponse<OrderServiceResponse>
+            {
+                Success = false,
+                Message = "Failed to create order service.",
+                Data = null
+            };
         }
 
-        public async Task<bool> Update(OrderServiceUpdateRequest request)
+        public async Task<ApiResponse<OrderServiceResponse>> UpdateAsync(int id, OrderServiceUpdateRequest request)
         {
-            var entity = await _repository.GetByIdAsync(request.OrderServiceId);
+            var entity = await _orderServiceRepository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order service not found.",
+                    Data = null
+                };
+            }
 
-            if (entity == null) return false;
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            var service = await _serviceRepository.GetByIdAsync(request.ServiceId);
+            if (service == null)
+            {
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = false,
+                    Message = "Service not found.",
+                    Data = null
+                };
+            }
 
             entity.OrderDetailId = request.OrderDetailId;
             entity.ServiceId = request.ServiceId;
             entity.Quantity = request.Quantity;
 
-            await _repository.UpdateAsync(entity);
+            var affected = await _orderServiceRepository.UpdateAsync(entity);
+            if (affected > 0)
+            {
+                entity.Service = service;
+                entity.OrderDetail = orderDetail;
+                var response = entity.Adapt<OrderServiceResponse>();
 
-            return true;
+                return new ApiResponse<OrderServiceResponse>
+                {
+                    Success = true,
+                    Message = "Order service updated successfully.",
+                    Data = response
+                };
+            }
+
+            return new ApiResponse<OrderServiceResponse>
+            {
+                Success = false,
+                Message = "Failed to update order service.",
+                Data = null
+            };
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<ApiResponse<bool>> DeleteAsync(int id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _orderServiceRepository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Order service not found.",
+                    Data = false
+                };
+            }
 
-            if (entity == null) return false;
+            var removed = await _orderServiceRepository.RemoveAsync(entity);
+            if (removed)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Order service deleted successfully.",
+                    Data = true
+                };
+            }
 
-            await _repository.RemoveAsync(entity);
-
-            return true;
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Failed to delete order service.",
+                Data = false
+            };
         }
     }
 }

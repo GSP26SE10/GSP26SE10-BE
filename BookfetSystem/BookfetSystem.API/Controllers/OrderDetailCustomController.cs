@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Interfaces;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -17,67 +17,46 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllOrderDetailCustoms([FromQuery] OrderDetailCustomFilterRequest filter)
+        public async Task<ActionResult> GetAllOrderDetailCustomsFiltered([FromQuery] OrderDetailCustomFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _orderDetailCustomService.GetAll(filter);
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult> GetOrderDetailCustomById(int id)
-        {
-            var result = await _orderDetailCustomService.GetById(id);
-
-            if (result == null)
-            {
-                return NotFound();
-            }
-
+            var result = await _orderDetailCustomService.GetAllOrderDetailCustomFilteredAsync(filter, page, pageSize);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult> CreateOrderDetailCustom([FromBody] OrderDetailCustomCreateRequest request)
         {
-            var result = await _orderDetailCustomService.Create(request);
-
-            if (result)
+            var result = await _orderDetailCustomService.CreateAsync(request);
+            if (result.Success)
             {
-                return Ok("OrderDetailCustom created successfully");
+                return Ok(result);
             }
 
-            return BadRequest("Create failed");
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateOrderDetailCustom(int id, [FromBody] OrderDetailCustomUpdateRequest request)
         {
-            if (id != request.OrderDetailCustomId)
+            var result = await _orderDetailCustomService.UpdateAsync(id, request);
+            if (result.Success)
             {
-                return BadRequest("Id mismatch");
+                return Ok(result);
             }
 
-            var result = await _orderDetailCustomService.Update(request);
-
-            if (result)
-            {
-                return Ok("OrderDetailCustom updated successfully");
-            }
-
-            return BadRequest("Update failed");
+            return BadRequest(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteOrderDetailCustom(int id)
         {
-            var result = await _orderDetailCustomService.Delete(id);
-
-            if (result)
+            var result = await _orderDetailCustomService.DeleteAsync(id);
+            if (result.Success)
             {
                 return NoContent();
             }
 
-            return NotFound();
+            return NotFound(result);
         }
     }
 }

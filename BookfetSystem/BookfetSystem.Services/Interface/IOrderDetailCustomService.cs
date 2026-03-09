@@ -1,18 +1,15 @@
-﻿using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using System.Threading.Tasks;
 
-namespace BookfetSystem.Services.Interfaces
+namespace BookfetSystem.Services.Interface
 {
     public interface IOrderDetailCustomService
     {
-        Task<List<OrderDetailCustomResponse>> GetAll(OrderDetailCustomFilterRequest filter);
-
-        Task<OrderDetailCustomResponse?> GetById(int id);
-
-        Task<bool> Create(OrderDetailCustomCreateRequest request);
-
-        Task<bool> Update(OrderDetailCustomUpdateRequest request);
-
-        Task<bool> Delete(int id);
+        Task<PagedResponse<OrderDetailCustomResponse>> GetAllOrderDetailCustomFilteredAsync(OrderDetailCustomFilterRequest request, int page, int pageSize);
+        Task<ApiResponse<OrderDetailCustomResponse>> CreateAsync(OrderDetailCustomCreateRequest request);
+        Task<ApiResponse<OrderDetailCustomResponse>> UpdateAsync(int id, OrderDetailCustomUpdateRequest request);
+        Task<ApiResponse<bool>> DeleteAsync(int id);
     }
 }
