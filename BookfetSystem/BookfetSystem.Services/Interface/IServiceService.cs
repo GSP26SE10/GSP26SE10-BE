@@ -1,18 +1,19 @@
-﻿using BookfetSystem.Services.Models.Request;
+﻿using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 
 namespace BookfetSystem.Services.Interfaces
 {
     public interface IServiceService
     {
-        Task<List<ServiceResponse>> GetAll(ServiceFilterRequest filter);
+        Task<PagedResponse<ServiceResponse>> GetAllFilteredAsync(ServiceFilterRequest filter, int page, int pageSize);
 
         Task<ServiceResponse?> GetById(int id);
 
-        Task<bool> Create(ServiceCreateRequest request);
+        Task<ApiResponse<ServiceResponse>> Create(ServiceCreateRequest request);
 
-        Task<bool> Update(ServiceUpdateRequest request);
+        Task<ApiResponse<ServiceResponse>> Update(int id, ServiceUpdateRequest request);
 
-        Task<bool> Delete(int id);
+        Task<ApiResponse<bool>> Delete(int id);
     }
 }

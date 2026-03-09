@@ -1,39 +1,39 @@
-﻿namespace BookfetSystem.Services.Models.Request
+﻿using BookfetSystem.Services.Enum;
+
+namespace BookfetSystem.Services.Models.Request
 {
     public class ServiceCreateRequest
     {
-        public string ServiceName { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
 
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         public decimal? BasePrice { get; set; }
 
-        public string Status { get; set; }
+        public ServiceStatus? Status { get; set; }
 
-        public string Img { get; set; }
+        public string Img { get; set; } = string.Empty;
     }
 
     public class ServiceUpdateRequest
     {
-        public int ServiceId { get; set; }
+        public string? ServiceName { get; set; }
 
-        public string ServiceName { get; set; }
-
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public decimal? BasePrice { get; set; }
 
-        public string Status { get; set; }
+        public ServiceStatus? Status { get; set; }
 
-        public string Img { get; set; }
+        public string? Img { get; set; }
     }
 
     public class ServiceFilterRequest
     {
         public int? ServiceId { get; set; }
 
-        public string ServiceName { get; set; }
+        public string? ServiceName { get; set; }
 
-        public string Status { get; set; }
+        public string? Status { get; set; }
     }
 }

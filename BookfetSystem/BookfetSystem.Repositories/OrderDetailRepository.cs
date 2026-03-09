@@ -34,7 +34,7 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrWhiteSpace(filter.Status))
             {
-                query = query.Where(x => x.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(x => x.Status != null && x.Status.ToLower().Contains(filter.Status.ToLower()));
             }
 
             if (filter.MenuId.HasValue && filter.MenuId.Value != 0)
