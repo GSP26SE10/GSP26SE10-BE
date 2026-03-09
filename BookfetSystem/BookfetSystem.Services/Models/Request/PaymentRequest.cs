@@ -1,50 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using BookfetSystem.Services.Enum;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookfetSystem.Services.Models.Request
 {
-    public class PaymentRequest
+    public class PaymentCreateRequest
     {
-        public class PaymentCreateRequest
-        {
-            public int? OrderId { get; set; }
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
 
-            public decimal? Amount { get; set; }
+        public decimal? Amount { get; set; }
 
-            public string PaymentType { get; set; }
+        [Required(ErrorMessage = "PaymentType is required.")]
+        [EnumDataType(typeof(PaymentType), ErrorMessage = "Invalid payment type. Use 1 for DEPOSIT, 2 for FULL.")]
+        public PaymentType PaymentType { get; set; }
 
-            public string PaymentMethod { get; set; }
+        [Required(ErrorMessage = "PaymentMethod is required.")]
+        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER.")]
+        public PaymentMethod PaymentMethod { get; set; }
+    }
 
-            public string PaymentStatus { get; set; }
+    public class PaymentUpdateRequest
+    {
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
 
-            public DateTime? PaidAt { get; set; }
-        }
-        
-        public class PaymentUpdateRequest
-        {
-            public int? OrderId { get; set; }
+        public decimal? Amount { get; set; }
 
-            public decimal? Amount { get; set; }
+        [Required(ErrorMessage = "PaymentType is required.")]
+        [EnumDataType(typeof(PaymentType), ErrorMessage = "Invalid payment type. Use 1 for DEPOSIT, 2 for FULL.")]
+        public PaymentType PaymentType { get; set; }
 
-            public string PaymentType { get; set; }
+        [Required(ErrorMessage = "PaymentMethod is required.")]
+        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER.")]
+        public PaymentMethod PaymentMethod { get; set; }
 
-            public string PaymentMethod { get; set; }
+        [EnumDataType(typeof(PaymentStatus), ErrorMessage = "Invalid payment status. Use 1 for UNPAID, 2 for PAID.")]
+        public PaymentStatus? PaymentStatus { get; set; }
 
-            public string PaymentStatus { get; set; }
+        public DateTime? PaidAt { get; set; }
+    }
 
-            public DateTime? PaidAt { get; set; }
-        }
-
-        public class PaymentFilterRequest
-        {
-            public int? OrderId { get; set; }
-
-            public string PaymentStatus { get; set; }
-
-            public string PaymentMethod { get; set; }
-        }
+    public class PaymentFilterRequest
+    {
+        public int PaymentId { get; set; }
+        public int? OrderId { get; set; }
+        public string? PaymentType { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? PaymentStatus { get; set; }
     }
 }

@@ -12,7 +12,6 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Services;
-using BookfetSystem.Services.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
