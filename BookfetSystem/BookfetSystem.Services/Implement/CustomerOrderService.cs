@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
@@ -12,13 +12,21 @@ namespace BookfetSystem.Services.Services
 {
     public class CustomerOrderService : ICustomerOrderService
     {
-        private readonly OrderRepository _repository;
+        private readonly OrderRepository _orderRepository;
+        private readonly OrderDetailRepository _orderDetailRepository;
+        private readonly OrderServiceRepository _orderServiceRepository;
+        private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
+        private readonly MenuRepository _menuRepository;
 
-        public CustomerOrderService(OrderRepository repository, UserRepository userRepository)
+        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository)
         {
-            _repository = repository;
+            _orderRepository = orderRepository;
             _userRepository = userRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _orderServiceRepository = orderServiceRepository;
+            _serviceRepository = serviceRepository;
+            _menuRepository = menuRepository;
         }
 
         public async Task<PagedResponse<OrderResponse>> GetAllFilteredAsync(OrderFilterRequest filter, int page, int pageSize)
@@ -26,7 +34,7 @@ namespace BookfetSystem.Services.Services
             var entityFilter = filter.Adapt<Order>();
             entityFilter.Status = filter.Status?.ToString();
 
-            var query = _repository.GetAllOrderFiltered(entityFilter);
+            var query = _orderRepository.GetAllOrderFiltered(entityFilter);
             var totalCount = await query.CountAsync();
 
             var data = await query
@@ -46,7 +54,7 @@ namespace BookfetSystem.Services.Services
 
         public async Task<OrderResponse?> GetById(int id)
         {
-            var entity = await _repository.GetByIdWithRelationAsync(id);
+            var entity = await _orderRepository.GetByIdWithRelationAsync(id);
 
             if (entity == null) return null;
 
@@ -87,7 +95,7 @@ namespace BookfetSystem.Services.Services
 
             try
             {
-                await _repository.CreateAsync(entity);
+                await _orderRepository.CreateAsync(entity);
                 var created = await GetById(entity.OrderId);
                 return new ApiResponse<OrderResponse>
                 {
@@ -109,7 +117,7 @@ namespace BookfetSystem.Services.Services
 
         public async Task<ApiResponse<OrderResponse>> Update(int id, OrderUpdateRequest request)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _orderRepository.GetByIdAsync(id);
 
             if (entity == null)
             {
@@ -154,7 +162,7 @@ namespace BookfetSystem.Services.Services
 
             try
             {
-                await _repository.UpdateAsync(entity);
+                await _orderRepository.UpdateAsync(entity);
                 var updated = await GetById(entity.OrderId);
                 return new ApiResponse<OrderResponse>
                 {
@@ -176,7 +184,7 @@ namespace BookfetSystem.Services.Services
 
         public async Task<ApiResponse<bool>> Delete(int id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _orderRepository.GetByIdAsync(id);
 
             if (entity == null)
             {
@@ -188,7 +196,7 @@ namespace BookfetSystem.Services.Services
                 };
             }
 
-            var hasRelatedData = await _repository.HasRelatedDataAsync(id);
+            var hasRelatedData = await _orderRepository.HasRelatedDataAsync(id);
             if (hasRelatedData)
             {
                 return new ApiResponse<bool>
@@ -201,7 +209,7 @@ namespace BookfetSystem.Services.Services
 
             try
             {
-                await _repository.RemoveAsync(entity);
+                await _orderRepository.RemoveAsync(entity);
                 return new ApiResponse<bool>
                 {
                     Success = true,
@@ -218,6 +226,81 @@ namespace BookfetSystem.Services.Services
                     Data = false
                 };
             }
+        }
+
+        public async Task<ApiResponse<int>> CreateOrderAsync(CreateOrderRequest request)
+        {
+            // create order
+            var order = new Order
+            {
+                CustomerId = request.CustomerId,
+                Status = OrderStatus.PENDING.ToString(),
+                CreatedAt = DateTime.UtcNow,
+                TotalPrice = 0
+            };
+
+            await _orderRepository.CreateAsync(order);
+
+            var menu = await _menuRepository.GetByIdAsync(request.MenuId);
+            var menuPrice = menu?.BasePrice ?? 0;
+
+            // create order detail (TotalPrice from menu)
+            var orderDetail = new OrderDetail
+            {
+                OrderId = order.OrderId,
+                Address = request.Address ?? string.Empty,
+                NumberOfGuests = request.NumberOfGuests,
+                Status = OrderStatus.PENDING.ToString(),
+                TotalPrice = menuPrice,
+                Type = "Order",
+                StartTime = request.StartTime,
+                EndTime = request.EndTime,
+                MenuId = request.MenuId,
+                PartyCategoryId = request.PartyCategoryId
+            };
+
+            await _orderDetailRepository.CreateAsync(orderDetail);
+
+            decimal totalServicePrice = 0;
+
+            // create order services
+            if (request.Services != null && request.Services.Any())
+            {
+                foreach (var item in request.Services)
+                {
+                    var service = await _serviceRepository.GetByIdAsync(item.ServiceId);
+
+                    if (service == null)
+                        continue;
+
+                    var orderService = new OrderService
+                    {
+                        OrderDetailId = orderDetail.OrderDetailId,
+                        ServiceId = item.ServiceId,
+                        Quantity = item.Quantity,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _orderServiceRepository.CreateAsync(orderService);
+
+                    if (service.BasePrice != null)
+                        totalServicePrice += service.BasePrice.Value * item.Quantity;
+                }
+            }
+
+            await _orderServiceRepository.SaveAsync();
+
+            // update order total = orderDetail (menu) + services
+            order.TotalPrice = menuPrice + totalServicePrice;
+
+            await _orderRepository.UpdateAsync(order);
+
+            return new ApiResponse<int>
+            {
+                Success = true,
+                Message = "Order created successfully.",
+                Data = order.OrderId
+            };
         }
     }
 }

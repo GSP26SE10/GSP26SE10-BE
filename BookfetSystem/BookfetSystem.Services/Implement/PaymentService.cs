@@ -9,6 +9,7 @@ using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace BookfetSystem.Services.Implement
 {
@@ -16,11 +17,13 @@ namespace BookfetSystem.Services.Implement
     {
         private readonly PaymentRepository _paymentRepository;
         private readonly OrderRepository _orderRepository;
+        private readonly IConfiguration _configuration;
 
-        public PaymentService(PaymentRepository paymentRepository, OrderRepository orderRepository)
+        public PaymentService(PaymentRepository paymentRepository, OrderRepository orderRepository, IConfiguration configuration)
         {
             _paymentRepository = paymentRepository;
             _orderRepository = orderRepository;
+            _configuration = configuration;
         }
 
         public async Task<PagedResponse<PaymentResponse>> GetAllPaymentFilteredAsync(PaymentFilterRequest request, int page, int pageSize)
@@ -171,6 +174,55 @@ namespace BookfetSystem.Services.Implement
                 Success = false,
                 Message = "Failed to delete payment.",
                 Data = false
+            };
+        }
+
+        public async Task<ApiResponse<object>> CreatePaymentQR(int orderId)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+
+            if (order == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order not found"
+                };
+            }
+
+            var depositAmount = order.TotalPrice * 0.3m;
+
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                Amount = depositAmount,
+                PaymentType = PaymentType.DEPOSIT.ToString(),
+                PaymentMethod = PaymentMethod.BANK_TRANSFER.ToString(),
+                PaymentStatus = PaymentStatus.UNPAID.ToString(),
+            };
+
+            await _paymentRepository.CreateAsync(payment);
+
+            var paymentCode = $"BOOKFET_{order.OrderId}";
+
+            var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
+            var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
+            var qrBank = _configuration["SePay:QrBankCode"] ?? string.Empty;
+
+            var qrUrl =
+                $"{qrBaseUrl}?acc={qrAccount}&bank={qrBank}&amount={depositAmount}&des={paymentCode}";
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "QR created",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentCode,
+                    amount = depositAmount,
+                    qrUrl
+                }
             };
         }
     }

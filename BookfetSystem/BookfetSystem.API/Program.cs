@@ -110,6 +110,7 @@ builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IOrderDetailCustomService, OrderDetailCustomService>();
 builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 
 // JWT Authentication

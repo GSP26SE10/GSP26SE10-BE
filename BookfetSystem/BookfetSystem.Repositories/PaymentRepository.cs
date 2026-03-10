@@ -2,7 +2,9 @@ using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookfetSystem.Repositories
 {
@@ -47,5 +49,13 @@ namespace BookfetSystem.Repositories
             return query.OrderByDescending(p => p.PaidAt);
         }
 
+        public async Task<Payment?> GetUnpaidDepositByOrderIdAsync(int orderId)
+        {
+            return await _context.Payments
+                .FirstOrDefaultAsync(p =>
+                    p.OrderId == orderId &&
+                    p.PaymentType != null && p.PaymentType.Equals("DEPOSIT", StringComparison.OrdinalIgnoreCase) &&
+                    p.PaymentStatus != null && p.PaymentStatus.Equals("UNPAID", StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
