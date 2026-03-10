@@ -64,7 +64,7 @@ namespace BookfetSystem.Services.Implement
             if (string.IsNullOrWhiteSpace(text))
                 return null;
 
-            var match = Regex.Match(text, @"BOOKFET_(\d+)", RegexOptions.IgnoreCase);
+            var match = Regex.Match(text, @"BOOKFET_?(\d+)", RegexOptions.IgnoreCase);
             return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
         }
     }
