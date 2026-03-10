@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Implement;
+using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
@@ -77,6 +77,17 @@ namespace BookfetSystem.API.Controllers
                 return NotFound(result);
             }
 
+            return BadRequest(result);
+        }
+
+        [HttpPost("create")]
+        public async Task<ActionResult> CreateOrderAsync([FromBody] CreateOrderRequest request)
+        {
+            var result = await _orderService.CreateOrderAsync(request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
             return BadRequest(result);
         }
     }

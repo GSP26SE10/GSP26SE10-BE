@@ -1,5 +1,7 @@
+using System;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.SePay;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -10,10 +12,17 @@ namespace BookfetSystem.API.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentService _paymentService;
+        private readonly ISePayWebhookService _sePayWebhookService;
+        private readonly IConfiguration _configuration;
 
-        public PaymentController(IPaymentService paymentService)
+        public PaymentController(
+            IPaymentService paymentService,
+            ISePayWebhookService sePayWebhookService,
+            IConfiguration configuration)
         {
             _paymentService = paymentService;
+            _sePayWebhookService = sePayWebhookService;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -57,6 +66,37 @@ namespace BookfetSystem.API.Controllers
             }
 
             return NotFound(result);
+        }
+
+        [HttpPost("create-qr/{orderId}")]
+        public async Task<ActionResult> CreatePaymentQR(int orderId)
+        {
+            var result = await _paymentService.CreatePaymentQR(orderId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPost("sepay-webhook")]
+        public async Task<IActionResult> SePayWebhook([FromBody] SePayWebhookPayload payload)
+        {
+            if (payload == null)
+                return BadRequest(new { success = false });
+
+            var webhookKey = _configuration["SePay:WebhookApiKey"];
+            if (!string.IsNullOrEmpty(webhookKey))
+            {
+                if (!Request.Headers.TryGetValue("Authorization", out var auth) ||
+                    !auth.ToString().Contains($"Apikey {webhookKey}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Unauthorized(new { success = false });
+                }
+            }
+
+            await _sePayWebhookService.ProcessAsync(payload);
+            return Ok(new { success = true });
         }
     }
 }
