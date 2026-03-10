@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookfetSystem.Services.Models.Request
@@ -32,19 +32,24 @@ namespace BookfetSystem.Services.Models.Request
     {
         public int CustomerId { get; set; }
 
-        public string Address { get; set; }
+        public List<CreateOrderItemRequest> Items { get; set; } = new();
+    }
+
+    public class CreateOrderItemRequest
+    {
+        public int MenuId { get; set; }
+
+        public int PartyCategoryId { get; set; }
 
         public int NumberOfGuests { get; set; }
+
+        public string Address { get; set; } = string.Empty;
 
         public DateTime StartTime { get; set; }
 
         public DateTime EndTime { get; set; }
 
-        public int MenuId { get; set; }
-
-        public int PartyCategoryId { get; set; }
-
-        public List<ServiceItemRequest> Services { get; set; }
+        public List<ServiceItemRequest>? Services { get; set; }
     }
 
     public class ServiceItemRequest

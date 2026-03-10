@@ -190,6 +190,31 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var paymentCode = $"BOOKFET_{order.OrderId}";
+            var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
+            var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
+            var qrBank = _configuration["SePay:QrBankCode"] ?? string.Empty;
+
+            var existingUnpaid = await _paymentRepository.GetUnpaidDepositByOrderIdAsync(order.OrderId);
+            if (existingUnpaid != null)
+            {
+                var amt = (int)Math.Round(existingUnpaid.Amount ?? 0);
+                var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
+
+                return new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "QR already exists for this order. Use existing payment.",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentCode,
+                        amount = existingUnpaid.Amount,
+                        qrUrl = url
+                    }
+                };
+            }
+
             var depositAmount = order.TotalPrice * 0.3m;
 
             var payment = new Payment
@@ -202,12 +227,6 @@ namespace BookfetSystem.Services.Implement
             };
 
             await _paymentRepository.CreateAsync(payment);
-
-            var paymentCode = $"BOOKFET_{order.OrderId}";
-
-            var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
-            var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
-            var qrBank = _configuration["SePay:QrBankCode"] ?? string.Empty;
 
             var amountInt = (int)Math.Round(depositAmount ?? 0);
             var qrUrl =

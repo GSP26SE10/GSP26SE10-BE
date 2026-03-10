@@ -18,8 +18,9 @@ namespace BookfetSystem.Services.Services
         private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
         private readonly MenuRepository _menuRepository;
+        private readonly PartyCategoryRepository _partyCategoryRepository;
 
-        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository)
+        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository, PartyCategoryRepository partyCategoryRepository)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
@@ -27,6 +28,7 @@ namespace BookfetSystem.Services.Services
             _orderServiceRepository = orderServiceRepository;
             _serviceRepository = serviceRepository;
             _menuRepository = menuRepository;
+            _partyCategoryRepository = partyCategoryRepository;
         }
 
         public async Task<PagedResponse<OrderResponse>> GetAllFilteredAsync(OrderFilterRequest filter, int page, int pageSize)
@@ -230,7 +232,27 @@ namespace BookfetSystem.Services.Services
 
         public async Task<ApiResponse<int>> CreateOrderAsync(CreateOrderRequest request)
         {
-            // create order
+            var customer = await _userRepository.GetByIdAsync(request.CustomerId);
+            if (customer == null)
+            {
+                return new ApiResponse<int>
+                {
+                    Success = false,
+                    Message = "Customer not found.",
+                    Data = 0
+                };
+            }
+
+            if (request.Items == null || !request.Items.Any())
+            {
+                return new ApiResponse<int>
+                {
+                    Success = false,
+                    Message = "Items are required.",
+                    Data = 0
+                };
+            }
+
             var order = new Order
             {
                 CustomerId = request.CustomerId,
@@ -241,58 +263,114 @@ namespace BookfetSystem.Services.Services
 
             await _orderRepository.CreateAsync(order);
 
-            var menu = await _menuRepository.GetByIdAsync(request.MenuId);
-            var menuPrice = menu?.BasePrice ?? 0;
+            decimal orderTotal = 0;
 
-            // create order detail (TotalPrice from menu)
-            var orderDetail = new OrderDetail
+            foreach (var itemRequest in request.Items)
             {
-                OrderId = order.OrderId,
-                Address = request.Address ?? string.Empty,
-                NumberOfGuests = request.NumberOfGuests,
-                Status = OrderStatus.PENDING.ToString(),
-                TotalPrice = menuPrice,
-                Type = "Order",
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
-                MenuId = request.MenuId,
-                PartyCategoryId = request.PartyCategoryId
-            };
-
-            await _orderDetailRepository.CreateAsync(orderDetail);
-
-            decimal totalServicePrice = 0;
-
-            // create order services
-            if (request.Services != null && request.Services.Any())
-            {
-                foreach (var item in request.Services)
+                if (itemRequest.MenuId <= 0)
                 {
-                    var service = await _serviceRepository.GetByIdAsync(item.ServiceId);
-
-                    if (service == null)
-                        continue;
-
-                    var orderService = new OrderService
+                    return new ApiResponse<int>
                     {
-                        OrderDetailId = orderDetail.OrderDetailId,
-                        ServiceId = item.ServiceId,
-                        Quantity = item.Quantity,
-                        CreatedAt = DateTime.UtcNow
+                        Success = false,
+                        Message = "MenuId must be greater than 0.",
+                        Data = 0
                     };
-
-                    await _orderServiceRepository.CreateAsync(orderService);
-
-                    if (service.BasePrice != null)
-                        totalServicePrice += service.BasePrice.Value * item.Quantity;
                 }
+
+                if (itemRequest.NumberOfGuests <= 0)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = "NumberOfGuests must be greater than 0.",
+                        Data = 0
+                    };
+                }
+
+                var menu = await _menuRepository.GetByIdAsync(itemRequest.MenuId);
+                if (menu == null)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = $"Menu with Id {itemRequest.MenuId} not found.",
+                        Data = 0
+                    };
+                }
+
+                int? partyCategoryId = null;
+                if (itemRequest.PartyCategoryId > 0)
+                {
+                    var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
+                    if (partyCategory == null)
+                    {
+                        return new ApiResponse<int>
+                        {
+                            Success = false,
+                            Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
+                            Data = 0
+                        };
+                    }
+                    partyCategoryId = itemRequest.PartyCategoryId;
+                }
+
+                var menuPrice = menu.BasePrice ?? 0;
+                decimal itemServiceTotal = 0;
+
+                if (itemRequest.Services != null && itemRequest.Services.Any())
+                {
+                    foreach (var svc in itemRequest.Services)
+                    {
+                        if (svc.ServiceId <= 0 || svc.Quantity <= 0)
+                            continue;
+                        var service = await _serviceRepository.GetByIdAsync(svc.ServiceId);
+                        if (service != null && service.BasePrice.HasValue)
+                            itemServiceTotal += service.BasePrice.Value * svc.Quantity;
+                    }
+                }
+
+                var orderDetail = new OrderDetail
+                {
+                    OrderId = order.OrderId,
+                    Address = itemRequest.Address ?? string.Empty,
+                    NumberOfGuests = itemRequest.NumberOfGuests,
+                    Status = OrderStatus.PENDING.ToString(),
+                    TotalPrice = menuPrice + itemServiceTotal,
+                    Type = "Order",
+                    StartTime = itemRequest.StartTime,
+                    EndTime = itemRequest.EndTime,
+                    MenuId = itemRequest.MenuId,
+                    PartyCategoryId = partyCategoryId
+                };
+
+                await _orderDetailRepository.CreateAsync(orderDetail);
+
+                if (itemRequest.Services != null && itemRequest.Services.Any())
+                {
+                    foreach (var svc in itemRequest.Services)
+                    {
+                        if (svc.ServiceId <= 0 || svc.Quantity <= 0)
+                            continue;
+                        var service = await _serviceRepository.GetByIdAsync(svc.ServiceId);
+                        if (service == null)
+                            continue;
+
+                        var orderService = new OrderService
+                        {
+                            OrderDetailId = orderDetail.OrderDetailId,
+                            ServiceId = svc.ServiceId,
+                            Quantity = svc.Quantity,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        await _orderServiceRepository.CreateAsync(orderService);
+                    }
+                }
+
+                orderTotal += menuPrice + itemServiceTotal;
             }
 
-            await _orderServiceRepository.SaveAsync();
-
-            // update order total = orderDetail (menu) + services
-            order.TotalPrice = menuPrice + totalServicePrice;
-
+            order.TotalPrice = orderTotal;
             await _orderRepository.UpdateAsync(order);
 
             return new ApiResponse<int>
