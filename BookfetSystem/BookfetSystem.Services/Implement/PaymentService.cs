@@ -209,7 +209,7 @@ namespace BookfetSystem.Services.Implement
             var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
             var qrBank = _configuration["SePay:QrBankCode"] ?? string.Empty;
 
-            var amountInt = (int)Math.Round(depositAmount);
+            var amountInt = (int)Math.Round(depositAmount ?? 0);
             var qrUrl =
                 $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amountInt}&des={Uri.EscapeDataString(paymentCode)}";
 
