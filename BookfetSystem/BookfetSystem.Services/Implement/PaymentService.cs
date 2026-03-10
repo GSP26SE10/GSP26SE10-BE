@@ -177,7 +177,7 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<object>> CreatePaymentQR(int orderId)
+        public async Task<ApiResponse<object>> CreateDepositQR(int orderId)
         {
             var order = await _orderRepository.GetByIdAsync(orderId);
 

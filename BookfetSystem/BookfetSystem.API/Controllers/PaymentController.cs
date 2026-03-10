@@ -68,10 +68,10 @@ namespace BookfetSystem.API.Controllers
             return NotFound(result);
         }
 
-        [HttpPost("create-qr/{orderId}")]
-        public async Task<ActionResult> CreatePaymentQR(int orderId)
+        [HttpPost("create-deposit-qr/{orderId}")]
+        public async Task<ActionResult> CreateDepositQR(int orderId)
         {
-            var result = await _paymentService.CreatePaymentQR(orderId);
+            var result = await _paymentService.CreateDepositQR(orderId);
             if (result.Success)
             {
                 return Ok(result);
