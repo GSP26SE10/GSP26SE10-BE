@@ -54,8 +54,8 @@ namespace BookfetSystem.Repositories
             return await _context.Payments
                 .FirstOrDefaultAsync(p =>
                     p.OrderId == orderId &&
-                    p.PaymentType != null && p.PaymentType.Equals("DEPOSIT", StringComparison.OrdinalIgnoreCase) &&
-                    p.PaymentStatus != null && p.PaymentStatus.Equals("UNPAID", StringComparison.OrdinalIgnoreCase));
+                    p.PaymentType != null && p.PaymentType.ToLower() == "deposit" &&
+                    p.PaymentStatus != null && p.PaymentStatus.ToLower() == "unpaid");
         }
     }
 }
