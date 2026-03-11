@@ -329,13 +329,15 @@ namespace BookfetSystem.Services.Services
                     }
                 }
 
+                var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+
                 var orderDetail = new OrderDetail
                 {
                     OrderId = order.OrderId,
                     Address = itemRequest.Address ?? string.Empty,
                     NumberOfGuests = itemRequest.NumberOfGuests,
                     Status = OrderStatus.PENDING.ToString(),
-                    TotalPrice = menuPrice + itemServiceTotal,
+                    TotalPrice = itemTotal,
                     Type = "Order",
                     StartTime = itemRequest.StartTime,
                     EndTime = itemRequest.EndTime,
@@ -367,7 +369,7 @@ namespace BookfetSystem.Services.Services
                     }
                 }
 
-                orderTotal += menuPrice + itemServiceTotal;
+                orderTotal += itemTotal;
             }
 
             order.TotalPrice = orderTotal;
