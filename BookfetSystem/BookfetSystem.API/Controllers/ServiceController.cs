@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BookfetSystem.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/service")]
     [ApiController]
     public class ServiceController : ControllerBase
     {

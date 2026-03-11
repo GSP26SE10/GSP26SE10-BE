@@ -215,7 +215,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var depositAmount = order.TotalPrice * 0.3m;
+            var depositAmount = order.TotalPrice * 0.5m;
 
             var payment = new Payment
             {
