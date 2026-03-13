@@ -265,7 +265,9 @@ namespace BookfetSystem.Services.Services
                 CustomerId = request.CustomerId,
                 Status = OrderStatus.PENDING.ToString(),
                 CreatedAt = DateTime.UtcNow,
-                TotalPrice = 0
+                TotalPrice = 0,
+                DepositAmount = 0,
+                RemainingAmount = 0
             };
 
             await _orderRepository.CreateAsync(order);
