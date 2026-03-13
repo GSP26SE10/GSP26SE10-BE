@@ -17,15 +17,18 @@ namespace BookfetSystem.Services.Implement
         private readonly FeedbackMenuRepository _feedbackMenuRepository;
         private readonly MenuRepository _menuRepository;
         private readonly UserRepository _userRepository;
+        private readonly OrderRepository _orderRepository;
 
         public FeedbackMenuService(
             FeedbackMenuRepository feedbackMenuRepository,
             MenuRepository menuRepository,
-            UserRepository userRepository)
+            UserRepository userRepository,
+            OrderRepository orderRepository)
         {
             _feedbackMenuRepository = feedbackMenuRepository;
             _menuRepository = menuRepository;
             _userRepository = userRepository;
+            _orderRepository = orderRepository;
         }
 
         public async Task<PagedResponse<FeedbackMenuResponse>> GetAllFeedbackMenuFilteredAsync(FeedbackMenuFilterRequest request, int page, int pageSize)
@@ -54,6 +57,17 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<ApiResponse<FeedbackMenuResponse>> CreateAsync(FeedbackMenuCreateRequest request)
         {
+            var order = await _orderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
             var menu = await _menuRepository.GetByIdAsync(request.MenuId);
             if (menu == null)
             {
@@ -78,6 +92,7 @@ namespace BookfetSystem.Services.Implement
 
             var entity = new FeedbackMenu
             {
+                OrderId = request.OrderId,
                 MenuId = request.MenuId,
                 CustomerId = request.CustomerId,
                 Rating = request.Rating,
@@ -145,6 +160,18 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var order = await _orderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            entity.OrderId = request.OrderId;
             entity.MenuId = request.MenuId;
             entity.CustomerId = request.CustomerId;
             entity.Rating = request.Rating;

@@ -5,6 +5,9 @@ namespace BookfetSystem.Services.Models.Request
 {
     public class FeedbackMenuCreateRequest
     {
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
+
         [Required(ErrorMessage = "MenuId is required.")]
         public int MenuId { get; set; }
 
@@ -19,6 +22,9 @@ namespace BookfetSystem.Services.Models.Request
 
     public class FeedbackMenuUpdateRequest
     {
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
+
         [Required(ErrorMessage = "MenuId is required.")]
         public int MenuId { get; set; }
 
@@ -37,6 +43,7 @@ namespace BookfetSystem.Services.Models.Request
     public class FeedbackMenuFilterRequest
     {
         public int FeedbackMenuId { get; set; }
+        public int? OrderId { get; set; }
         public int? MenuId { get; set; }
         public int? CustomerId { get; set; }
         public int? Rating { get; set; }

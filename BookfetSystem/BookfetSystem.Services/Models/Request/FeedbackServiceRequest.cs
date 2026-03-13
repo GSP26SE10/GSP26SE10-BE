@@ -5,6 +5,9 @@ namespace BookfetSystem.Services.Models.Request
 {
     public class FeedbackServiceCreateRequest
     {
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
+
         [Required(ErrorMessage = "ServiceId is required.")]
         public int ServiceId { get; set; }
 
@@ -19,6 +22,9 @@ namespace BookfetSystem.Services.Models.Request
 
     public class FeedbackServiceUpdateRequest
     {
+        [Required(ErrorMessage = "OrderId is required.")]
+        public int OrderId { get; set; }
+
         [Required(ErrorMessage = "ServiceId is required.")]
         public int ServiceId { get; set; }
 
@@ -37,6 +43,7 @@ namespace BookfetSystem.Services.Models.Request
     public class FeedbackServiceFilterRequest
     {
         public int FeedbackServiceId { get; set; }
+        public int? OrderId { get; set; }
         public int? ServiceId { get; set; }
         public int? CustomerId { get; set; }
         public int? Rating { get; set; }

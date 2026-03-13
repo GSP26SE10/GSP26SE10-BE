@@ -5,6 +5,7 @@ namespace BookfetSystem.Services.Models.Response
     public class FeedbackServiceResponse
     {
         public int FeedbackServiceId { get; set; }
+        public int? OrderId { get; set; }
         public int? ServiceId { get; set; }
         public int? CustomerId { get; set; }
         public int Rating { get; set; }

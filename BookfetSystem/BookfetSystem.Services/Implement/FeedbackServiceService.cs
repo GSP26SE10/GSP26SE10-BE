@@ -17,15 +17,18 @@ namespace BookfetSystem.Services.Implement
         private readonly FeedbackServiceRepository _feedbackServiceRepository;
         private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
+        private readonly OrderRepository _orderRepository;
 
         public FeedbackServiceService(
             FeedbackServiceRepository feedbackServiceRepository,
             ServiceRepository serviceRepository,
-            UserRepository userRepository)
+            UserRepository userRepository,
+            OrderRepository orderRepository)
         {
             _feedbackServiceRepository = feedbackServiceRepository;
             _serviceRepository = serviceRepository;
             _userRepository = userRepository;
+            _orderRepository = orderRepository;
         }
 
         public async Task<PagedResponse<FeedbackServiceResponse>> GetAllFeedbackServiceFilteredAsync(FeedbackServiceFilterRequest request, int page, int pageSize)
@@ -54,6 +57,17 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<ApiResponse<FeedbackServiceResponse>> CreateAsync(FeedbackServiceCreateRequest request)
         {
+            var order = await _orderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+            {
+                return new ApiResponse<FeedbackServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
             var service = await _serviceRepository.GetByIdAsync(request.ServiceId);
             if (service == null)
             {
@@ -78,6 +92,7 @@ namespace BookfetSystem.Services.Implement
 
             var entity = new FeedbackService
             {
+                OrderId = request.OrderId,
                 ServiceId = request.ServiceId,
                 CustomerId = request.CustomerId,
                 Rating = request.Rating,
@@ -145,6 +160,18 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var order = await _orderRepository.GetByIdAsync(request.OrderId);
+            if (order == null)
+            {
+                return new ApiResponse<FeedbackServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            entity.OrderId = request.OrderId;
             entity.ServiceId = request.ServiceId;
             entity.CustomerId = request.CustomerId;
             entity.Rating = request.Rating;
