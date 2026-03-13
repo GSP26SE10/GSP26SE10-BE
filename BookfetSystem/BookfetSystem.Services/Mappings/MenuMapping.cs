@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -19,7 +20,9 @@ namespace BookfetSystem.Services.Mappings
                        src => src.PartyCategoryMenus
                            .OrderBy(pcm => pcm.PartyCategoryMenuId)
                            .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.PartyCategoryName : null)
-                           .FirstOrDefault());
+                           .FirstOrDefault())
+                  .Map(dest => dest.ImgUrl,
+                       src => SnapshotParser.TryParseJsonToObject(src.ImgUrl));
         }
     }
 }
