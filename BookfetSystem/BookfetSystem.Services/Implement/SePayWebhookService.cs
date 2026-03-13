@@ -11,11 +11,13 @@ namespace BookfetSystem.Services.Implement
     public class SePayWebhookService : ISePayWebhookService
     {
         private readonly PaymentRepository _paymentRepository;
+        private readonly OrderRepository _orderRepository;
         private readonly ILogger<SePayWebhookService> _logger;
 
-        public SePayWebhookService(PaymentRepository paymentRepository, ILogger<SePayWebhookService> logger)
+        public SePayWebhookService(PaymentRepository paymentRepository, OrderRepository orderRepository, ILogger<SePayWebhookService> logger)
         {
             _paymentRepository = paymentRepository;
+            _orderRepository = orderRepository;
             _logger = logger;
         }
 
@@ -55,6 +57,18 @@ namespace BookfetSystem.Services.Implement
             payment.PaidAt = DateTime.UtcNow;
             await _paymentRepository.UpdateAsync(payment);
             _logger.LogInformation("Payment {PaymentId} marked PAID for orderId={OrderId}", payment.PaymentId, orderId.Value);
+
+            var order = await _orderRepository.GetByIdAsync(orderId.Value);
+            if (order != null)
+            {
+                var depositAmount = payment.Amount ?? 0;
+                var totalPrice = order.TotalPrice ?? 0;
+                order.DepositAmount = depositAmount;
+                order.RemainingAmount = totalPrice - depositAmount;
+                await _orderRepository.UpdateAsync(order);
+                _logger.LogInformation("Order {OrderId} updated: DepositAmount={Deposit}, RemainingAmount={Remaining}",
+                    orderId.Value, depositAmount, order.RemainingAmount);
+            }
 
             return true;
         }

@@ -7,6 +7,7 @@ SET TIME ZONE 'Asia/Ho_Chi_Minh';
 DROP TABLE IF EXISTS post_block CASCADE;
 DROP TABLE IF EXISTS post CASCADE;
 DROP TABLE IF EXISTS blog_category CASCADE;
+DROP TABLE IF EXISTS notification CASCADE;
 DROP TABLE IF EXISTS message CASCADE;
 DROP TABLE IF EXISTS conversation CASCADE;
 DROP TABLE IF EXISTS feedback_service CASCADE;
@@ -103,7 +104,7 @@ CREATE TABLE menu (
     menu_name VARCHAR(150),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     base_price NUMERIC(12,2),
-    img_url VARCHAR(255),
+    img_url JSONB, -- array: ["url1", "url2", ...]
     status VARCHAR(50),
     menu_category_id INT REFERENCES menu_category(menu_category_id)
 );
@@ -154,6 +155,9 @@ CREATE TABLE orders (
     customer_id INT REFERENCES users(user_id),
     status VARCHAR(50),
     total_price NUMERIC(12,2),
+    deposit_amount NUMERIC(12,2),
+    remaining_amount NUMERIC(12,2),
+    note_order TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -170,7 +174,10 @@ CREATE TABLE order_detail (
     end_time TIMESTAMPTZ,
     staff_group_id INT REFERENCES staff_group(staff_group_id),
     party_category_id INT REFERENCES party_category(party_category_id),
-    menu_id INT REFERENCES menu(menu_id)
+    menu_id INT REFERENCES menu(menu_id),
+    note_order_detail TEXT,
+    menu_snapshot JSONB,
+    service_snapshot JSONB
 );
 
 CREATE TABLE staff_group_member (
@@ -221,6 +228,7 @@ CREATE TABLE payment (
 
 CREATE TABLE feedback_menu (
     feedback_menu_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(order_id),
     menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
@@ -231,6 +239,7 @@ CREATE TABLE feedback_menu (
 
 CREATE TABLE feedback_service (
     feedback_service_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(order_id),
     service_id INT REFERENCES service(service_id) ON DELETE CASCADE,
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
@@ -252,6 +261,15 @@ CREATE TABLE message (
     sender_id INT REFERENCES users(user_id),
     content TEXT,
     sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notification (
+    notification_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    type VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================================
@@ -343,18 +361,18 @@ INSERT INTO menu_category (menu_category_name, description, status) VALUES
 ('Buffet bò', 'Buffet các món bò cao cấp', 'AVAILABLE'),
 ('Buffet hải sản', 'Buffet hải sản tươi sống đa dạng', 'AVAILABLE');
 
--- MENU (Buffet bò: 1, Buffet hải sản: 2) - 5 món mỗi category
+-- MENU (Buffet bò: 1, Buffet hải sản: 2) - 5 món mỗi category, img_url là array nhiều ảnh
 INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
-('Combo Bò Úc', 350000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
-('Combo Bò Wagyu', 650000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
-('Combo Bò Việt', 280000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
-('Combo Bò Premium', 420000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
-('Combo Bò Đặc Biệt', 520000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 1),
-('Combo Hải Sản Tươi Sống', 450000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
-('Combo Hải Sản Cao Cấp', 550000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
-('Combo Hải Sản Đặc Sản', 750000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
-('Combo Hải Sản Premium', 620000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2),
-('Combo Hải Sản Đại Dương', 850000, 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png', 'AVAILABLE', 2);
+('Combo Bò Úc', 350000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Wagyu', 650000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Việt', 280000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Premium', 420000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Đặc Biệt', 520000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Hải Sản Tươi Sống', 450000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Cao Cấp', 550000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Đặc Sản', 750000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Premium', 620000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Đại Dương', 850000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2);
 
 -- MENU - DISH
 INSERT INTO menu_dish (menu_id, dish_id) VALUES
@@ -404,21 +422,21 @@ INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 
 -- SERVICE
 INSERT INTO service (service_name, description, base_price, status, img) VALUES
-('Stage Decoration', 'Professional stage setup and decoration', 2000000, 'AVAILABLE', '/images/service_stage.jpg'),
-('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', '/images/service_sound.jpg'),
-('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', '/images/service_mc.jpg');
+('Stage Decoration', 'Professional stage setup and decoration', 2000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png'),
+('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png'),
+('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421422/service/service3.png');
 
 -- STAFF GROUP (phải tạo trước order_detail)
 INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES 
 ('Service Team A', 'ACTIVE', 2);
 
 -- ORDER
-INSERT INTO orders (customer_id, status, total_price)
-VALUES (4, 'PENDING', 7500000);
+INSERT INTO orders (customer_id, status, total_price, deposit_amount, remaining_amount, note_order)
+VALUES (4, 'PENDING', 7500000, 0, 7500000, NULL);
 
--- ORDER DETAIL
+-- ORDER DETAIL (menu_snapshot, service_snapshot lưu tại thời điểm tạo order)
 INSERT INTO order_detail 
-(order_id, address, number_of_guests, start_time, end_time, status, total_price, type, staff_group_id, party_category_id, menu_id)
+(order_id, address, number_of_guests, start_time, end_time, status, total_price, type, staff_group_id, party_category_id, menu_id, menu_snapshot, service_snapshot)
 VALUES 
 (1,
 '123 Nguyen Trai, District 1, Ho Chi Minh City',
@@ -430,7 +448,9 @@ NOW() + INTERVAL '5 hours',
 'Order',
 1,
 1,
-1);
+1,
+'{"menuName":"Combo Bò Úc","basePrice":350000,"imgUrl":["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"],"dishes":[{"dishId":1,"dishName":"Honey Grilled Chicken","price":150000},{"dishId":2,"dishName":"Beef Steak","price":200000},{"dishId":3,"dishName":"Coconut Ice Cream","price":50000},{"dishId":4,"dishName":"Fresh Orange Juice","price":30000}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb,
+'{"services":[{"serviceId":1,"serviceName":"Stage Decoration","basePrice":2000000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png"},{"serviceId":2,"serviceName":"Sound & Lighting System","basePrice":1500000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png"}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb);
 
 -- ORDER SERVICE
 INSERT INTO order_service (order_detail_id, service_id, quantity) VALUES 
@@ -456,16 +476,16 @@ INSERT INTO order_detail_custom (order_detail_id, dish_id, quantity, total_amoun
 INSERT INTO payment (order_id, amount, payment_type, payment_method, payment_status)
 VALUES (1, 7500000, 'Full', 'BANK_TRANSFER', 'UNPAID');
 
--- FEEDBACK MENU (đánh giá menu từ khách hàng)
-INSERT INTO feedback_menu (menu_id, customer_id, rating, comment, status) VALUES
-(1, 4, 5, 'Menu Standard rất ngon và đa dạng!', 'ACTIVE'),
-(2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', 'ACTIVE');
+-- FEEDBACK MENU (đánh giá menu từ khách hàng, gắn với order_id)
+INSERT INTO feedback_menu (order_id, menu_id, customer_id, rating, comment, status) VALUES
+(1, 1, 4, 5, 'Menu Standard rất ngon và đa dạng!', 'ACTIVE'),
+(1, 2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', 'ACTIVE');
 
--- FEEDBACK SERVICE (đánh giá dịch vụ: bàn ghế, karaoke, MC...)
-INSERT INTO feedback_service (service_id, customer_id, rating, comment, status) VALUES
-(1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', 'ACTIVE'),
-(2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', 'ACTIVE'),
-(3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', 'ACTIVE');
+-- FEEDBACK SERVICE (đánh giá dịch vụ, gắn với order_id)
+INSERT INTO feedback_service (order_id, service_id, customer_id, rating, comment, status) VALUES
+(1, 1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', 'ACTIVE'),
+(1, 2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', 'ACTIVE'),
+(1, 3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', 'ACTIVE');
 
 -- CONVERSATION
 INSERT INTO conversation (customer_id, owner_id)
@@ -476,3 +496,8 @@ INSERT INTO message (conversation_id, sender_id, content)
 VALUES 
 (1, 4, 'I would like to change the event time.'),
 (1, 2, 'Sure, please provide the new schedule.');
+
+-- NOTIFICATION
+INSERT INTO notification (user_id, title, content, type) VALUES
+(4, 'Đơn hàng đã được xác nhận', 'Đơn hàng #1 của bạn đã được xác nhận.', 'ORDER'),
+(4, 'Nhắc nhở thanh toán', 'Vui lòng thanh toán đơn hàng #1 trước ngày sự kiện.', 'PAYMENT');

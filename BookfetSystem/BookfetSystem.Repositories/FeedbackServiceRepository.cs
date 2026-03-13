@@ -24,6 +24,11 @@ namespace BookfetSystem.Repositories
                 query = query.Where(fs => fs.FeedbackServiceId == filter.FeedbackServiceId);
             }
 
+            if (filter.OrderId.HasValue)
+            {
+                query = query.Where(fs => fs.OrderId == filter.OrderId);
+            }
+
             if (filter.ServiceId.HasValue)
             {
                 query = query.Where(fs => fs.ServiceId == filter.ServiceId);

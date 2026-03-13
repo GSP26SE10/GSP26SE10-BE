@@ -9,6 +9,8 @@ public partial class FeedbackService
 {
     public int FeedbackServiceId { get; set; }
 
+    public int? OrderId { get; set; }
+
     public int? ServiceId { get; set; }
 
     public int? CustomerId { get; set; }
@@ -22,6 +24,8 @@ public partial class FeedbackService
     public DateTime? CreatedAt { get; set; }
 
     public virtual User Customer { get; set; }
+
+    public virtual Order Order { get; set; }
 
     public virtual Service Service { get; set; }
 }

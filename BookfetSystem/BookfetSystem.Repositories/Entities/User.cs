@@ -37,6 +37,8 @@ public partial class User
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     public virtual ICollection<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; } = new List<OrderDetailStaffTask>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();

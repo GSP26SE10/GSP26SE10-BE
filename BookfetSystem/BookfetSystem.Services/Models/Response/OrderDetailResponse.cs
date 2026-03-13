@@ -1,4 +1,6 @@
-﻿namespace BookfetSystem.Services.Models.Response
+using BookfetSystem.Services.Models;
+
+namespace BookfetSystem.Services.Models.Response
 {
     public class OrderDetailResponse
     {
@@ -29,5 +31,11 @@
         public string? MenuName { get; set; }
 
         public string? PartyCategoryName { get; set; }
+
+        public MenuSnapshotDto? MenuSnapshot { get; set; }
+
+        public ServiceSnapshotDto? ServiceSnapshot { get; set; }
+
+        public string? NoteOrderDetail { get; set; }
     }
 }
