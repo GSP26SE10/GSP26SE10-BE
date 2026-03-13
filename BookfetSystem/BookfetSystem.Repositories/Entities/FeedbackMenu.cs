@@ -9,6 +9,8 @@ public partial class FeedbackMenu
 {
     public int FeedbackMenuId { get; set; }
 
+    public int? OrderId { get; set; }
+
     public int? MenuId { get; set; }
 
     public int? CustomerId { get; set; }
@@ -24,4 +26,6 @@ public partial class FeedbackMenu
     public virtual User Customer { get; set; }
 
     public virtual Menu Menu { get; set; }
+
+    public virtual Order Order { get; set; }
 }

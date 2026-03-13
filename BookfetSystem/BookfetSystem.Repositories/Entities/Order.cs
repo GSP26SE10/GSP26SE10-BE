@@ -15,9 +15,19 @@ public partial class Order
 
     public decimal? TotalPrice { get; set; }
 
+    public decimal? DepositAmount { get; set; }
+
+    public decimal? RemainingAmount { get; set; }
+
+    public string NoteOrder { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual User Customer { get; set; }
+
+    public virtual ICollection<FeedbackMenu> FeedbackMenus { get; set; } = new List<FeedbackMenu>();
+
+    public virtual ICollection<FeedbackService> FeedbackServices { get; set; } = new List<FeedbackService>();
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 

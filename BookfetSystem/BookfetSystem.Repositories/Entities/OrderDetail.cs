@@ -31,6 +31,12 @@ public partial class OrderDetail
 
     public int? MenuId { get; set; }
 
+    public string NoteOrderDetail { get; set; }
+
+    public string MenuSnapshot { get; set; }
+
+    public string ServiceSnapshot { get; set; }
+
     public virtual Menu Menu { get; set; }
 
     public virtual Order Order { get; set; }
