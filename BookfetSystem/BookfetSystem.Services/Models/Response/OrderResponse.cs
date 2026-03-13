@@ -1,4 +1,4 @@
-﻿namespace BookfetSystem.Services.Models.Response
+namespace BookfetSystem.Services.Models.Response
 {
     public class OrderResponse
     {
@@ -11,6 +11,12 @@
         public string? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
+
+        public decimal? DepositAmount { get; set; }
+
+        public decimal? RemainingAmount { get; set; }
+
+        public string? NoteOrder { get; set; }
 
         public DateTime? CreatedAt { get; set; }
     }

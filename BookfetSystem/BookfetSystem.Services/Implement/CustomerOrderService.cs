@@ -1,7 +1,9 @@
+using System.Text.Json;
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
@@ -18,9 +20,10 @@ namespace BookfetSystem.Services.Services
         private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
         private readonly MenuRepository _menuRepository;
+        private readonly MenuDishRepository _menuDishRepository;
         private readonly PartyCategoryRepository _partyCategoryRepository;
 
-        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository, PartyCategoryRepository partyCategoryRepository)
+        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
@@ -28,6 +31,7 @@ namespace BookfetSystem.Services.Services
             _orderServiceRepository = orderServiceRepository;
             _serviceRepository = serviceRepository;
             _menuRepository = menuRepository;
+            _menuDishRepository = menuDishRepository;
             _partyCategoryRepository = partyCategoryRepository;
         }
 
@@ -67,6 +71,9 @@ namespace BookfetSystem.Services.Services
                 CustomerName = entity.Customer?.FullName,
                 Status = entity.Status,
                 TotalPrice = entity.TotalPrice,
+                DepositAmount = entity.DepositAmount,
+                RemainingAmount = entity.RemainingAmount,
+                NoteOrder = entity.NoteOrder,
                 CreatedAt = entity.CreatedAt
             };
         }
@@ -316,6 +323,7 @@ namespace BookfetSystem.Services.Services
 
                 var menuPrice = menu.BasePrice ?? 0;
                 decimal itemServiceTotal = 0;
+                var serviceItems = new List<ServiceItemSnapshotDto>();
 
                 if (itemRequest.Services != null && itemRequest.Services.Any())
                 {
@@ -325,11 +333,63 @@ namespace BookfetSystem.Services.Services
                             continue;
                         var service = await _serviceRepository.GetByIdAsync(svc.ServiceId);
                         if (service != null && service.BasePrice.HasValue)
+                        {
                             itemServiceTotal += service.BasePrice.Value * svc.Quantity;
+                            serviceItems.Add(new ServiceItemSnapshotDto
+                            {
+                                ServiceId = service.ServiceId,
+                                ServiceName = service.ServiceName,
+                                BasePrice = service.BasePrice,
+                                Quantity = svc.Quantity,
+                                Img = service.Img
+                            });
+                        }
                     }
                 }
 
                 var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+
+                var menuDishes = await _menuDishRepository
+                    .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
+                    .ToListAsync();
+                var dishSnapshots = menuDishes
+                    .Where(md => md.Dish != null)
+                    .Select(md => new DishSnapshotDto
+                    {
+                        DishId = md.Dish!.DishId,
+                        DishName = md.Dish.DishName,
+                        Price = md.Dish.Price
+                    })
+                    .ToList();
+
+                object? imgUrlObj = null;
+                if (!string.IsNullOrEmpty(menu.ImgUrl))
+                {
+                    try
+                    {
+                        imgUrlObj = JsonSerializer.Deserialize<object>(menu.ImgUrl);
+                    }
+                    catch
+                    {
+                        imgUrlObj = new[] { menu.ImgUrl };
+                    }
+                }
+                imgUrlObj ??= Array.Empty<string>();
+
+                var menuSnapshot = new MenuSnapshotDto
+                {
+                    MenuName = menu.MenuName,
+                    BasePrice = menu.BasePrice,
+                    ImgUrl = imgUrlObj,
+                    Dishes = dishSnapshots,
+                    CapturedAt = DateTime.UtcNow.ToString("o")
+                };
+
+                var serviceSnapshot = new ServiceSnapshotDto
+                {
+                    Services = serviceItems,
+                    CapturedAt = DateTime.UtcNow.ToString("o")
+                };
 
                 var orderDetail = new OrderDetail
                 {
@@ -342,7 +402,9 @@ namespace BookfetSystem.Services.Services
                     StartTime = itemRequest.StartTime,
                     EndTime = itemRequest.EndTime,
                     MenuId = itemRequest.MenuId,
-                    PartyCategoryId = partyCategoryId
+                    PartyCategoryId = partyCategoryId,
+                    MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
+                    ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot)
                 };
 
                 await _orderDetailRepository.CreateAsync(orderDetail);
