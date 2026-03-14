@@ -31,7 +31,7 @@ namespace BookfetSystem.Services.Models.Request
         [MaxLength(255)]
         public string? TaskName { get; set; }
 
-        [EnumDataType(typeof(StaffTaskStatus), ErrorMessage = "Invalid task status. Use 1 for PENDING, 2 for COMPLETED, 3 for CANCELLED.")]
+        [EnumDataType(typeof(StaffTaskStatus), ErrorMessage = "Invalid task status. Use 1=PENDING, 2=IN_PROGRESS, 3=COMPLETED, 4=CANCELLED.")]
         public StaffTaskStatus? TaskStatus { get; set; }
 
         public DateTime? StartTime { get; set; }

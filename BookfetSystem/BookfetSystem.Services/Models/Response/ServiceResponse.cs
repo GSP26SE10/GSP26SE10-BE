@@ -1,4 +1,4 @@
-﻿namespace BookfetSystem.Services.Models.Response
+namespace BookfetSystem.Services.Models.Response
 {
     public class ServiceResponse
     {
@@ -10,7 +10,7 @@
 
         public decimal? BasePrice { get; set; }
 
-        public string Status { get; set; }
+        public int? Status { get; set; }
 
         public string Img { get; set; }
 

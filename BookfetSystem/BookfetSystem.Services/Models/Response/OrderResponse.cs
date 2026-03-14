@@ -8,7 +8,7 @@ namespace BookfetSystem.Services.Models.Response
 
         public string? CustomerName { get; set; }
 
-        public string? Status { get; set; }
+        public int? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
 
@@ -19,5 +19,7 @@ namespace BookfetSystem.Services.Models.Response
         public string? NoteOrder { get; set; }
 
         public DateTime? CreatedAt { get; set; }
+
+        public List<OrderDetailResponse> OrderDetails { get; set; } = new();
     }
 }

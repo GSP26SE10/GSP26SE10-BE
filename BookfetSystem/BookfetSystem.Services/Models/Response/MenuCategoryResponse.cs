@@ -5,6 +5,6 @@ namespace BookfetSystem.Services.Models.Response
         public int MenuCategoryId { get; set; }
         public string? MenuCategoryName { get; set; }
         public string? Description { get; set; }
-        public string? Status { get; set; }
+        public int? Status { get; set; }
     }
 }

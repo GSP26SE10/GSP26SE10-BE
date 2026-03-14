@@ -3,7 +3,8 @@ namespace BookfetSystem.Services.Enum
     public enum StaffTaskStatus
     {
         PENDING = 1,
-        COMPLETED = 2,
-        CANCELLED = 3
+        IN_PROGRESS = 2,
+        COMPLETED = 3,
+        CANCELLED = 4
     }
 }

@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Repositories.Basic;
+using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +18,9 @@ namespace BookfetSystem.Repositories
             var query = _context.Orders
                 .Include(x => x.Customer)
                 .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.Menu)
+                .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.PartyCategory)
                 .Include(x => x.Payments)
                 .AsQueryable();
 
@@ -45,6 +48,9 @@ namespace BookfetSystem.Repositories
             return await _context.Orders
                 .Include(x => x.Customer)
                 .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.Menu)
+                .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.PartyCategory)
                 .Include(x => x.Payments)
                 .FirstOrDefaultAsync(x => x.OrderId == id);
         }

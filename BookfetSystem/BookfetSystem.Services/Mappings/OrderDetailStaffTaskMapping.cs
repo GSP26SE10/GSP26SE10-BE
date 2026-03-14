@@ -1,4 +1,6 @@
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -14,7 +16,9 @@ namespace BookfetSystem.Services.Mappings
 
             config.NewConfig<OrderDetailStaffTask, OrderDetailStaffTaskResponse>()
                   .Map(dest => dest.StaffName,
-                       src => src.Staff != null ? src.Staff.FullName : null);
+                       src => src.Staff != null ? src.Staff.FullName : null)
+                  .Map(dest => dest.TaskStatus,
+                       src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus));
         }
     }
 }

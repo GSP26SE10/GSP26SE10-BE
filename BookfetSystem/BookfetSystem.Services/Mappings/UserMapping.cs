@@ -1,4 +1,6 @@
-﻿using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -19,8 +21,10 @@ namespace BookfetSystem.Services.Mappings
             config.NewConfig<UserFilterRequest, User>()
                   .IgnoreNullValues(true);
             config.NewConfig<User, UserResponse>()
-                    .Map(dest => dest.RoleName,
-           src => src.Role.RoleName);
+                  .Map(dest => dest.RoleName,
+                      src => src.Role != null ? src.Role.RoleName : null)
+                  .Map(dest => dest.Status,
+                      src => EnumHelper.TryParseToInt<UserStatus>(src.Status));
         }
     }
 }

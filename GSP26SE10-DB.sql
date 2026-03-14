@@ -325,9 +325,9 @@ INSERT INTO users (full_name, email, password_hash, user_name, phone, address, s
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
-('Wedding Party', 'Elegant wedding celebrations', 'ACTIVE', 200, '/images/wedding.jpg'),
-('Birthday Party', 'Fun birthday celebrations', 'ACTIVE', 50, '/images/birthday.jpg'),
-('Corporate Event', 'Professional corporate gatherings', 'ACTIVE', 100, '/images/corporate.jpg');
+('Wedding Party', 'Elegant wedding celebrations', 'AVAILABLE', 200, '/images/wedding.jpg'),
+('Birthday Party', 'Fun birthday celebrations', 'AVAILABLE', 50, '/images/birthday.jpg'),
+('Corporate Event', 'Professional corporate gatherings', 'AVAILABLE', 100, '/images/corporate.jpg');
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
@@ -445,7 +445,7 @@ NOW(),
 NOW() + INTERVAL '5 hours',
 'PENDING',
 7500000,
-'Order',
+'ORDER',
 1,
 1,
 1,

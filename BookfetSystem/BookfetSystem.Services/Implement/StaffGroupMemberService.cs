@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -118,7 +119,7 @@ namespace BookfetSystem.Services.Implement
                     StaffGroupMemberId = entity.StaffGroupMemberId,
                     StaffGroupId = entity.StaffGroupId,
                     StaffId = entity.StaffId,
-                    Status = entity.Status,
+                    Status = EnumHelper.TryParseToInt<StaffGroupStatus>(entity.Status),
                     StaffName = staff.FullName,
                     StaffGroupName = staffGroup.StaffGroupName
                 };
@@ -219,7 +220,7 @@ namespace BookfetSystem.Services.Implement
                     StaffGroupMemberId = entity.StaffGroupMemberId,
                     StaffGroupId = entity.StaffGroupId,
                     StaffId = entity.StaffId,
-                    Status = entity.Status,
+                    Status = EnumHelper.TryParseToInt<StaffGroupStatus>(entity.Status),
                     StaffName = staff.FullName,
                     StaffGroupName = staffGroup.StaffGroupName
                 };

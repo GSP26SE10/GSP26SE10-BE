@@ -2,6 +2,7 @@ using System.Text.Json;
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models;
 using BookfetSystem.Services.Models.Common;
@@ -69,12 +70,13 @@ namespace BookfetSystem.Services.Services
                 OrderId = entity.OrderId,
                 CustomerId = entity.CustomerId,
                 CustomerName = entity.Customer?.FullName,
-                Status = entity.Status,
+                Status = EnumHelper.TryParseToInt<OrderStatus>(entity.Status),
                 TotalPrice = entity.TotalPrice,
                 DepositAmount = entity.DepositAmount,
                 RemainingAmount = entity.RemainingAmount,
                 NoteOrder = entity.NoteOrder,
-                CreatedAt = entity.CreatedAt
+                CreatedAt = entity.CreatedAt,
+                OrderDetails = entity.OrderDetails?.Select(od => od.Adapt<OrderDetailResponse>()).ToList() ?? new List<OrderDetailResponse>()
             };
         }
 
@@ -400,7 +402,7 @@ namespace BookfetSystem.Services.Services
                     NumberOfGuests = itemRequest.NumberOfGuests,
                     Status = OrderStatus.PENDING.ToString(),
                     TotalPrice = itemTotal,
-                    Type = "Order",
+                    Type = OrderDetailType.ORDER.ToString(),
                     StartTime = itemRequest.StartTime,
                     EndTime = itemRequest.EndTime,
                     MenuId = itemRequest.MenuId,

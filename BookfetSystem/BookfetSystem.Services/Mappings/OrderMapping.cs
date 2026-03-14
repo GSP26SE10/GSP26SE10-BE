@@ -1,4 +1,6 @@
-﻿using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -14,7 +16,11 @@ namespace BookfetSystem.Services.Mappings
 
             config.NewConfig<Order, OrderResponse>()
                   .Map(dest => dest.CustomerName,
-                       src => src.Customer != null ? src.Customer.FullName : null);
+                       src => src.Customer != null ? src.Customer.FullName : null)
+                  .Map(dest => dest.Status,
+                       src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+                  .Map(dest => dest.OrderDetails,
+                       src => src.OrderDetails != null ? src.OrderDetails.Select(od => od.Adapt<OrderDetailResponse>()).ToList() : new List<OrderDetailResponse>());
         }
     }
 }

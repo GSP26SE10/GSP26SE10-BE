@@ -1,4 +1,4 @@
-﻿namespace BookfetSystem.Services.Models.Response
+namespace BookfetSystem.Services.Models.Response
 {
     public class PartyCategoryResponse
     {
@@ -8,7 +8,7 @@
 
         public string? Description { get; set; }
 
-        public string? Status { get; set; }
+        public int? Status { get; set; }
 
         public int? NumberOfGuests { get; set; }
 
