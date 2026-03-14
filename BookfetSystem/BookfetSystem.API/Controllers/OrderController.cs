@@ -24,18 +24,18 @@ namespace BookfetSystem.API.Controllers
             return Ok(orders);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult> GetOrderById(int id)
-        {
-            var order = await _orderService.GetById(id);
+        //[HttpGet("{id}")]
+        //public async Task<ActionResult> GetOrderById(int id)
+        //{
+        //    var order = await _orderService.GetById(id);
 
-            if (order == null)
-            {
-                return NotFound();
-            }
+        //    if (order == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return Ok(order);
-        }
+        //    return Ok(order);
+        //}
 
         [HttpPost]
         public async Task<ActionResult> CreateOrder([FromBody] OrderCreateRequest request)

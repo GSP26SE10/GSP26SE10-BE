@@ -19,5 +19,7 @@ namespace BookfetSystem.Services.Models.Response
         public string? NoteOrder { get; set; }
 
         public DateTime? CreatedAt { get; set; }
+
+        public List<OrderDetailResponse> OrderDetails { get; set; } = new();
     }
 }

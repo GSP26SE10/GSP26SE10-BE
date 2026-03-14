@@ -75,7 +75,8 @@ namespace BookfetSystem.Services.Services
                 DepositAmount = entity.DepositAmount,
                 RemainingAmount = entity.RemainingAmount,
                 NoteOrder = entity.NoteOrder,
-                CreatedAt = entity.CreatedAt
+                CreatedAt = entity.CreatedAt,
+                OrderDetails = entity.OrderDetails?.Select(od => od.Adapt<OrderDetailResponse>()).ToList() ?? new List<OrderDetailResponse>()
             };
         }
 
