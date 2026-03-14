@@ -12,11 +12,11 @@ namespace BookfetSystem.Services.Models.Response
 
         public int? NumberOfGuests { get; set; }
 
-        public string? Status { get; set; }
+        public int? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
 
-        public string? Type { get; set; }
+        public int? Type { get; set; }
 
         public DateTime? StartTime { get; set; }
 

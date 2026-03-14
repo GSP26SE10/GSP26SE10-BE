@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
@@ -22,7 +23,9 @@ namespace BookfetSystem.Services.Mappings
                            .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.PartyCategoryName : null)
                            .FirstOrDefault())
                   .Map(dest => dest.ImgUrl,
-                       src => SnapshotParser.TryParseJsonToObject(src.ImgUrl));
+                       src => SnapshotParser.TryParseJsonToObject(src.ImgUrl))
+                  .Map(dest => dest.Status,
+                       src => EnumHelper.TryParseToInt<MenuStatus>(src.Status));
         }
     }
 }

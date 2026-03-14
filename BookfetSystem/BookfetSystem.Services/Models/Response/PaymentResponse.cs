@@ -10,11 +10,11 @@ namespace BookfetSystem.Services.Models.Response
 
         public decimal? Amount { get; set; }
 
-        public string PaymentType { get; set; }
+        public int? PaymentType { get; set; }
 
-        public string PaymentMethod { get; set; }
+        public int? PaymentMethod { get; set; }
 
-        public string PaymentStatus { get; set; }
+        public int? PaymentStatus { get; set; }
 
         public DateTime? PaidAt { get; set; }
     }

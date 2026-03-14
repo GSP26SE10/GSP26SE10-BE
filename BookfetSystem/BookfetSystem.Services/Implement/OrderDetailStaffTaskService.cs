@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -93,7 +94,7 @@ namespace BookfetSystem.Services.Implement
                     OrderDetailId = entity.OrderDetailId,
                     StaffId = entity.StaffId,
                     TaskName = entity.TaskName,
-                    TaskStatus = entity.TaskStatus,
+                    TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note,
@@ -171,7 +172,7 @@ namespace BookfetSystem.Services.Implement
                     OrderDetailId = entity.OrderDetailId,
                     StaffId = entity.StaffId,
                     TaskName = entity.TaskName,
-                    TaskStatus = entity.TaskStatus,
+                    TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note,
