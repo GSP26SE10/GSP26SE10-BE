@@ -17,5 +17,9 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<bool>> Delete(int id);
 
         Task<ApiResponse<int>> CreateOrderAsync(CreateOrderRequest request);
+
+        Task<PagedResponse<OrderResponse>> GetDepositedApprovedForAssignmentAsync(int page, int pageSize);
+
+        Task<ApiResponse<OrderResponse>> AssignOrderToStaffGroupAsync(int orderId, int staffGroupId);
     }
 }

@@ -59,5 +59,25 @@ namespace BookfetSystem.Repositories
                 .Include(x => x.Order)
                 .FirstOrDefaultAsync(x => x.OrderDetailId == id);
         }
+
+        public async Task<int> AssignOrderToStaffGroupAsync(int orderId, int staffGroupId, string preparingStatus)
+        {
+            var orderDetails = await _context.OrderDetails
+                .Where(x => x.OrderId == orderId && !x.StaffGroupId.HasValue)
+                .ToListAsync();
+
+            foreach (var orderDetail in orderDetails)
+            {
+                orderDetail.StaffGroupId = staffGroupId;
+                if (string.IsNullOrWhiteSpace(orderDetail.Status) ||
+                    orderDetail.Status == "PENDING" ||
+                    orderDetail.Status == "APPROVED")
+                {
+                    orderDetail.Status = preparingStatus;
+                }
+            }
+
+            return await _context.SaveChangesAsync();
+        }
     }
 }

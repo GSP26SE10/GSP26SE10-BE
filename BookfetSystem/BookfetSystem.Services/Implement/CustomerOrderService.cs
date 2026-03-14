@@ -20,17 +20,19 @@ namespace BookfetSystem.Services.Services
         private readonly OrderServiceRepository _orderServiceRepository;
         private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
+        private readonly StaffGroupRepository _staffGroupRepository;
         private readonly MenuRepository _menuRepository;
         private readonly MenuDishRepository _menuDishRepository;
         private readonly PartyCategoryRepository _partyCategoryRepository;
 
-        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository)
+        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
             _orderDetailRepository = orderDetailRepository;
             _orderServiceRepository = orderServiceRepository;
             _serviceRepository = serviceRepository;
+            _staffGroupRepository = staffGroupRepository;
             _menuRepository = menuRepository;
             _menuDishRepository = menuDishRepository;
             _partyCategoryRepository = partyCategoryRepository;
@@ -446,6 +448,133 @@ namespace BookfetSystem.Services.Services
                 Success = true,
                 Message = "Order created successfully.",
                 Data = order.OrderId
+            };
+        }
+
+        public async Task<PagedResponse<OrderResponse>> GetDepositedApprovedForAssignmentAsync(int page, int pageSize)
+        {
+            var query = _orderRepository.GetDepositedApprovedOrdersForAssignment();
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<OrderResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<OrderResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<ApiResponse<OrderResponse>> AssignOrderToStaffGroupAsync(int orderId, int staffGroupId)
+        {
+            if (staffGroupId <= 0)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "StaffGroupId must be greater than 0.",
+                    Data = null
+                };
+            }
+
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+            if (order == null)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            if (!string.Equals(order.Status, OrderStatus.APPROVED.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Only APPROVED orders can be assigned.",
+                    Data = null
+                };
+            }
+
+            var isDeposited = (order.DepositAmount ?? 0) > 0 ||
+                              (order.Payments?.Any(p =>
+                                  p.PaymentType == PaymentType.DEPOSIT.ToString() &&
+                                  p.PaymentStatus == PaymentStatus.PAID.ToString()) ?? false);
+
+            if (!isDeposited)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order has not been deposited yet.",
+                    Data = null
+                };
+            }
+
+            var staffGroup = await _staffGroupRepository
+                .GetAllStaffGroupFiltered(new StaffGroup { StaffGroupId = staffGroupId })
+                .FirstOrDefaultAsync(x => x.Status == StaffGroupStatus.ACTIVE.ToString());
+
+            if (staffGroup == null)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Staff group not found or inactive.",
+                    Data = null
+                };
+            }
+
+            if (!staffGroup.LeaderId.HasValue)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Staff group must have a leader before assignment.",
+                    Data = null
+                };
+            }
+
+            if (order.OrderDetails == null || !order.OrderDetails.Any())
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order has no order details to assign.",
+                    Data = null
+                };
+            }
+
+            var hasUnassignedDetails = order.OrderDetails.Any(x => !x.StaffGroupId.HasValue);
+            if (!hasUnassignedDetails)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order is already assigned to a staff group.",
+                    Data = null
+                };
+            }
+
+            await _orderDetailRepository.AssignOrderToStaffGroupAsync(orderId, staffGroup.StaffGroupId, OrderStatus.PREPARING.ToString());
+
+            order.Status = OrderStatus.PREPARING.ToString();
+            await _orderRepository.UpdateAsync(order);
+
+            var updated = await GetById(orderId);
+            return new ApiResponse<OrderResponse>
+            {
+                Success = true,
+                Message = "Order assigned to staff group successfully.",
+                Data = updated
             };
         }
     }
