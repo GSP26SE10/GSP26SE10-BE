@@ -19,7 +19,9 @@ namespace BookfetSystem.Services.Models.Response
     public class StaffGroupAssignmentOrderResponse
     {
         public int OrderDetailId { get; set; }
+        public int? OrderStatus { get; set; }
         public string? MenuName { get; set; }
+        public string? MenuImage { get; set; }
         public string? PartyCategory { get; set; }
         public int? NumberOfGuests { get; set; }
         public string? Address { get; set; }
@@ -32,6 +34,11 @@ namespace BookfetSystem.Services.Models.Response
     {
         public int TaskId { get; set; }
         public string? TaskName { get; set; }
-        public string? Status { get; set; }
+        public int? Status { get; set; }
+        public int? AssigneeId { get; set; }
+        public string? AssigneeName { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public string? Note { get; set; }
     }
 }
