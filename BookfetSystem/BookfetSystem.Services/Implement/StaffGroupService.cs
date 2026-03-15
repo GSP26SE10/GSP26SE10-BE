@@ -61,7 +61,7 @@ namespace BookfetSystem.Services.Implement
             {
                 StaffGroupName = request.StaffGroupName?.Trim(),
                 LeaderId = request.LeaderId,
-                Status = "ACTIVE"
+                Status = StaffGroupStatus.ACTIVE.ToString()
             };
 
             var affected = await _staffGroupRepository.CreateAsync(entity);
