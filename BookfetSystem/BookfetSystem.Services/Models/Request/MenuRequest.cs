@@ -41,6 +41,6 @@ namespace BookfetSystem.Services.Models.Request
         public string? MenuName { get; set; }
         public decimal? MinBasePrice { get; set; }
         public decimal? MaxBasePrice { get; set; }
-        public string? Status { get; set; }
+        public MenuStatus? Status { get; set; }
     }
 }

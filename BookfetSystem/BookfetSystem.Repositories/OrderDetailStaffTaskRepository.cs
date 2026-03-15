@@ -36,7 +36,7 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrEmpty(filter.TaskStatus))
             {
-                query = query.Where(t => t.TaskStatus != null && t.TaskStatus.Contains(filter.TaskStatus));
+                query = query.Where(t => t.TaskStatus == filter.TaskStatus);
             }
 
             if (!string.IsNullOrEmpty(filter.TaskName))

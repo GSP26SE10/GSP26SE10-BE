@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using BookfetSystem.Services.Enum;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -36,7 +37,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? PartyCategoryName { get; set; }
 
-        public string? Status { get; set; }
+        public MenuStatus? Status { get; set; }
 
         public int? NumberOfGuests { get; set; }
     }

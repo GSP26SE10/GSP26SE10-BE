@@ -12,7 +12,8 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<ServiceFilterRequest, Repositories.Entities.Service>()
-                .IgnoreNullValues(true);
+                .IgnoreNullValues(true)
+                .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
 
             config.NewConfig<Repositories.Entities.Service, ServiceResponse>()
                 .Map(dest => dest.Status,

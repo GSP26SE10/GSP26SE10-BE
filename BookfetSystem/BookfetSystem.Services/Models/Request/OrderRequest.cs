@@ -24,7 +24,7 @@ namespace BookfetSystem.Services.Models.Request
     {
         public int? OrderId { get; set; }
         public int? CustomerId { get; set; }
-        public string? Status { get; set; }
+        public OrderStatus? Status { get; set; }
     }
 
     // FOR ORDER CREATE BUSSINESS LOGIC

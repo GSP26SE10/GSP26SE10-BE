@@ -12,7 +12,10 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<PaymentFilterRequest, Payment>()
-                  .IgnoreNullValues(true);
+                  .IgnoreNullValues(true)
+                  .Map(dest => dest.PaymentType, src => src.PaymentType.HasValue ? src.PaymentType.Value.ToString() : null)
+                  .Map(dest => dest.PaymentMethod, src => src.PaymentMethod.HasValue ? src.PaymentMethod.Value.ToString() : null)
+                  .Map(dest => dest.PaymentStatus, src => src.PaymentStatus.HasValue ? src.PaymentStatus.Value.ToString() : null);
 
             config.NewConfig<Payment, PaymentResponse>()
                   .Map(dest => dest.PaymentType,

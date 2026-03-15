@@ -30,7 +30,7 @@ namespace BookfetSystem.Repositories
             if (!string.IsNullOrEmpty(filter.Phone))
                 query = query.Where(u => u.Phone.Contains(filter.Phone));
             if (!string.IsNullOrEmpty(filter.Status))
-                query = query.Where(u => u.Status.Contains(filter.Status));
+                query = query.Where(u => u.Status == filter.Status);
             if (!string.IsNullOrEmpty(filter.UserName))
                 query = query.Where(u => u.UserName.Contains(filter.UserName));
             if (filter.RoleId != null)

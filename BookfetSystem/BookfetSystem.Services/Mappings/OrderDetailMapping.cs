@@ -12,7 +12,9 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<OrderDetailFilterRequest, OrderDetail>()
-                .IgnoreNullValues(true);
+                .IgnoreNullValues(true)
+                .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null)
+                .Map(dest => dest.Type, src => src.Type.HasValue ? src.Type.Value.ToString() : null);
 
             config.NewConfig<OrderDetail, OrderDetailResponse>()
                 .Map(dest => dest.MenuName,

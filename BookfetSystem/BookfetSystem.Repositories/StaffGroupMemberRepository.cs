@@ -36,7 +36,7 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(m => m.Status.Contains(filter.Status));
+                query = query.Where(m => m.Status == filter.Status);
             }
 
             return query.OrderBy(m => m.StaffGroupMemberId);

@@ -36,9 +36,9 @@ namespace BookfetSystem.Repositories
                 query = query.Where(m => m.MenuName.ToLower().Contains(filter.MenuName.ToLower()));
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Status))
+            if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(m => m.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(m => m.Status == filter.Status);
             }
 
             if (minBasePrice.HasValue)

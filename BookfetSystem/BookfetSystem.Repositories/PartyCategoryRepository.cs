@@ -31,10 +31,9 @@ namespace BookfetSystem.Repositories
                     .Contains(filter.PartyCategoryName.ToLower()));
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Status))
+            if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(pc => pc.Status != null &&
-                    pc.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(pc => pc.Status == filter.Status);
             }
 
             if (filter.NumberOfGuests.HasValue)

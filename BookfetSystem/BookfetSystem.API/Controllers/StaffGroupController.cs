@@ -19,6 +19,10 @@ namespace BookfetSystem.API.Controllers
             _staffGroupService = staffGroupService;
         }
 
+        /// <summary>
+        /// Lấy danh sách staff group có phân trang và bộ lọc.
+        /// Status filter nhận số enum: 1 = ACTIVE, 0 = INACTIVE (DB lưu string; response trả enum số).
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> GetAllStaffGroupsFiltered([FromQuery] StaffGroupFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
