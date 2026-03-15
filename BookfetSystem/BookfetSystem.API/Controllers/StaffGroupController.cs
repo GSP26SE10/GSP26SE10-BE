@@ -1,7 +1,9 @@
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
@@ -58,6 +60,25 @@ namespace BookfetSystem.API.Controllers
             }
 
             return NotFound(result);
+        }
+
+        [Authorize]
+        [HttpGet("leader/orders-overview")]
+        public async Task<ActionResult> GetMyAssignmentOverview()
+        {
+            var leaderIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(leaderIdValue, out var leaderId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing leader id." });
+            }
+
+            var result = await _staffGroupService.GetAssignmentOverviewByLeaderAsync(leaderId);
+            if (result == null)
+            {
+                return NotFound(new { Message = "Leader does not have a staff group." });
+            }
+
+            return Ok(result);
         }
     }
 }

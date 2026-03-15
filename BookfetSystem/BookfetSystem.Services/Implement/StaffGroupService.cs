@@ -180,6 +180,23 @@ namespace BookfetSystem.Services.Implement
                 Data = false
             };
         }
+
+        public async Task<StaffGroupAssignmentOverviewResponse?> GetAssignmentOverviewByLeaderAsync(int leaderId)
+        {
+            var staffGroup = await _staffGroupRepository.GetAssignmentOverviewByLeaderIdAsync(leaderId);
+            if (staffGroup == null)
+            {
+                return null;
+            }
+
+            var response = staffGroup.Adapt<StaffGroupAssignmentOverviewResponse>();
+
+            response.Members = response.Members
+                .Where(m => m.StaffId.HasValue)
+                .ToList();
+
+            return response;
+        }
     }
 }
 
