@@ -72,10 +72,9 @@ namespace BookfetSystem.Repositories
                 .Include(x => x.OrderDetails)
                     .ThenInclude(od => od.PartyCategory)
                 .Include(x => x.Payments)
-                .Where(x => x.Status == "APPROVED")
+                .Where(x => x.Status == "PENDING")  
                 .Where(x => (x.DepositAmount ?? 0) > 0 ||
-                            x.Payments.Any(p => p.PaymentType == "DEPOSIT" &&
-                                                p.PaymentStatus == "PAID"))
+                            x.Payments.Any(p => p.PaymentStatus == "PAID"))
                 .Where(x => x.OrderDetails.Any(od => !od.StaffGroupId.HasValue))
                 .OrderByDescending(x => x.CreatedAt)
                 .AsQueryable();

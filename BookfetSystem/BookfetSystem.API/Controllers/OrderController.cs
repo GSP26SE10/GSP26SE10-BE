@@ -114,5 +114,22 @@ namespace BookfetSystem.API.Controllers
 
             return BadRequest(result);
         }
+
+        [HttpPut("{orderId}/owner/review")]
+        public async Task<ActionResult> ReviewOrder(int orderId, [FromBody] ReviewOrderRequest request)
+        {
+            var result = await _orderService.ReviewOrderAsync(orderId, request.Status);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }
