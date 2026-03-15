@@ -17,15 +17,41 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderDetailStaffTaskRepository _taskRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly UserRepository _userRepository;
+        private readonly StaffGroupRepository _staffGroupRepository;
+        private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
 
         public OrderDetailStaffTaskService(
             OrderDetailStaffTaskRepository taskRepository,
             OrderDetailRepository orderDetailRepository,
-            UserRepository userRepository)
+            UserRepository userRepository,
+            StaffGroupRepository staffGroupRepository,
+            StaffGroupMemberRepository staffGroupMemberRepository)
         {
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
             _userRepository = userRepository;
+            _staffGroupRepository = staffGroupRepository;
+            _staffGroupMemberRepository = staffGroupMemberRepository;
+        }
+
+        public async Task<PagedResponse<StaffMyTaskResponse>> GetMyTasksAsync(int staffId, int page, int pageSize)
+        {
+            var query = _taskRepository.GetMyTasksByStaffId(staffId);
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<StaffMyTaskResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<StaffMyTaskResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<PagedResponse<OrderDetailStaffTaskResponse>> GetAllOrderDetailStaffTaskFilteredAsync(OrderDetailStaffTaskFilterRequest request, int page, int pageSize)
@@ -50,8 +76,24 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<OrderDetailStaffTaskResponse>> CreateAsync(OrderDetailStaffTaskCreateRequest request)
+        public async Task<ApiResponse<OrderDetailStaffTaskResponse>> CreateAsync(OrderDetailStaffTaskCreateRequest request, int leaderId)
         {
+            // 1. Tìm staff group của leader
+            var staffGroup = await _staffGroupRepository
+                .GetAllStaffGroupFiltered(new StaffGroup { LeaderId = leaderId })
+                .FirstOrDefaultAsync(sg => sg.Status == StaffGroupStatus.ACTIVE.ToString());
+
+            if (staffGroup == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Leader does not have an active staff group.",
+                    Data = null
+                };
+            }
+
+            // 2. Kiểm tra order detail tồn tại và thuộc staff group của leader
             var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
             if (orderDetail == null)
             {
@@ -63,6 +105,17 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (orderDetail.StaffGroupId != staffGroup.StaffGroupId)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Order detail does not belong to your staff group.",
+                    Data = null
+                };
+            }
+
+            // 3. Kiểm tra staff tồn tại
             var staff = await _userRepository.GetByIdAsync(request.StaffId);
             if (staff == null)
             {
@@ -70,6 +123,18 @@ namespace BookfetSystem.Services.Implement
                 {
                     Success = false,
                     Message = "Staff not found.",
+                    Data = null
+                };
+            }
+
+            // 4. Kiểm tra staff có là thành viên của group leader không
+            var isMember = await _staffGroupMemberRepository.ExistsAsync(staffGroup.StaffGroupId, request.StaffId);
+            if (!isMember)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Staff does not belong to your staff group.",
                     Data = null
                 };
             }
