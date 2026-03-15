@@ -29,6 +29,7 @@ namespace BookfetSystem.Services.Models.Request
         public int StaffGroupMemberId { get; set; }
         public int? StaffGroupId { get; set; }
         public int? StaffId { get; set; }
-        public string? Status { get; set; }
+        /// <summary>Filter theo status: 1 = ACTIVE, 0 = INACTIVE (enum số, DB lưu string).</summary>
+        public StaffGroupStatus? Status { get; set; }
     }
 }

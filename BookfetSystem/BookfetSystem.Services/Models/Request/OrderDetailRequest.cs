@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookfetSystem.Services.Models.Request
@@ -60,7 +60,9 @@ namespace BookfetSystem.Services.Models.Request
 
         public int? OrderId { get; set; }
 
-        public string? Status { get; set; }
+        public OrderStatus? Status { get; set; }
+
+        public OrderDetailType? Type { get; set; }
 
         public int? MenuId { get; set; }
 

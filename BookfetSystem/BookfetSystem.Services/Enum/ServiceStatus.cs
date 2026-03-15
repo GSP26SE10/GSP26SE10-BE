@@ -11,10 +11,4 @@ namespace BookfetSystem.Services.Enum
         UNAVAILABLE = 0,
         AVAILABLE = 1
     }
-    public enum ServiceType
-    {
-        SPOON_FORK_BOWL = 1,
-        STOVE = 2,
-        KARAOKE = 3
-    }
 }

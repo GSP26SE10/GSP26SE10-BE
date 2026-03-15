@@ -17,9 +17,10 @@ namespace BookfetSystem.Services.Mappings
     {
         public void Register(TypeAdapterConfig config)
         {
-            //filter request -> entity
+            //filter request -> entity (Status: enum số -> string để query DB)
             config.NewConfig<UserFilterRequest, User>()
-                  .IgnoreNullValues(true);
+                  .IgnoreNullValues(true)
+                  .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
             config.NewConfig<User, UserResponse>()
                   .Map(dest => dest.RoleName,
                       src => src.Role != null ? src.Role.RoleName : null)

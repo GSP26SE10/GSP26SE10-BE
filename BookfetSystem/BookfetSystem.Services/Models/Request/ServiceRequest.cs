@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Enum;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -34,6 +34,6 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? ServiceName { get; set; }
 
-        public string? Status { get; set; }
+        public ServiceStatus? Status { get; set; }
     }
 }

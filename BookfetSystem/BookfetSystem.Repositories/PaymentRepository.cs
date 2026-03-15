@@ -30,20 +30,19 @@ namespace BookfetSystem.Repositories
                 query = query.Where(p => p.OrderId == filter.OrderId);
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.PaymentType))
+            if (!string.IsNullOrEmpty(filter.PaymentType))
             {
-                query = query.Where(p => p.PaymentType != null && p.PaymentType.ToLower().Contains(filter.PaymentType.ToLower()));
+                query = query.Where(p => p.PaymentType == filter.PaymentType);
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.PaymentMethod))
+            if (!string.IsNullOrEmpty(filter.PaymentMethod))
             {
-                query = query.Where(p => p.PaymentMethod != null && p.PaymentMethod.ToLower().Contains(filter.PaymentMethod.ToLower()));
+                query = query.Where(p => p.PaymentMethod == filter.PaymentMethod);
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.PaymentStatus))
+            if (!string.IsNullOrEmpty(filter.PaymentStatus))
             {
-                query = query.Where(p => p.PaymentStatus != null &&
-                    p.PaymentStatus.ToLower().Contains(filter.PaymentStatus.ToLower()));
+                query = query.Where(p => p.PaymentStatus == filter.PaymentStatus);
             }
 
             return query.OrderByDescending(p => p.PaidAt);

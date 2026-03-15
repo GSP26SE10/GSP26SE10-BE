@@ -31,11 +31,9 @@ namespace BookfetSystem.Repositories
                     x.ServiceName.ToLower().Contains(filter.ServiceName.ToLower()));
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Status))
+            if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(x =>
-                    x.Status != null &&
-                    x.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(x => x.Status == filter.Status);
             }
 
             return query.OrderByDescending(x => x.CreatedAt);

@@ -12,7 +12,8 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<MenuCategoryFilterRequest, MenuCategory>()
-                  .IgnoreNullValues(true);
+                  .IgnoreNullValues(true)
+                  .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
 
             config.NewConfig<MenuCategory, MenuCategoryResponse>()
                   .Map(dest => dest.Status,

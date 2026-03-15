@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Enum;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -56,7 +56,8 @@ namespace BookfetSystem.Services.Models.Request
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
-        public string? Status { get; set; }
+        /// <summary>Filter theo status: 1 = ACTIVE, 0 = INACTIVE (enum số, DB lưu string).</summary>
+        public UserStatus? Status { get; set; }
         public string? UserName { get; set; }
         public int? RoleId { get; set; }
     }

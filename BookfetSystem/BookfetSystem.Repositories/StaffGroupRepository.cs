@@ -31,7 +31,7 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(sg => sg.Status.Contains(filter.Status));
+                query = query.Where(sg => sg.Status == filter.Status);
             }
 
             if (filter.LeaderId != null)

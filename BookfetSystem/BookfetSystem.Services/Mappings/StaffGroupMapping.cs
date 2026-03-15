@@ -11,8 +11,10 @@ namespace BookfetSystem.Services.Mappings
     {
         public void Register(TypeAdapterConfig config)
         {
+            // Filter: Status enum số -> string để query DB
             config.NewConfig<StaffGroupFilterRequest, StaffGroup>()
-                  .IgnoreNullValues(true);
+                  .IgnoreNullValues(true)
+                  .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
 
             config.NewConfig<StaffGroup, StaffGroupResponse>()
                   .Map(dest => dest.LeaderName,

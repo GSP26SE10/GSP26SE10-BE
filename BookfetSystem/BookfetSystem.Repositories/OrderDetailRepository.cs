@@ -32,9 +32,14 @@ namespace BookfetSystem.Repositories
                 query = query.Where(x => x.OrderId == filter.OrderId);
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Status))
+            if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(x => x.Status != null && x.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(x => x.Status == filter.Status);
+            }
+
+            if (!string.IsNullOrEmpty(filter.Type))
+            {
+                query = query.Where(x => x.Type == filter.Type);
             }
 
             if (filter.MenuId.HasValue && filter.MenuId.Value != 0)

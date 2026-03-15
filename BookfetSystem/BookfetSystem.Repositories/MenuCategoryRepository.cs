@@ -32,9 +32,9 @@ namespace BookfetSystem.Repositories
                 query = query.Where(mc => mc.Description != null && mc.Description.ToLower().Contains(filter.Description.ToLower()));
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Status))
+            if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(mc => mc.Status != null && mc.Status.ToLower().Contains(filter.Status.ToLower()));
+                query = query.Where(mc => mc.Status == filter.Status);
             }
 
             return query.OrderBy(mc => mc.MenuCategoryName);

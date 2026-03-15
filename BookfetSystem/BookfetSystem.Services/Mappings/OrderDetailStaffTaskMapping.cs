@@ -12,7 +12,8 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<OrderDetailStaffTaskFilterRequest, OrderDetailStaffTask>()
-                  .IgnoreNullValues(true);
+                  .IgnoreNullValues(true)
+                  .Map(dest => dest.TaskStatus, src => src.TaskStatus.HasValue ? src.TaskStatus.Value.ToString() : null);
 
             config.NewConfig<OrderDetailStaffTask, OrderDetailStaffTaskResponse>()
                   .Map(dest => dest.StaffName,
