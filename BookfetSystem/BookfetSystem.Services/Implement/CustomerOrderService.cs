@@ -577,5 +577,61 @@ namespace BookfetSystem.Services.Services
                 Data = updated
             };
         }
+
+        public async Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status)
+        {
+            if (!System.Enum.IsDefined(typeof(OrderStatus), status))
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Invalid status value.",
+                    Data = null
+                };
+            }
+
+            var targetStatus = (OrderStatus)status;
+            if (targetStatus != OrderStatus.APPROVED && targetStatus != OrderStatus.REJECTED)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Only APPROVED(2) or REJECTED(3) are allowed.",
+                    Data = null
+                };
+            }
+
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+            if (order == null)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            if (!string.Equals(order.Status, OrderStatus.PENDING.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Only PENDING orders can be reviewed.",
+                    Data = null
+                };
+            }
+
+            order.Status = targetStatus.ToString();
+            await _orderRepository.UpdateAsync(order);
+
+            var updated = await GetById(orderId);
+            return new ApiResponse<OrderResponse>
+            {
+                Success = true,
+                Message = $"Order has been {targetStatus} successfully.",
+                Data = updated
+            };
+        }
     }
 }
