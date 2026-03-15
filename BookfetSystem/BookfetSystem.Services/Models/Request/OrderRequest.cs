@@ -58,4 +58,16 @@ namespace BookfetSystem.Services.Models.Request
 
         public int Quantity { get; set; }
     }
+
+    public class AssignOrderStaffGroupRequest
+    {
+        [Required(ErrorMessage = "StaffGroupId is required.")]
+        public int StaffGroupId { get; set; }
+    }
+
+    public class ReviewOrderRequest
+    {
+        [Required(ErrorMessage = "Status is required.")]
+        public int Status { get; set; }
+    }
 }

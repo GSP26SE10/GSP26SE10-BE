@@ -46,5 +46,16 @@ namespace BookfetSystem.Repositories
 
             return query.OrderByDescending(t => t.StartTime);
         }
+
+        public IQueryable<OrderDetailStaffTask> GetMyTasksByStaffId(int staffId)
+        {
+            return _context.OrderDetailStaffTasks
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.Menu)
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.PartyCategory)
+                .Where(t => t.StaffId == staffId)
+                .OrderByDescending(t => t.StartTime);
+        }
     }
 }

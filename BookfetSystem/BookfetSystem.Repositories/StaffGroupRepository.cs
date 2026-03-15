@@ -47,6 +47,23 @@ namespace BookfetSystem.Repositories
             return await _context.OrderDetails
                 .AnyAsync(od => od.StaffGroupId == staffGroupId);
         }
+
+        public async Task<StaffGroup?> GetAssignmentOverviewByLeaderIdAsync(int leaderId)
+        {
+            return await _context.StaffGroups
+                .Include(sg => sg.Leader)
+                .Include(sg => sg.StaffGroupMembers)
+                    .ThenInclude(member => member.Staff)
+                .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.Menu)
+                .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.PartyCategory)
+                .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailStaffTasks)
+                .Where(sg => sg.LeaderId == leaderId)
+                .OrderByDescending(sg => sg.StaffGroupId)
+                .FirstOrDefaultAsync();
+        }
     }
 }
 

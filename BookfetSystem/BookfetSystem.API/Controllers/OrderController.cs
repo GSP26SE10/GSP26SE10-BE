@@ -90,5 +90,46 @@ namespace BookfetSystem.API.Controllers
             }
             return BadRequest(result);
         }
+
+        [HttpGet("owner/assignable")]
+        public async Task<ActionResult> GetDepositedApprovedOrdersForAssignment([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var orders = await _orderService.GetDepositedApprovedForAssignmentAsync(page, pageSize);
+            return Ok(orders);
+        }
+
+        [HttpPut("{orderId}/assign-staff-group")]
+        public async Task<ActionResult> AssignOrderToStaffGroup(int orderId, [FromBody] AssignOrderStaffGroupRequest request)
+        {
+            var result = await _orderService.AssignOrderToStaffGroupAsync(orderId, request.StaffGroupId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [HttpPut("{orderId}/owner/review")]
+        public async Task<ActionResult> ReviewOrder(int orderId, [FromBody] ReviewOrderRequest request)
+        {
+            var result = await _orderService.ReviewOrderAsync(orderId, request.Status);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

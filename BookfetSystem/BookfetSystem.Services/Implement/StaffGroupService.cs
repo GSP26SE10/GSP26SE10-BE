@@ -61,7 +61,7 @@ namespace BookfetSystem.Services.Implement
             {
                 StaffGroupName = request.StaffGroupName?.Trim(),
                 LeaderId = request.LeaderId,
-                Status = "ACTIVE"
+                Status = StaffGroupStatus.ACTIVE.ToString()
             };
 
             var affected = await _staffGroupRepository.CreateAsync(entity);
@@ -179,6 +179,23 @@ namespace BookfetSystem.Services.Implement
                 Message = "Failed to delete staff group.",
                 Data = false
             };
+        }
+
+        public async Task<StaffGroupAssignmentOverviewResponse?> GetAssignmentOverviewByLeaderAsync(int leaderId)
+        {
+            var staffGroup = await _staffGroupRepository.GetAssignmentOverviewByLeaderIdAsync(leaderId);
+            if (staffGroup == null)
+            {
+                return null;
+            }
+
+            var response = staffGroup.Adapt<StaffGroupAssignmentOverviewResponse>();
+
+            response.Members = response.Members
+                .Where(m => m.StaffId.HasValue)
+                .ToList();
+
+            return response;
         }
     }
 }

@@ -11,6 +11,7 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<StaffGroupResponse>> CreateAsync(StaffGroupCreateRequest request);
         Task<ApiResponse<StaffGroupResponse>> UpdateAsync(int id, StaffGroupUpdateRequest request);
         Task<ApiResponse<bool>> DeleteAsync(int id);
+        Task<StaffGroupAssignmentOverviewResponse?> GetAssignmentOverviewByLeaderAsync(int leaderId);
     }
 }
 
