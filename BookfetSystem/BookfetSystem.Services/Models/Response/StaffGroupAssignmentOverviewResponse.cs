@@ -35,5 +35,10 @@ namespace BookfetSystem.Services.Models.Response
         public int TaskId { get; set; }
         public string? TaskName { get; set; }
         public int? Status { get; set; }
+        public int? AssigneeId { get; set; }
+        public string? AssigneeName { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public string? Note { get; set; }
     }
 }

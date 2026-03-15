@@ -43,8 +43,17 @@ namespace BookfetSystem.Services.Mappings
                        src => src.OrderDetailStaffTasks.OrderBy(t => t.TaskId));
 
             config.NewConfig<OrderDetailStaffTask, StaffGroupAssignmentTaskResponse>()
+               .Map(dest => dest.AssigneeId,
+                    src => src.StaffId)
+               .Map(dest => dest.AssigneeName,
+                    src => src.Staff != null ? src.Staff.FullName : null)
+               .Map(dest => dest.StartTime,
+                    src => src.StartTime)
+               .Map(dest => dest.EndTime,
+                    src => src.EndTime)
                   .Map(dest => dest.Status,
-                        src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus));
+                        src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus))
+               .Map(dest => dest.Note, src => src.Note);
         }
 
           private static string? GetFirstMenuImage(string? rawImgUrl)
