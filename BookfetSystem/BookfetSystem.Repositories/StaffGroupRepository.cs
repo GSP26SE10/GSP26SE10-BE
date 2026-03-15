@@ -59,7 +59,10 @@ namespace BookfetSystem.Repositories
                 .Include(sg => sg.OrderDetails)
                     .ThenInclude(od => od.PartyCategory)
                 .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.Order)
+                .Include(sg => sg.OrderDetails)
                     .ThenInclude(od => od.OrderDetailStaffTasks)
+                        .ThenInclude(task => task.Staff)
                 .Where(sg => sg.LeaderId == leaderId)
                 .OrderByDescending(sg => sg.StaffGroupId)
                 .FirstOrDefaultAsync();
