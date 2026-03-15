@@ -25,6 +25,9 @@ namespace BookfetSystem.Services.Mappings
                       src => src.Role != null ? src.Role.RoleName : null)
                   .Map(dest => dest.Status,
                       src => EnumHelper.TryParseToInt<UserStatus>(src.Status));
+            config.NewConfig<User, LoginResponse>()
+                  .Map(dest => dest.RoleName,
+                      src => src.Role != null ? src.Role.RoleName : null);
         }
     }
 }

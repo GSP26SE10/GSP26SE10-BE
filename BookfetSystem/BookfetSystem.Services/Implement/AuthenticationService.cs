@@ -254,6 +254,9 @@ namespace BookfetSystem.Services.Implement
 
                 var response = account.Adapt<LoginResponse>();
                 response.AccessToken = jwtToken;
+                // Map vẫn chạy khi DB null (chỉ ra null). Ghi đè bằng giá trị từ Google để response luôn có email + fullName.
+                response.Email = email;
+                response.FullName = fullName;
 
                 return new ApiResponse<LoginResponse>
                 {

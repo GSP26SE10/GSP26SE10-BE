@@ -127,7 +127,20 @@ namespace BookfetSystem.API.Controllers
                     ? mobileTarget
                     : $"{frontendUrl}/auth/callback";
 
-                return Redirect($"{target}?token={Uri.EscapeDataString(result.Data.AccessToken)}");
+                var d = result.Data;
+                var query = new List<string>
+                {
+                    $"token={Uri.EscapeDataString(d.AccessToken ?? "")}"
+                };
+                if (isMobile && mobileTarget != null)
+                {
+                    query.Add($"userId={d.UserId}");
+                    if (!string.IsNullOrEmpty(d.Email)) query.Add($"email={Uri.EscapeDataString(d.Email)}");
+                    if (!string.IsNullOrEmpty(d.FullName)) query.Add($"fullName={Uri.EscapeDataString(d.FullName)}");
+                    if (!string.IsNullOrEmpty(d.RoleName)) query.Add($"roleName={Uri.EscapeDataString(d.RoleName)}");
+                    if (!string.IsNullOrEmpty(d.Status)) query.Add($"status={Uri.EscapeDataString(d.Status)}");
+                }
+                return Redirect($"{target}?{string.Join("&", query)}");
             }
 
             // Xử lý lỗi khi backend login thất bại
