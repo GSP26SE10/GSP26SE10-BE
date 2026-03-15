@@ -260,6 +260,63 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<ApiResponse<OrderDetailStaffTaskResponse>> UpdateMyTaskStatusAsync(int taskId, int staffId, StaffUpdateTaskStatusRequest request)
+        {
+            var entity = await _taskRepository.GetByIdAsync(taskId);
+            if (entity == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Task not found.",
+                    Data = null
+                };
+            }
+
+            if (entity.StaffId != staffId)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "You are not allowed to update this task.",
+                    Data = null
+                };
+            }
+
+            entity.TaskStatus = request.TaskStatus.ToString();
+            var affected = await _taskRepository.UpdateAsync(entity);
+            if (affected <= 0)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Failed to update task status.",
+                    Data = null
+                };
+            }
+
+            var staff = await _userRepository.GetByIdAsync(staffId);
+            var response = new OrderDetailStaffTaskResponse
+            {
+                TaskId = entity.TaskId,
+                OrderDetailId = entity.OrderDetailId,
+                StaffId = entity.StaffId,
+                TaskName = entity.TaskName,
+                TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
+                StartTime = entity.StartTime,
+                EndTime = entity.EndTime,
+                Note = entity.Note,
+                StaffName = staff?.FullName
+            };
+
+            return new ApiResponse<OrderDetailStaffTaskResponse>
+            {
+                Success = true,
+                Message = "Task status updated successfully.",
+                Data = response
+            };
+        }
+
         public async Task<ApiResponse<bool>> DeleteAsync(int id)
         {
             var entity = await _taskRepository.GetByIdAsync(id);

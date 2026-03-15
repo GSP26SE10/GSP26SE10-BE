@@ -47,4 +47,9 @@ namespace BookfetSystem.Services.Models.Request
         public string? TaskName { get; set; }
         public string? TaskStatus { get; set; }
     }
+
+    public class StaffUpdateTaskStatusRequest
+    {
+        public StaffTaskStatus TaskStatus { get; set; }
+    }
 }

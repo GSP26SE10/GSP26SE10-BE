@@ -19,7 +19,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [Authorize]
-        [HttpGet("my-tasks")]
+        [HttpGet("staff-tasks")]
         public async Task<ActionResult> GetMyTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var staffIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -53,6 +53,30 @@ namespace BookfetSystem.API.Controllers
             if (result.Success)
             {
                 return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPatch("{id}/staff-task-status")]
+        public async Task<ActionResult> UpdateMyTaskStatus(int id, [FromBody] StaffUpdateTaskStatusRequest request)
+        {
+            var staffIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(staffIdValue, out var staffId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing staff id." });
+            }
+
+            var result = await _orderDetailStaffTaskService.UpdateMyTaskStatusAsync(id, staffId, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Task not found.")
+            {
+                return NotFound(result);
             }
 
             return BadRequest(result);
