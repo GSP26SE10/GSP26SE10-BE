@@ -1,6 +1,8 @@
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
@@ -16,6 +18,20 @@ namespace BookfetSystem.API.Controllers
             _orderDetailStaffTaskService = orderDetailStaffTaskService;
         }
 
+        [Authorize]
+        [HttpGet("my-tasks")]
+        public async Task<ActionResult> GetMyTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var staffIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(staffIdValue, out var staffId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing staff id." });
+            }
+
+            var result = await _orderDetailStaffTaskService.GetMyTasksAsync(staffId, page, pageSize);
+            return Ok(result);
+        }
+
         [HttpGet]
         public async Task<ActionResult> GetAllOrderDetailStaffTasksFiltered([FromQuery] OrderDetailStaffTaskFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -23,10 +39,17 @@ namespace BookfetSystem.API.Controllers
             return Ok(tasks);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult> CreateOrderDetailStaffTask([FromBody] OrderDetailStaffTaskCreateRequest request)
         {
-            var result = await _orderDetailStaffTaskService.CreateAsync(request);
+            var leaderIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(leaderIdValue, out var leaderId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing leader id." });
+            }
+
+            var result = await _orderDetailStaffTaskService.CreateAsync(request, leaderId);
             if (result.Success)
             {
                 return Ok(result);
