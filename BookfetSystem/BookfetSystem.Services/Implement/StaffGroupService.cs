@@ -56,7 +56,17 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
-            
+
+            var alreadyHasGroup = await _staffGroupRepository.LeaderHasGroupAsync(request.LeaderId);
+            if (alreadyHasGroup)
+            {
+                return new ApiResponse<StaffGroupResponse>
+                {
+                    Success = false,
+                    Message = "Leader already has a staff group.",
+                    Data = null
+                };
+            }
 
             var entity = new StaffGroup
             {
