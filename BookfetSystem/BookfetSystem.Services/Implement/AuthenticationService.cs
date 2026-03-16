@@ -22,12 +22,43 @@ namespace BookfetSystem.Services.Implement
 {
     public class AuthenticationService : IAuthenticationService
     {
+        private const string VerifyCodeCacheKeyPrefix = "verify:";
+        private const string DefaultVerifyCodeChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        private const int DefaultVerifyCodeLength = 6;
+
         private readonly UserRepository _userRepository;
+        private readonly IEmailService _emailService;
+        private readonly ICache _cache;
         private readonly IConfiguration _configuration;
-        public AuthenticationService(UserRepository userRepository, IConfiguration configuration)
+
+        public AuthenticationService(
+            UserRepository userRepository,
+            IEmailService emailService,
+            ICache cache,
+            IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _emailService = emailService;
+            _cache = cache;
             _configuration = configuration;
+        }
+
+        /// <summary>
+        /// Sinh mã xác thực từ bộ ký tự và độ dài cấu hình (Verification:VerifyCodeChars, Verification:VerifyCodeLength).
+        /// </summary>
+        public string GenerateVerifyCode()
+        {
+            var verification = _configuration.GetSection("Verification");
+            var charsStr = verification["VerifyCodeChars"] ?? DefaultVerifyCodeChars;
+            var length = int.TryParse(verification["VerifyCodeLength"], out var n) && n > 0 ? n : DefaultVerifyCodeLength;
+            var chars = charsStr.ToCharArray();
+            if (chars.Length == 0) chars = DefaultVerifyCodeChars.ToCharArray();
+
+            var span = new char[length];
+            var rnd = Random.Shared;
+            for (int i = 0; i < length; i++)
+                span[i] = chars[rnd.Next(chars.Length)];
+            return new string(span);
         }
         public async Task<ApiResponse<LoginResponse>> Login(LoginRequest loginRequest)
         {
@@ -274,6 +305,232 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+        }
+
+        public async Task<ApiResponse<bool>> Register(RegisterRequest request)
+        {
+            var existingByEmail = await _userRepository.GetUserByEmailAsync(request.Email);
+            if (existingByEmail != null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email is already registered.",
+                    Data = false
+                };
+            }
+
+            var existingByUsername = await _userRepository.GetUserByUserName(request.UserName);
+            if (existingByUsername != null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Username already exists.",
+                    Data = false
+                };
+            }
+
+            var user = new User
+            {
+                FullName = request.FullName,
+                Email = request.Email,
+                UserName = request.UserName,
+                Phone = request.Phone,
+                Address = request.Address,
+                Status = "INACTIVE",
+                RoleId = 4, // USER
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var created = await _userRepository.CreateAsync(user);
+            if (created <= 0)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Failed to create account.",
+                    Data = false
+                };
+            }
+
+            var verifyCode = GenerateVerifyCode();
+            var cacheKey = VerifyCodeCacheKeyPrefix + request.Email;
+            _cache.Set(cacheKey, verifyCode, TimeSpan.FromMinutes(2));
+
+            var subject = "Mã xác thực - Bookfet System";
+            var htmlBody = BuildVerificationEmailBody(request.FullName, verifyCode);
+
+            try
+            {
+                await _emailService.SendAsync(request.Email, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Registration succeeded but sending email failed: {ex.Message}",
+                    Data = false
+                };
+            }
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Registration successful. Please check your email for the verification code.",
+                Data = true
+            };
+        }
+
+        public async Task<ApiResponse<bool>> VerifyEmail(VerifyEmailRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email and verification code are required.",
+                    Data = false
+                };
+            }
+
+            var cacheKey = VerifyCodeCacheKeyPrefix + request.Email.Trim();
+            var cachedCode = _cache.Get(cacheKey);
+            if (cachedCode == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Code has expired or does not exist. Please register again or request a new code.",
+                    Data = false
+                };
+            }
+
+            if (!string.Equals(cachedCode, request.Code.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Invalid verification code.",
+                    Data = false
+                };
+            }
+
+            var user = await _userRepository.GetUserByEmailAsync(request.Email.Trim());
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account not found.",
+                    Data = false
+                };
+            }
+
+            if (user.Status == "ACTIVE")
+            {
+                _cache.Remove(cacheKey);
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Account was already verified. You can log in.",
+                    Data = true
+                };
+            }
+
+            user.Status = "ACTIVE";
+            await _userRepository.UpdateAsync(user);
+            _cache.Remove(cacheKey);
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Email verified successfully. You can now log in.",
+                Data = true
+            };
+        }
+
+        public async Task<ApiResponse<bool>> ResendVerificationCode(ResendVerificationRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email is required.",
+                    Data = false
+                };
+            }
+
+            var email = request.Email.Trim();
+            var user = await _userRepository.GetUserByEmailAsync(email);
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account not found.",
+                    Data = false
+                };
+            }
+
+            if (user.Status != "INACTIVE")
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account already verified or not found.",
+                    Data = false
+                };
+            }
+
+            var verifyCode = GenerateVerifyCode();
+            var cacheKey = VerifyCodeCacheKeyPrefix + email;
+            _cache.Set(cacheKey, verifyCode, TimeSpan.FromMinutes(2));
+
+            var subject = "Mã xác thực - Bookfet System";
+            var htmlBody = BuildVerificationEmailBody(user.FullName ?? user.Email, verifyCode);
+
+            try
+            {
+                await _emailService.SendAsync(email, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Failed to send email: {ex.Message}",
+                    Data = false
+                };
+            }
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "A new verification code has been sent to your email.",
+                Data = true
+            };
+        }
+
+        private static string BuildVerificationEmailBody(string fullName, string verifyCode)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+    <h2>Xin chào {fullName}!</h2>
+    <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>Bookfet System</strong> — nền tảng đặt tiệc và quản lý sự kiện tin cậy. Để hoàn tất đăng ký và bảo vệ tài khoản của bạn, vui lòng sử dụng mã xác thực bên dưới.</p>
+    <p>Mã xác thực của bạn là:</p>
+    <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #2563eb;'>{verifyCode}</p>
+    <p>Mã có hiệu lực trong <strong>2 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+    <hr/>
+    <p style='font-size: 12px; color: #666;'>Bookfet System</p>
+</body>
+</html>";
         }
     }
 }
