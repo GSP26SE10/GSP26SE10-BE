@@ -23,6 +23,7 @@ namespace BookfetSystem.Services.Implement
     public class AuthenticationService : IAuthenticationService
     {
         private const string VerifyCodeCacheKeyPrefix = "verify:";
+        private const string ResetPasswordCacheKeyPrefix = "reset:";
         private const string DefaultVerifyCodeChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         private const int DefaultVerifyCodeLength = 6;
 
@@ -515,6 +516,139 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<ApiResponse<bool>> ForgotPassword(ForgotPasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.EmailOrUsername))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email or username is required.",
+                    Data = false
+                };
+            }
+
+            var identifier = request.EmailOrUsername.Trim();
+            var user = await _userRepository.GetUserByUsernameOrEmailAsync(identifier);
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account not found.",
+                    Data = false
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User does not have a valid email.",
+                    Data = false
+                };
+            }
+
+            var resetCode = GenerateVerifyCode();
+            var cacheKey = ResetPasswordCacheKeyPrefix + user.Email.Trim();
+            _cache.Set(cacheKey, resetCode, TimeSpan.FromMinutes(10));
+
+            var subject = "Đặt lại mật khẩu - Bookfet System";
+            var htmlBody = BuildResetPasswordEmailBody(user.FullName ?? user.Email, resetCode);
+
+            try
+            {
+                await _emailService.SendAsync(user.Email, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Failed to send reset password email: {ex.Message}",
+                    Data = false
+                };
+            }
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Reset password code has been sent to your email.",
+                Data = true
+            };
+        }
+
+        public async Task<ApiResponse<bool>> ResetPassword(ResetPasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.EmailOrUsername) ||
+                string.IsNullOrWhiteSpace(request.Code) ||
+                string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Email/username, code and new password are required.",
+                    Data = false
+                };
+            }
+
+            var identifier = request.EmailOrUsername.Trim();
+            var user = await _userRepository.GetUserByUsernameOrEmailAsync(identifier);
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account not found.",
+                    Data = false
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User does not have a valid email.",
+                    Data = false
+                };
+            }
+
+            var cacheKey = ResetPasswordCacheKeyPrefix + user.Email.Trim();
+            var cachedCode = _cache.Get(cacheKey);
+            if (cachedCode == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Code has expired or does not exist. Please request a new code.",
+                    Data = false
+                };
+            }
+
+            if (!string.Equals(cachedCode, request.Code.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Invalid reset code.",
+                    Data = false
+                };
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await _userRepository.UpdateAsync(user);
+            _cache.Remove(cacheKey);
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Password has been reset successfully.",
+                Data = true
+            };
+        }
+
         private static string BuildVerificationEmailBody(string fullName, string verifyCode)
         {
             return $@"
@@ -527,6 +661,24 @@ namespace BookfetSystem.Services.Implement
     <p>Mã xác thực của bạn là:</p>
     <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #2563eb;'>{verifyCode}</p>
     <p>Mã có hiệu lực trong <strong>2 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+    <hr/>
+    <p style='font-size: 12px; color: #666;'>Bookfet System</p>
+</body>
+</html>";
+        }
+
+        private static string BuildResetPasswordEmailBody(string fullName, string resetCode)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+    <h2>Xin chào {fullName}!</h2>
+    <p>Bạn vừa yêu cầu đặt lại mật khẩu tại <strong>Bookfet System</strong>. Vui lòng sử dụng mã bên dưới để tiếp tục quá trình đặt lại mật khẩu.</p>
+    <p>Mã đặt lại mật khẩu của bạn là:</p>
+    <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #dc2626;'>{resetCode}</p>
+    <p>Mã có hiệu lực trong <strong>10 phút</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
     <hr/>
     <p style='font-size: 12px; color: #666;'>Bookfet System</p>
 </body>
