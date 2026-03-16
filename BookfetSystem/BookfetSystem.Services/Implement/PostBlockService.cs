@@ -1,5 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -28,6 +30,11 @@ namespace BookfetSystem.Services.Implement
         public async Task<PagedResponse<PostBlockResponse>> GetAllPostBlockFilteredAsync(PostBlockFilterRequest request, int page, int pageSize)
         {
             var entityFilter = request.Adapt<PostBlock>();
+            if (request.Type != 0)
+            {
+                entityFilter.Type = EnumDescriptionHelper
+                    .GetDescription((PostBlockType)request.Type);
+            }
             var query = _postBlockRepository.GetAllPostBlockFiltered(entityFilter);
 
             var totalCount = await query.CountAsync();
@@ -62,7 +69,7 @@ namespace BookfetSystem.Services.Implement
             var entity = new PostBlock
             {
                 PostId = request.PostId,
-                Type = request.Type.ToString(),
+                Type = EnumDescriptionHelper.GetDescription(request.Type),
                 Position = request.Position,
                 Data = GetDataJsonString(request.Data),
                 CreatedAt = DateTime.UtcNow,
@@ -102,7 +109,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            entity.Type = request.Type.ToString();
+            entity.Type = EnumDescriptionHelper.GetDescription(request.Type);
             entity.Position = request.Position;
             entity.Data = GetDataJsonString(request.Data);
             entity.UpdatedAt = DateTime.UtcNow;
@@ -183,7 +190,8 @@ namespace BookfetSystem.Services.Implement
             {
                 PostBlockId = entity.PostBlockId,
                 PostId = entity.PostId,
-                Type = entity.Type,
+                Type = (int)EnumDescriptionHelper
+            .GetEnumFromDescription<PostBlockType>(entity.Type),
                 Position = entity.Position,
                 Data = data,
                 CreatedAt = entity.CreatedAt,
