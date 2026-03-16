@@ -19,6 +19,33 @@ namespace BookfetSystem.API.Controllers
                 _authenticationService = authenticationService;
                 _configuration = configuration;
             }
+        [HttpPost("register")]
+        public async Task<ActionResult> Register([FromBody] RegisterRequest request)
+        {
+            var result = await _authenticationService.Register(request);
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpPost("verify-email")]
+        public async Task<ActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            var result = await _authenticationService.VerifyEmail(request);
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpPost("resend-verification-code")]
+        public async Task<ActionResult> ResendVerificationCode([FromBody] ResendVerificationRequest request)
+        {
+            var result = await _authenticationService.ResendVerificationCode(request);
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
         [HttpPost("login")]
         public async Task<ActionResult> Login([FromBody] LoginRequest loginRequest)
         {
