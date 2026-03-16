@@ -2,6 +2,7 @@ using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -67,6 +68,11 @@ namespace BookfetSystem.Repositories
                 .OrderByDescending(sg => sg.StaffGroupId)
                 .FirstOrDefaultAsync();
         }
+        public async Task<bool> LeaderHasGroupAsync(int leader)
+        {
+            return await _context.StaffGroups.AnyAsync(sg => sg.LeaderId == leader);
+        }
+
     }
 }
 
