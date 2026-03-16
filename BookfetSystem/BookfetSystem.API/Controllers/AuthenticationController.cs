@@ -1,6 +1,7 @@
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using BookfetSystem.Services.Models.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -56,6 +57,40 @@ namespace BookfetSystem.API.Controllers
             }
 
             return Unauthorized(result);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var result = await _authenticationService.ForgotPassword(request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return BadRequest(new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Confirm password does not match new password.",
+                    Data = false
+                });
+            }
+
+            var result = await _authenticationService.ResetPassword(request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
 
         [HttpGet("google-login")]

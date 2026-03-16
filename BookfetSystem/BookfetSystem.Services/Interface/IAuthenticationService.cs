@@ -16,5 +16,7 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<bool>> Register(RegisterRequest request);
         Task<ApiResponse<bool>> VerifyEmail(VerifyEmailRequest request);
         Task<ApiResponse<bool>> ResendVerificationCode(ResendVerificationRequest request);
+        Task<ApiResponse<bool>> ForgotPassword(ForgotPasswordRequest request);
+        Task<ApiResponse<bool>> ResetPassword(ResetPasswordRequest request);
     }
 }
