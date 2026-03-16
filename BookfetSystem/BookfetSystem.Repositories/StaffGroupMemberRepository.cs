@@ -45,7 +45,7 @@ namespace BookfetSystem.Repositories
         public async Task<bool> ExistsAsync(int staffGroupId, int staffId, int? excludeMemberId = null)
         {
             var query = _context.StaffGroupMembers
-                .Where(m => m.StaffGroupId == staffGroupId && m.StaffId == staffId);
+                .Where(m => m.StaffGroupId  == staffGroupId && m.StaffId == staffId);
 
             if (excludeMemberId.HasValue)
             {
