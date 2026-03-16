@@ -138,7 +138,6 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
-
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
