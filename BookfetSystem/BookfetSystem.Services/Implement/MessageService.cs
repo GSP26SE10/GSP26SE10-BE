@@ -5,9 +5,12 @@ using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using BookfetSystem.Services.Hubs;
 using System;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace BookfetSystem.Services.Implement
 {
@@ -16,15 +19,18 @@ namespace BookfetSystem.Services.Implement
         private readonly MessageRepository _messageRepository;
         private readonly ConversationRepository _conversationRepository;
         private readonly UserRepository _userRepository;
+        private readonly IHubContext<ChatHub> _hubContext;
 
         public MessageService(
             MessageRepository messageRepository,
             ConversationRepository conversationRepository,
-            UserRepository userRepository)
+            UserRepository userRepository,
+            IHubContext<ChatHub> hubContext)
         {
             _messageRepository = messageRepository;
             _conversationRepository = conversationRepository;
             _userRepository = userRepository;
+            _hubContext = hubContext;
         }
 
         public async Task<PagedResponse<MessageResponse>> GetAllMessageFilteredAsync(MessageFilterRequest request, int page, int pageSize)
@@ -52,6 +58,7 @@ namespace BookfetSystem.Services.Implement
         public async Task<ApiResponse<MessageResponse>> CreateAsync(MessageCreateRequest request)
         {
             var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
+            var sender = await _userRepository.GetByIdAsync(request.SenderId);
             if (conversation == null)
             {
                 return new ApiResponse<MessageResponse>
@@ -62,7 +69,6 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var sender = await _userRepository.GetByIdAsync(request.SenderId);
             if (sender == null)
             {
                 return new ApiResponse<MessageResponse>
@@ -78,7 +84,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<MessageResponse>
                 {
                     Success = false,
-                    Message = "Sender must be the customer or owner of this conversation.",
+                    Message = "Sender not in conversation.",
                     Data = null
                 };
             }
@@ -92,6 +98,7 @@ namespace BookfetSystem.Services.Implement
             };
 
             var affected = await _messageRepository.CreateAsync(entity);
+
             if (affected > 0)
             {
                 var response = new MessageResponse
@@ -104,10 +111,29 @@ namespace BookfetSystem.Services.Implement
                     SenderName = sender.FullName
                 };
 
+                // ?? REALTIME (ROOM)
+                await _hubContext.Clients
+                    .Group(entity.ConversationId.ToString())
+                    .SendAsync("ReceiveMessage", response);
+
+                // ?? PUSH NOTI (optional nâng cao)
+                var receiverId = request.SenderId == conversation.CustomerId
+                    ? conversation.OwnerId
+                    : conversation.CustomerId;
+
+                await _hubContext.Clients
+                    .User(receiverId.ToString())
+                    .SendAsync("PushNotification", new
+                    {
+                        Title = "New Message",
+                        Body = response.Content,
+                        ConversationId = response.ConversationId
+                    });
+
                 return new ApiResponse<MessageResponse>
                 {
                     Success = true,
-                    Message = "Message created successfully.",
+                    Message = "Message sent",
                     Data = response
                 };
             }
@@ -115,7 +141,7 @@ namespace BookfetSystem.Services.Implement
             return new ApiResponse<MessageResponse>
             {
                 Success = false,
-                Message = "Failed to create message.",
+                Message = "Failed to create message",
                 Data = null
             };
         }
