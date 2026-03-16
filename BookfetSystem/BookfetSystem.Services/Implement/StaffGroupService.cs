@@ -1,4 +1,4 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
@@ -56,6 +56,7 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+            
 
             var entity = new StaffGroup
             {
@@ -95,6 +96,17 @@ namespace BookfetSystem.Services.Implement
                 {
                     Success = false,
                     Message = "Staff group not found.",
+                    Data = null
+                };
+            }
+
+            var leaderHasGroup = await _staffGroupRepository.LeaderHasGroupAsync(request.LeaderId);
+            if (leaderHasGroup)
+            {
+                return new ApiResponse<StaffGroupResponse>
+                {
+                    Success = false,
+                    Message = "Leader already in staff group",
                     Data = null
                 };
             }
