@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using BookfetSystem.Services.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -9,13 +11,16 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "MenuName is required.")]
         public string? MenuName { get; set; }
 
-        [Required(ErrorMessage = "MenuCategoryId is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "MenuCategoryId is required.")]
         public int MenuCategoryId { get; set; }
+
+        public List<int>? PartyCategoryIds { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "BasePrice must be greater than or equal to 0.")]
         public decimal? BasePrice { get; set; }
 
-        public string? ImgUrl { get; set; }
+        // Send multiple files using the same form key "ImgFiles".
+        public List<IFormFile>? ImgFiles { get; set; }
     }
 
     public class MenuUpdateRequest
@@ -23,13 +28,16 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "MenuName is required.")]
         public string? MenuName { get; set; }
 
-        [Required(ErrorMessage = "MenuCategoryId is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "MenuCategoryId is required.")]
         public int MenuCategoryId { get; set; }
+
+        public List<int>? PartyCategoryIds { get; set; }
 
         [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "BasePrice must be greater than or equal to 0.")]
         public decimal? BasePrice { get; set; }
 
-        public string? ImgUrl { get; set; }
+        // Send multiple files using the same form key "ImgFiles".
+        public List<IFormFile>? ImgFiles { get; set; }
         [EnumDataType(typeof(MenuStatus), ErrorMessage = "Invalid status value.")]
         public MenuStatus Status { get; set; }
     }

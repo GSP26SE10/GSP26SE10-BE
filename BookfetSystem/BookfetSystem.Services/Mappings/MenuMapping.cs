@@ -23,6 +23,18 @@ namespace BookfetSystem.Services.Mappings
                            .OrderBy(pcm => pcm.PartyCategoryMenuId)
                            .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.PartyCategoryName : null)
                            .FirstOrDefault())
+                  .Map(dest => dest.PartyCategoryIds,
+                       src => src.PartyCategoryMenus
+                           .Where(pcm => pcm.PartyCategoryId.HasValue)
+                           .Select(pcm => pcm.PartyCategoryId!.Value)
+                           .Distinct()
+                           .ToList())
+                  .Map(dest => dest.PartyCategoryNames,
+                       src => src.PartyCategoryMenus
+                           .Where(pcm => pcm.PartyCategory != null && !string.IsNullOrWhiteSpace(pcm.PartyCategory.PartyCategoryName))
+                           .Select(pcm => pcm.PartyCategory!.PartyCategoryName)
+                           .Distinct()
+                           .ToList())
                   .Map(dest => dest.ImgUrl,
                        src => SnapshotParser.TryParseJsonToObject(src.ImgUrl))
                   .Map(dest => dest.Status,

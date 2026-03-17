@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace BookfetSystem.Services.Models.Response
 {
@@ -12,5 +13,7 @@ namespace BookfetSystem.Services.Models.Response
         public int? Status { get; set; }
         public string? MenuCategoryName { get; set; }
         public string? PartyCategoryName { get; set; }
+        public List<int> PartyCategoryIds { get; set; } = new();
+        public List<string> PartyCategoryNames { get; set; } = new();
     }
 }
