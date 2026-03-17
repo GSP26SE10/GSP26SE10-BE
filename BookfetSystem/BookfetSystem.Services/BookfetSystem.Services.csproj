@@ -19,8 +19,4 @@
 	  <ProjectReference Include="..\BookfetSystem.Repositories\BookfetSystem.Repositories.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Helpers\" />
-	</ItemGroup>
-
 </Project>

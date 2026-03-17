@@ -12,7 +12,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Services;
-
+using BookfetSystem.Services.Hubs;
+using Microsoft.AspNetCore.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -115,6 +116,8 @@ builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.AddSignalR();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
@@ -200,7 +203,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 });
-
+app.MapHub<ChatHub>("/chatHub");
 app.UseGlobalException();
 
 app.UseSwagger();

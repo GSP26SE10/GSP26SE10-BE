@@ -33,6 +33,6 @@ namespace BookfetSystem.Services.Models.Request
     {
         public int PostBlockId { get; set; }
         public int PostId { get; set; }
-        public string? Type { get; set; }
+        public int Type { get; set; }
     }
 }
