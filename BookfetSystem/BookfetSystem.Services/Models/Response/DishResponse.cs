@@ -7,7 +7,7 @@ namespace BookfetSystem.Services.Models.Response
         public string? DishName { get; set; }
         public decimal? Price { get; set; }
         public string? Description { get; set; }
-        public string? Status { get; set; }
+        public int? Status { get; set; }
         public string? Img { get; set; }
         public int? DishCategoryId { get; set; }
         public string? DishCategoryName { get; set; }

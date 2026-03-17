@@ -1,11 +1,13 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,11 +17,16 @@ namespace BookfetSystem.Services.Implement
     {
         private readonly DishRepository _dishRepository;
         private readonly DishCategoryRepository _dishCategoryRepository;
+        private readonly IImageStorageService _imageStorageService;
 
-        public DishService(DishRepository dishRepository, DishCategoryRepository dishCategoryRepository)
+        public DishService(
+            DishRepository dishRepository,
+            DishCategoryRepository dishCategoryRepository,
+            IImageStorageService imageStorageService)
         {
             _dishRepository = dishRepository;
             _dishCategoryRepository = dishCategoryRepository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<DishResponse>> GetAllDishFilteredAsync(DishFilterRequest request, int page, int pageSize)
@@ -91,10 +98,27 @@ namespace BookfetSystem.Services.Implement
                 Price = request.Price,
                 Description = request.Description?.Trim(),
                 Note = request.Note?.Trim(),
-                Img = request.Img?.Trim(),
-                Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper(),
+                Img = null,
+                Status = DishStatus.AVAILABLE.ToString(),
                 DishCategoryId = request.DishCategoryId
             };
+
+            try
+            {
+                if (request.ImgFile != null)
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Dish);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<DishResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to upload dish image: {ex.Message}",
+                    Data = null
+                };
+            }
 
             var affected = await _dishRepository.CreateAsync(entity);
             if (affected > 0)
@@ -176,12 +200,28 @@ namespace BookfetSystem.Services.Implement
             entity.Price = request.Price;
             entity.Description = request.Description?.Trim();
             entity.Note = request.Note?.Trim();
-            entity.Img = request.Img?.Trim();
             entity.DishCategoryId = request.DishCategoryId;
 
-            if (!string.IsNullOrWhiteSpace(request.Status))
+            if (request.Status.HasValue)
             {
-                entity.Status = request.Status.Trim().ToUpper();
+                entity.Status = request.Status.Value.ToString();
+            }
+
+            if (request.ImgFile != null)
+            {
+                try
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Dish, id);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<DishResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload dish image: {ex.Message}",
+                        Data = null
+                    };
+                }
             }
 
             var affected = await _dishRepository.UpdateAsync(entity);

@@ -24,7 +24,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateDish([FromBody] DishCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateDish([FromForm] DishCreateRequest request)
         {
             var result = await _dishService.CreateAsync(request);
             if (result.Success)
@@ -36,7 +37,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateDish(int id, [FromBody] DishUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdateDish(int id, [FromForm] DishUpdateRequest request)
         {
             var result = await _dishService.UpdateAsync(id, request);
             if (result.Success)
