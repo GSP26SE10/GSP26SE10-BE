@@ -337,10 +337,10 @@ INSERT INTO dish_category (dish_category_name, description) VALUES
 
 -- DISH
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
-('Honey Grilled Chicken', 150000, 'Tender chicken grilled with honey', 'AVAILABLE', '/images/chicken.jpg', 1, 'Spicy option available'),
-('Beef Steak', 200000, 'Premium beef steak', 'AVAILABLE', '/images/steak.jpg', 1, 'Cooked to order'),
-('Coconut Ice Cream', 50000, 'Fresh coconut ice cream', 'AVAILABLE', '/images/icecream.jpg', 2, 'Contains dairy'),
-('Fresh Orange Juice', 30000, 'Freshly squeezed orange juice', 'AVAILABLE', '/images/juice.jpg', 3, 'No added sugar');
+('Honey Grilled Chicken', 150000, 'Tender chicken grilled with honey', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Spicy option available'),
+('Beef Steak', 200000, 'Premium beef steak', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Cooked to order'),
+('Coconut Ice Cream', 50000, 'Fresh coconut ice cream', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 2, 'Contains dairy'),
+('Fresh Orange Juice', 30000, 'Freshly squeezed orange juice', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 3, 'No added sugar');
 
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
