@@ -1,6 +1,7 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -13,10 +14,12 @@ namespace BookfetSystem.Services.Services
     public class ServiceService : IServiceService
     {
         private readonly ServiceRepository _repository;
+        private readonly IImageStorageService _imageStorageService;
 
-        public ServiceService(ServiceRepository repository)
+        public ServiceService(ServiceRepository repository, IImageStorageService imageStorageService)
         {
             _repository = repository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<ServiceResponse>> GetAllFilteredAsync(ServiceFilterRequest filter, int page, int pageSize)
@@ -67,12 +70,17 @@ namespace BookfetSystem.Services.Services
                 Description = request.Description,
                 BasePrice = request.BasePrice,
                 Status = (request.Status ?? ServiceStatus.AVAILABLE).ToString(),
-                Img = request.Img,
+                Img = string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
 
             try
             {
+                if (request.ImgFile != null)
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Service);
+                }
+
                 await _repository.CreateAsync(entity);
                 var created = await GetById(entity.ServiceId);
 
@@ -83,12 +91,12 @@ namespace BookfetSystem.Services.Services
                     Data = created
                 };
             }
-            catch (DbUpdateException)
+            catch (Exception ex)
             {
                 return new ApiResponse<ServiceResponse>
                 {
                     Success = false,
-                    Message = "Create service failed.",
+                    Message = $"Create service failed: {ex.Message}",
                     Data = null
                 };
             }
@@ -128,9 +136,21 @@ namespace BookfetSystem.Services.Services
                 entity.Status = request.Status.Value.ToString();
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Img))
+            if (request.ImgFile != null)
             {
-                entity.Img = request.Img;
+                try
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Service, id);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<ServiceResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload service image: {ex.Message}",
+                        Data = null
+                    };
+                }
             }
 
             if (string.IsNullOrWhiteSpace(entity.Status))

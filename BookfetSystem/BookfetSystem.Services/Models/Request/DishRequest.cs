@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using BookfetSystem.Services.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -12,8 +14,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? Note { get; set; }
         public string? Description { get; set; }
-        public string? Status { get; set; }
-        public string? Img { get; set; }
+        public IFormFile? ImgFile { get; set; }
         public int? DishCategoryId { get; set; }
     }
 
@@ -27,8 +28,8 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? Note { get; set; }
         public string? Description { get; set; }
-        public string? Status { get; set; }
-        public string? Img { get; set; }
+        public DishStatus? Status { get; set; }
+        public IFormFile? ImgFile { get; set; }
         public int? DishCategoryId { get; set; }
     }
 
@@ -38,7 +39,7 @@ namespace BookfetSystem.Services.Models.Request
         public string? DishName { get; set; }
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
-        public string? Status { get; set; }
+        public DishStatus? Status { get; set; }
         public int? DishCategoryId { get; set; }
     }
 }

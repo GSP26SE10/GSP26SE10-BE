@@ -24,7 +24,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateMenu([FromBody] MenuCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateMenu([FromForm] MenuCreateRequest request)
         {
             var result = await _menuService.CreateAsync(request);
             if (result.Success)
@@ -36,7 +37,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateMenu(int id, [FromBody] MenuUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdateMenu(int id, [FromForm] MenuUpdateRequest request)
         {
             var result = await _menuService.UpdateAsync(id, request);
             if (result.Success)
