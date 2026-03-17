@@ -1,4 +1,5 @@
 using BookfetSystem.Services.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -12,7 +13,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public ServiceStatus? Status { get; set; }
 
-        public string Img { get; set; } = string.Empty;
+        public IFormFile? ImgFile { get; set; }
     }
 
     public class ServiceUpdateRequest
@@ -25,7 +26,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public ServiceStatus? Status { get; set; }
 
-        public string? Img { get; set; }
+        public IFormFile? ImgFile { get; set; }
     }
 
     public class ServiceFilterRequest

@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Interfaces;
+using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,7 +34,8 @@ namespace BookfetSystem.API.Controllers
         //}
 
         [HttpPost]
-        public async Task<IActionResult> Create(ServiceCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create([FromForm] ServiceCreateRequest request)
         {
             var result = await _service.Create(request);
 
@@ -47,7 +48,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, ServiceUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Update(int id, [FromForm] ServiceUpdateRequest request)
         {
             var result = await _service.Update(id, request);
 
