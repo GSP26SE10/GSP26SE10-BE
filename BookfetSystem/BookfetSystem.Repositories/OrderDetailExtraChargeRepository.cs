@@ -42,5 +42,15 @@ namespace BookfetSystem.Repositories
 
             return query.OrderByDescending(x => x.CreatedAt);
         }
+
+        public IQueryable<OrderDetailExtraCharge> GetByOrderId(int orderId)
+        {
+            return _context.OrderDetailExtraCharges
+                .Include(x => x.OrderDetail)
+                .Include(x => x.ExtraChargeCatalog)
+                .Include(x => x.CreateByNavigation)
+                .Where(x => x.OrderDetail != null && x.OrderDetail.OrderId == orderId)
+                .OrderByDescending(x => x.CreatedAt);
+        }
     }
 }
