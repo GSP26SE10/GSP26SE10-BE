@@ -27,6 +27,8 @@ public partial class User
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<ContactRequest> ContactRequests { get; set; } = new List<ContactRequest>();
+
     public virtual ICollection<Conversation> ConversationCustomers { get; set; } = new List<Conversation>();
 
     public virtual ICollection<Conversation> ConversationOwners { get; set; } = new List<Conversation>();
@@ -39,6 +41,8 @@ public partial class User
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
+    public virtual ICollection<OrderDetailExtraCharge> OrderDetailExtraCharges { get; set; } = new List<OrderDetailExtraCharge>();
+
     public virtual ICollection<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; } = new List<OrderDetailStaffTask>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
@@ -48,4 +52,6 @@ public partial class User
     public virtual ICollection<StaffGroupMember> StaffGroupMembers { get; set; } = new List<StaffGroupMember>();
 
     public virtual ICollection<StaffGroup> StaffGroups { get; set; } = new List<StaffGroup>();
+
+    public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 }

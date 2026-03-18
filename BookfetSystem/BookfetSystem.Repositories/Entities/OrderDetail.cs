@@ -43,6 +43,8 @@ public partial class OrderDetail
 
     public virtual ICollection<OrderDetailCustom> OrderDetailCustoms { get; set; } = new List<OrderDetailCustom>();
 
+    public virtual ICollection<OrderDetailExtraCharge> OrderDetailExtraCharges { get; set; } = new List<OrderDetailExtraCharge>();
+
     public virtual ICollection<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; } = new List<OrderDetailStaffTask>();
 
     public virtual ICollection<OrderService> OrderServices { get; set; } = new List<OrderService>();

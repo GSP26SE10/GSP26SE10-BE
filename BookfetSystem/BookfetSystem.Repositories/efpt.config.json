@@ -20,6 +20,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "public.contact_request",
+         "ObjectType": 0
+      },
+      {
          "Name": "public.conversation",
          "ObjectType": 0
       },
@@ -33,6 +37,10 @@
       },
       {
          "Name": "public.dish_detail",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.extra_charge_catalog",
          "ObjectType": 0
       },
       {
@@ -73,6 +81,10 @@
       },
       {
          "Name": "public.order_detail_custom",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.order_detail_extra_charge",
          "ObjectType": 0
       },
       {
@@ -121,6 +133,10 @@
       },
       {
          "Name": "public.staff_group_member",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.user_device",
          "ObjectType": 0
       },
       {
