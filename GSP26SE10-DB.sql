@@ -7,12 +7,15 @@ SET TIME ZONE 'Asia/Ho_Chi_Minh';
 DROP TABLE IF EXISTS post_block CASCADE;
 DROP TABLE IF EXISTS post CASCADE;
 DROP TABLE IF EXISTS blog_category CASCADE;
+DROP TABLE IF EXISTS user_device CASCADE;
 DROP TABLE IF EXISTS notification CASCADE;
 DROP TABLE IF EXISTS message CASCADE;
 DROP TABLE IF EXISTS conversation CASCADE;
 DROP TABLE IF EXISTS feedback_service CASCADE;
 DROP TABLE IF EXISTS feedback_menu CASCADE;
 DROP TABLE IF EXISTS payment CASCADE;
+DROP TABLE IF EXISTS contact_request CASCADE;
+DROP TABLE IF EXISTS order_detail_extra_charge CASCADE;
 DROP TABLE IF EXISTS order_detail_staff_task CASCADE;
 DROP TABLE IF EXISTS staff_group_member CASCADE;
 DROP TABLE IF EXISTS staff_group CASCADE;
@@ -26,6 +29,7 @@ DROP TABLE IF EXISTS menu_dish CASCADE;
 DROP TABLE IF EXISTS menu CASCADE;
 DROP TABLE IF EXISTS menu_category CASCADE;
 DROP TABLE IF EXISTS dish_detail CASCADE;
+DROP TABLE IF EXISTS extra_charge_catalog CASCADE;
 DROP TABLE IF EXISTS ingredient CASCADE;
 DROP TABLE IF EXISTS dish CASCADE;
 DROP TABLE IF EXISTS dish_category CASCADE;
@@ -88,6 +92,19 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE user_device (
+    user_device_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    device_id VARCHAR(255) NOT NULL,
+    expo_push_token VARCHAR(255) NOT NULL,
+    platform VARCHAR(50),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, device_id),
+    UNIQUE(expo_push_token)
+);
+
 CREATE TABLE dish (
     dish_id SERIAL PRIMARY KEY,
     note TEXT,
@@ -117,6 +134,18 @@ CREATE TABLE service (
     status VARCHAR(50),
     img VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE extra_charge_catalog (
+    extra_charge_catalog_id SERIAL PRIMARY KEY,
+    charge_type VARCHAR(100),
+    title VARCHAR(255),
+    description TEXT,
+    unit VARCHAR(50),
+    unit_price NUMERIC(12,2),
+    status VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Bảng phụ thuộc level 2
@@ -205,6 +234,26 @@ CREATE TABLE order_service (
     quantity INT
 );
 
+CREATE TABLE order_detail_extra_charge (
+    order_detail_extra_charge_id SERIAL PRIMARY KEY,
+    order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
+    extra_charge_catalog_id INT REFERENCES extra_charge_catalog(extra_charge_catalog_id),
+    charge_type VARCHAR(100),
+    title VARCHAR(255),
+    description TEXT,
+    unit VARCHAR(50),
+    unit_price NUMERIC(12,2),
+    quantity INT,
+    total_amount NUMERIC(12,2),
+    status VARCHAR(50),
+    create_by INT REFERENCES users(user_id),
+    incurred_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    image JSONB, -- array: ["url1", "url2", ...]
+    note TEXT
+);
+
 CREATE TABLE order_detail_staff_task (
     task_id SERIAL PRIMARY KEY,
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
@@ -233,6 +282,7 @@ CREATE TABLE feedback_menu (
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
     comment TEXT,
+    img JSONB, -- array: ["url1", "url2", ...]
     status VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -244,8 +294,22 @@ CREATE TABLE feedback_service (
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
     comment TEXT,
+    img JSONB, -- array: ["url1", "url2", ...]
     status VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE contact_request (
+    contact_request_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES users(user_id),
+    full_name VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    subject VARCHAR(255),
+    content TEXT,
+    status VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE conversation (
@@ -426,6 +490,18 @@ INSERT INTO service (service_name, description, base_price, status, img) VALUES
 ('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png'),
 ('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421422/service/service3.png');
 
+-- EXTRA CHARGE CATALOG
+INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_price, status) VALUES
+('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'item', 0, 'ACTIVE'),
+('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'hour', 500000, 'ACTIVE'),
+('EXTRA_SERVICE', 'Phát sinh thêm dịch vụ', 'Phụ thu cho các dịch vụ phát sinh ngoài gói', 'service', 300000, 'ACTIVE'),
+('EXTRA_EQUIPMENT', 'Phát sinh thêm thiết bị', 'Phụ thu cho thiết bị phát sinh thêm', 'item', 400000, 'ACTIVE'),
+('CLEANING', 'Phí vệ sinh thêm', 'Phụ thu cho chi phí vệ sinh phát sinh', 'session', 250000, 'ACTIVE'),
+('TRANSPORT', 'Phí vận chuyển phát sinh', 'Phụ thu vận chuyển ngoài phạm vi tiêu chuẩn', 'trip', 800000, 'ACTIVE'),
+('COMPENSATION', 'Phí bồi thường khác', 'Các khoản bồi thường phát sinh khác', 'case', 1000000, 'ACTIVE'),
+('PENALTY', 'Phí phạt', 'Phụ phí phạt theo điều khoản hợp đồng', 'case', 500000, 'ACTIVE'),
+('OTHER', 'Chi phí khác', 'Các chi phí phát sinh khác không thuộc nhóm trên', 'item', 0, 'ACTIVE');
+
 -- STAFF GROUP (phải tạo trước order_detail)
 INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES 
 ('Service Team A', 'ACTIVE', 2);
@@ -457,6 +533,12 @@ INSERT INTO order_service (order_detail_id, service_id, quantity) VALUES
 (1, 1, 1),
 (1, 2, 1);
 
+-- ORDER DETAIL EXTRA CHARGE (snapshot từ extra_charge_catalog)
+INSERT INTO order_detail_extra_charge
+(order_detail_id, extra_charge_catalog_id, charge_type, title, description, unit, unit_price, quantity, total_amount, status, create_by, incurred_at, image, note)
+VALUES
+(1, 2, 'LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'hour', 500000, 2, 1000000, 'ACTIVE', 2, NOW(), '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/extra-charge/overtime-1.png"]'::jsonb, 'Phát sinh do kéo dài thêm 2 giờ');
+
 -- STAFF GROUP MEMBER
 INSERT INTO staff_group_member (staff_group_id, staff_id, status) VALUES 
 (1, 2, 'ACTIVE'), -- Group Leader
@@ -477,15 +559,19 @@ INSERT INTO payment (order_id, amount, payment_type, payment_method, payment_sta
 VALUES (1, 7500000, 'Full', 'BANK_TRANSFER', 'UNPAID');
 
 -- FEEDBACK MENU (đánh giá menu từ khách hàng, gắn với order_id)
-INSERT INTO feedback_menu (order_id, menu_id, customer_id, rating, comment, status) VALUES
-(1, 1, 4, 5, 'Menu Standard rất ngon và đa dạng!', 'ACTIVE'),
-(1, 2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', 'ACTIVE');
+INSERT INTO feedback_menu (order_id, menu_id, customer_id, rating, comment, img, status) VALUES
+(1, 1, 4, 5, 'Menu Standard rất ngon và đa dạng!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-2.png"]'::jsonb, 'ACTIVE'),
+(1, 2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-3.png"]'::jsonb, 'ACTIVE');
 
 -- FEEDBACK SERVICE (đánh giá dịch vụ, gắn với order_id)
-INSERT INTO feedback_service (order_id, service_id, customer_id, rating, comment, status) VALUES
-(1, 1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', 'ACTIVE'),
-(1, 2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', 'ACTIVE'),
-(1, 3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', 'ACTIVE');
+INSERT INTO feedback_service (order_id, service_id, customer_id, rating, comment, img, status) VALUES
+(1, 1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-2.png"]'::jsonb, 'ACTIVE'),
+(1, 2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-3.png"]'::jsonb, 'ACTIVE'),
+(1, 3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-4.png"]'::jsonb, 'ACTIVE');
+
+-- CONTACT REQUEST
+INSERT INTO contact_request (customer_id, full_name, email, phone, subject, content, status) VALUES
+(4, 'Nguyen Van A', 'user@buffet.vn', '0901234570', 'Tư vấn menu tiệc cưới', 'Mình muốn được tư vấn gói buffet cho 150 khách.', 'PENDING');
 
 -- CONVERSATION
 INSERT INTO conversation (customer_id, owner_id)
@@ -496,6 +582,11 @@ INSERT INTO message (conversation_id, sender_id, content)
 VALUES 
 (1, 4, 'I would like to change the event time.'),
 (1, 2, 'Sure, please provide the new schedule.');
+
+-- USER DEVICE
+INSERT INTO user_device (user_id, device_id, expo_push_token, platform, is_active) VALUES
+(4, 'android-device-001', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx1]', 'android', TRUE),
+(4, 'ios-device-001', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx2]', 'ios', TRUE);
 
 -- NOTIFICATION
 INSERT INTO notification (user_id, title, content, type) VALUES

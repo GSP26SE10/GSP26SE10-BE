@@ -14,11 +14,13 @@ namespace BookfetSystem.Services.Implement
     {
         private readonly OrderDetailRepository _repository;
         private readonly OrderRepository _orderRepository;
+        private readonly IOrderStatusSchedulerService _orderStatusSchedulerService;
 
-        public OrderDetailService(OrderDetailRepository repository, OrderRepository orderRepository)
+        public OrderDetailService(OrderDetailRepository repository, OrderRepository orderRepository, IOrderStatusSchedulerService orderStatusSchedulerService)
         {
             _repository = repository;
             _orderRepository = orderRepository;
+            _orderStatusSchedulerService = orderStatusSchedulerService;
         }
 
         public async Task<PagedResponse<OrderDetailResponse>> GetAllFilteredAsync(OrderDetailFilterRequest filter, int page, int pageSize)
@@ -85,6 +87,7 @@ namespace BookfetSystem.Services.Implement
             try
             {
                 await _repository.CreateAsync(entity);
+                await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(entity.OrderDetailId, entity.StartTime, entity.EndTime);
                 var created = await GetById(entity.OrderDetailId);
 
                 return new ApiResponse<OrderDetailResponse>
@@ -193,6 +196,7 @@ namespace BookfetSystem.Services.Implement
             try
             {
                 await _repository.UpdateAsync(entity);
+                await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(entity.OrderDetailId, entity.StartTime, entity.EndTime);
                 var updated = await GetById(entity.OrderDetailId);
 
                 return new ApiResponse<OrderDetailResponse>

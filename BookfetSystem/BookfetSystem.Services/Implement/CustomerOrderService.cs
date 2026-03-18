@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BookfetSystem.Repositories;
+using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
@@ -15,6 +16,7 @@ namespace BookfetSystem.Services.Services
 {
     public class CustomerOrderService : ICustomerOrderService
     {
+        private readonly GSP26SE10DBContext _dbContext;
         private readonly OrderRepository _orderRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly OrderServiceRepository _orderServiceRepository;
@@ -24,9 +26,11 @@ namespace BookfetSystem.Services.Services
         private readonly MenuRepository _menuRepository;
         private readonly MenuDishRepository _menuDishRepository;
         private readonly PartyCategoryRepository _partyCategoryRepository;
+        private readonly IOrderStatusSchedulerService _orderStatusSchedulerService;
 
-        public CustomerOrderService(OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository)
+        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService)
         {
+            _dbContext = dbContext;
             _orderRepository = orderRepository;
             _userRepository = userRepository;
             _orderDetailRepository = orderDetailRepository;
@@ -36,6 +40,7 @@ namespace BookfetSystem.Services.Services
             _menuRepository = menuRepository;
             _menuDishRepository = menuDishRepository;
             _partyCategoryRepository = partyCategoryRepository;
+            _orderStatusSchedulerService = orderStatusSchedulerService;
         }
 
         public async Task<PagedResponse<OrderResponse>> GetAllFilteredAsync(OrderFilterRequest filter, int page, int pageSize)
@@ -52,6 +57,8 @@ namespace BookfetSystem.Services.Services
                 .Take(pageSize)
                 .ToListAsync();
 
+            await AttachExtraChargeCostsAsync(data);
+
             return new PagedResponse<OrderResponse>
             {
                 Items = data,
@@ -67,7 +74,7 @@ namespace BookfetSystem.Services.Services
 
             if (entity == null) return null;
 
-            return new OrderResponse
+            var response = new OrderResponse
             {
                 OrderId = entity.OrderId,
                 CustomerId = entity.CustomerId,
@@ -80,6 +87,9 @@ namespace BookfetSystem.Services.Services
                 CreatedAt = entity.CreatedAt,
                 OrderDetails = entity.OrderDetails?.Select(od => od.Adapt<OrderDetailResponse>()).ToList() ?? new List<OrderDetailResponse>()
             };
+
+            await AttachExtraChargeCostsAsync(new List<OrderResponse> { response });
+            return response;
         }
 
         public async Task<ApiResponse<OrderResponse>> Create(OrderCreateRequest request)
@@ -414,6 +424,7 @@ namespace BookfetSystem.Services.Services
                 };
 
                 await _orderDetailRepository.CreateAsync(orderDetail);
+                await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(orderDetail.OrderDetailId, orderDetail.StartTime, orderDetail.EndTime);
 
                 if (itemRequest.Services != null && itemRequest.Services.Any())
                 {
@@ -451,6 +462,283 @@ namespace BookfetSystem.Services.Services
             };
         }
 
+        public async Task<ApiResponse<OrderResponse>> UpdateCustomerOrderAsync(int orderId, UpdateCustomerOrderRequest request)
+        {
+            if (request.Items == null || !request.Items.Any())
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Items are required.",
+                    Data = null
+                };
+            }
+
+            var order = await _dbContext.Orders
+                .Include(x => x.Payments)
+                .Include(x => x.OrderDetails)
+                .FirstOrDefaultAsync(x => x.OrderId == orderId);
+
+            if (order == null)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            if (!string.Equals(order.Status, OrderStatus.PENDING.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Only PENDING orders can be edited by customer.",
+                    Data = null
+                };
+            }
+
+            var hasPaidPayment = order.Payments?.Any(p =>
+                string.Equals(p.PaymentStatus, PaymentStatus.PAID.ToString(), StringComparison.OrdinalIgnoreCase)) ?? false;
+
+            if (hasPaidPayment)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order has been paid and cannot be edited.",
+                    Data = null
+                };
+            }
+
+            var hasAssignedStaffGroup = order.OrderDetails?.Any(x => x.StaffGroupId.HasValue) ?? false;
+            if (hasAssignedStaffGroup)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order has already been assigned and cannot be edited.",
+                    Data = null
+                };
+            }
+
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                if (order.OrderDetails != null && order.OrderDetails.Any())
+                {
+                    _dbContext.OrderDetails.RemoveRange(order.OrderDetails);
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                decimal orderTotal = 0;
+
+                foreach (var itemRequest in request.Items)
+                {
+                    if (itemRequest.MenuId <= 0)
+                    {
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = "MenuId must be greater than 0.",
+                            Data = null
+                        };
+                    }
+
+                    if (itemRequest.NumberOfGuests <= 0)
+                    {
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = "NumberOfGuests must be greater than 0.",
+                            Data = null
+                        };
+                    }
+
+                    var menu = await _menuRepository.GetByIdAsync(itemRequest.MenuId);
+                    if (menu == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = $"Menu with Id {itemRequest.MenuId} not found.",
+                            Data = null
+                        };
+                    }
+
+                    int? partyCategoryId = null;
+                    if (itemRequest.PartyCategoryId > 0)
+                    {
+                        var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
+                        if (partyCategory == null)
+                        {
+                            await transaction.RollbackAsync();
+                            return new ApiResponse<OrderResponse>
+                            {
+                                Success = false,
+                                Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
+                                Data = null
+                            };
+                        }
+                        partyCategoryId = itemRequest.PartyCategoryId;
+                    }
+
+                    var menuPrice = menu.BasePrice ?? 0;
+                    decimal itemServiceTotal = 0;
+                    var serviceItems = new List<ServiceItemSnapshotDto>();
+
+                    if (itemRequest.Services != null && itemRequest.Services.Any())
+                    {
+                        foreach (var svc in itemRequest.Services)
+                        {
+                            if (svc.ServiceId <= 0 || svc.Quantity <= 0)
+                            {
+                                continue;
+                            }
+
+                            var service = await _serviceRepository.GetByIdAsync(svc.ServiceId);
+                            if (service != null && service.BasePrice.HasValue)
+                            {
+                                itemServiceTotal += service.BasePrice.Value * svc.Quantity;
+                                serviceItems.Add(new ServiceItemSnapshotDto
+                                {
+                                    ServiceId = service.ServiceId,
+                                    ServiceName = service.ServiceName,
+                                    BasePrice = service.BasePrice,
+                                    Quantity = svc.Quantity,
+                                    Img = service.Img
+                                });
+                            }
+                        }
+                    }
+
+                    var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+
+                    var menuDishes = await _menuDishRepository
+                        .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
+                        .ToListAsync();
+                    var dishSnapshots = menuDishes
+                        .Where(md => md.Dish != null)
+                        .Select(md => new DishSnapshotDto
+                        {
+                            DishId = md.Dish!.DishId,
+                            DishName = md.Dish.DishName,
+                            Price = md.Dish.Price
+                        })
+                        .ToList();
+
+                    object? imgUrlObj = null;
+                    if (!string.IsNullOrEmpty(menu.ImgUrl))
+                    {
+                        try
+                        {
+                            imgUrlObj = JsonSerializer.Deserialize<object>(menu.ImgUrl);
+                        }
+                        catch
+                        {
+                            imgUrlObj = new[] { menu.ImgUrl };
+                        }
+                    }
+                    imgUrlObj ??= Array.Empty<string>();
+
+                    var menuSnapshot = new MenuSnapshotDto
+                    {
+                        MenuName = menu.MenuName,
+                        BasePrice = menu.BasePrice,
+                        ImgUrl = imgUrlObj,
+                        Dishes = dishSnapshots,
+                        CapturedAt = DateTime.UtcNow.ToString("o")
+                    };
+
+                    var serviceSnapshot = new ServiceSnapshotDto
+                    {
+                        Services = serviceItems,
+                        CapturedAt = DateTime.UtcNow.ToString("o")
+                    };
+
+                    var orderDetail = new OrderDetail
+                    {
+                        OrderId = order.OrderId,
+                        Address = itemRequest.Address ?? string.Empty,
+                        NumberOfGuests = itemRequest.NumberOfGuests,
+                        Status = OrderStatus.PENDING.ToString(),
+                        TotalPrice = itemTotal,
+                        Type = OrderDetailType.ORDER.ToString(),
+                        StartTime = itemRequest.StartTime,
+                        EndTime = itemRequest.EndTime,
+                        MenuId = itemRequest.MenuId,
+                        PartyCategoryId = partyCategoryId,
+                        NoteOrderDetail = string.IsNullOrWhiteSpace(itemRequest.NoteOrderDetail) ? null : itemRequest.NoteOrderDetail.Trim(),
+                        MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
+                        ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot)
+                    };
+
+                    await _orderDetailRepository.CreateAsync(orderDetail);
+                    await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(orderDetail.OrderDetailId, orderDetail.StartTime, orderDetail.EndTime);
+
+                    if (itemRequest.Services != null && itemRequest.Services.Any())
+                    {
+                        foreach (var svc in itemRequest.Services)
+                        {
+                            if (svc.ServiceId <= 0 || svc.Quantity <= 0)
+                            {
+                                continue;
+                            }
+
+                            var service = await _serviceRepository.GetByIdAsync(svc.ServiceId);
+                            if (service == null)
+                            {
+                                continue;
+                            }
+
+                            var orderService = new OrderService
+                            {
+                                OrderDetailId = orderDetail.OrderDetailId,
+                                ServiceId = svc.ServiceId,
+                                Quantity = svc.Quantity,
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            await _orderServiceRepository.CreateAsync(orderService);
+                        }
+                    }
+
+                    orderTotal += itemTotal;
+                }
+
+                order.TotalPrice = orderTotal;
+                order.DepositAmount = 0;
+                order.RemainingAmount = orderTotal;
+                order.Status = OrderStatus.PENDING.ToString();
+
+                await _orderRepository.UpdateAsync(order);
+
+                await transaction.CommitAsync();
+
+                var updated = await GetById(orderId);
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = true,
+                    Message = "Order updated successfully.",
+                    Data = updated
+                };
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Update order failed.",
+                    Data = null
+                };
+            }
+        }
+
         public async Task<PagedResponse<OrderResponse>> GetDepositedApprovedForAssignmentAsync(int page, int pageSize)
         {
             var query = _orderRepository.GetDepositedApprovedOrdersForAssignment();
@@ -461,6 +749,8 @@ namespace BookfetSystem.Services.Services
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            await AttachExtraChargeCostsAsync(items);
 
             return new PagedResponse<OrderResponse>
             {
@@ -632,6 +922,50 @@ namespace BookfetSystem.Services.Services
                 Message = $"Order has been {targetStatus} successfully.",
                 Data = updated
             };
+        }
+
+        private async Task AttachExtraChargeCostsAsync(List<OrderResponse> orders)
+        {
+            if (orders == null || orders.Count == 0)
+            {
+                return;
+            }
+
+            var detailIds = orders
+                .SelectMany(x => x.OrderDetails ?? Enumerable.Empty<OrderDetailResponse>())
+                .Select(x => x.OrderDetailId)
+                .Distinct()
+                .ToList();
+
+            if (detailIds.Count == 0)
+            {
+                return;
+            }
+
+            var extraChargeCostByDetailId = await _dbContext.OrderDetailExtraCharges
+                .Where(x => x.OrderDetailId.HasValue && detailIds.Contains(x.OrderDetailId.Value))
+                .GroupBy(x => x.OrderDetailId!.Value)
+                .Select(g => new
+                {
+                    OrderDetailId = g.Key,
+                    ExtraChargeCost = g.Sum(x => x.TotalAmount)
+                })
+                .ToDictionaryAsync(x => x.OrderDetailId, x => x.ExtraChargeCost);
+
+            foreach (var order in orders)
+            {
+                if (order.OrderDetails == null || order.OrderDetails.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (var detail in order.OrderDetails)
+                {
+                    detail.ExtraChargeCost = extraChargeCostByDetailId.TryGetValue(detail.OrderDetailId, out var cost)
+                        ? cost
+                        : null;
+                }
+            }
         }
     }
 }

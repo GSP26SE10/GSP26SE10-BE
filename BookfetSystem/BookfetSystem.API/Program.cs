@@ -5,6 +5,9 @@ using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Mappings;
 using BookfetSystem.API.Middlewares;
 using BookfetSystem.Services.Options;
+using BookfetSystem.API.BackgroundJobs;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +55,13 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<GSP26SE10DBContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHangfire(config =>
+    config.UseSimpleAssemblyNameTypeSerializer()
+          .UseRecommendedSerializerSettings()
+          .UsePostgreSqlStorage(options =>
+              options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+builder.Services.AddHangfireServer();
+
 // Register Mapster mappings
 MapsterConfig.RegisterMappings();
 
@@ -64,6 +74,8 @@ builder.Services.AddScoped<ConversationRepository>();
 builder.Services.AddScoped<MessageRepository>();
 builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<OrderDetailStaffTaskRepository>();
+builder.Services.AddScoped<OrderDetailExtraChargeRepository>();
+builder.Services.AddScoped<ExtraChargeCatalogRepository>();
 builder.Services.AddScoped<FeedbackMenuRepository>();
 builder.Services.AddScoped<FeedbackServiceRepository>();
 builder.Services.AddScoped<MenuRepository>();
@@ -98,6 +110,7 @@ builder.Services.AddScoped<IStaffGroupMemberService, StaffGroupMemberService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IOrderDetailStaffTaskService, OrderDetailStaffTaskService>();
+builder.Services.AddScoped<IOrderDetailExtraChargeService, OrderDetailExtraChargeService>();
 builder.Services.AddScoped<IFeedbackMenuService, FeedbackMenuService>();
 builder.Services.AddScoped<IFeedbackServiceService, FeedbackServiceService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
@@ -119,6 +132,8 @@ builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
+builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>();
+builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddSignalR();
 
@@ -211,6 +226,7 @@ app.UseGlobalException();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseHangfireDashboard("/hangfire");
 
 app.UseHttpsRedirection();
 

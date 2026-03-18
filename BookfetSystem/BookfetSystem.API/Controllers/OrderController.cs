@@ -24,39 +24,19 @@ namespace BookfetSystem.API.Controllers
             return Ok(orders);
         }
 
-        //[HttpGet("{id}")]
-        //public async Task<ActionResult> GetOrderById(int id)
-        //{
-        //    var order = await _orderService.GetById(id);
 
-        //    if (order == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(order);
-        //}
-
-        [HttpPost]
-        public async Task<ActionResult> CreateOrder([FromBody] OrderCreateRequest request)
+        [HttpPut("{orderId}/customer-edit")]
+        public async Task<ActionResult> UpdateCustomerOrder(int orderId, [FromBody] UpdateCustomerOrderRequest request)
         {
-            var result = await _orderService.Create(request);
-
+            var result = await _orderService.UpdateCustomerOrderAsync(orderId, request);
             if (result.Success)
             {
                 return Ok(result);
             }
 
-            return BadRequest(result);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateOrder(int id, [FromBody] OrderUpdateRequest request)
-        {
-            var result = await _orderService.Update(id, request);
-            if (result.Success)
+            if (result.Message == "Order not found.")
             {
-                return Ok(result);
+                return NotFound(result);
             }
 
             return BadRequest(result);

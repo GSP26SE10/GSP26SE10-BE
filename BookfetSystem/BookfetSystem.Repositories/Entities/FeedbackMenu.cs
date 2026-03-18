@@ -19,6 +19,8 @@ public partial class FeedbackMenu
 
     public string Comment { get; set; }
 
+    public string Img { get; set; }
+
     public string Status { get; set; }
 
     public DateTime? CreatedAt { get; set; }

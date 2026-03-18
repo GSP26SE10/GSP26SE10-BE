@@ -24,7 +24,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateFeedbackMenu([FromBody] FeedbackMenuCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateFeedbackMenu([FromForm] FeedbackMenuCreateRequest request)
         {
             var result = await _feedbackMenuService.CreateAsync(request);
             if (result.Success)

@@ -16,6 +16,8 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<BlogCategory> BlogCategories { get; set; }
 
+    public virtual DbSet<ContactRequest> ContactRequests { get; set; }
+
     public virtual DbSet<Conversation> Conversations { get; set; }
 
     public virtual DbSet<Dish> Dishes { get; set; }
@@ -23,6 +25,8 @@ public partial class GSP26SE10DBContext : DbContext
     public virtual DbSet<DishCategory> DishCategories { get; set; }
 
     public virtual DbSet<DishDetail> DishDetails { get; set; }
+
+    public virtual DbSet<ExtraChargeCatalog> ExtraChargeCatalogs { get; set; }
 
     public virtual DbSet<FeedbackMenu> FeedbackMenus { get; set; }
 
@@ -45,6 +49,8 @@ public partial class GSP26SE10DBContext : DbContext
     public virtual DbSet<OrderDetail> OrderDetails { get; set; }
 
     public virtual DbSet<OrderDetailCustom> OrderDetailCustoms { get; set; }
+
+    public virtual DbSet<OrderDetailExtraCharge> OrderDetailExtraCharges { get; set; }
 
     public virtual DbSet<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; }
 
@@ -70,6 +76,8 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserDevice> UserDevices { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BlogCategory>(entity =>
@@ -89,6 +97,42 @@ public partial class GSP26SE10DBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("slug");
+        });
+
+        modelBuilder.Entity<ContactRequest>(entity =>
+        {
+            entity.HasKey(e => e.ContactRequestId).HasName("contact_request_pkey");
+
+            entity.ToTable("contact_request");
+
+            entity.Property(e => e.ContactRequestId).HasColumnName("contact_request_id");
+            entity.Property(e => e.Content).HasColumnName("content");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Email)
+                .HasMaxLength(100)
+                .HasColumnName("email");
+            entity.Property(e => e.FullName)
+                .HasMaxLength(100)
+                .HasColumnName("full_name");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .HasColumnName("phone");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
+            entity.Property(e => e.Subject)
+                .HasMaxLength(255)
+                .HasColumnName("subject");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.ContactRequests)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("contact_request_customer_id_fkey");
         });
 
         modelBuilder.Entity<Conversation>(entity =>
@@ -183,6 +227,37 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasConstraintName("dish_detail_ingredient_id_fkey");
         });
 
+        modelBuilder.Entity<ExtraChargeCatalog>(entity =>
+        {
+            entity.HasKey(e => e.ExtraChargeCatalogId).HasName("extra_charge_catalog_pkey");
+
+            entity.ToTable("extra_charge_catalog");
+
+            entity.Property(e => e.ExtraChargeCatalogId).HasColumnName("extra_charge_catalog_id");
+            entity.Property(e => e.ChargeType)
+                .HasMaxLength(100)
+                .HasColumnName("charge_type");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
+            entity.Property(e => e.Unit)
+                .HasMaxLength(50)
+                .HasColumnName("unit");
+            entity.Property(e => e.UnitPrice)
+                .HasPrecision(12, 2)
+                .HasColumnName("unit_price");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
         modelBuilder.Entity<FeedbackMenu>(entity =>
         {
             entity.HasKey(e => e.FeedbackMenuId).HasName("feedback_menu_pkey");
@@ -195,6 +270,9 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Img)
+                .HasColumnType("jsonb")
+                .HasColumnName("img");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
@@ -229,6 +307,9 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Img)
+                .HasColumnType("jsonb")
+                .HasColumnName("img");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
@@ -491,6 +572,62 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasForeignKey(d => d.OrderDetailId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("order_detail_custom_order_detail_id_fkey");
+        });
+
+        modelBuilder.Entity<OrderDetailExtraCharge>(entity =>
+        {
+            entity.HasKey(e => e.OrderDetailExtraChargeId).HasName("order_detail_extra_charge_pkey");
+
+            entity.ToTable("order_detail_extra_charge");
+
+            entity.Property(e => e.OrderDetailExtraChargeId).HasColumnName("order_detail_extra_charge_id");
+            entity.Property(e => e.ChargeType)
+                .HasMaxLength(100)
+                .HasColumnName("charge_type");
+            entity.Property(e => e.CreateBy).HasColumnName("create_by");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.ExtraChargeCatalogId).HasColumnName("extra_charge_catalog_id");
+            entity.Property(e => e.Image)
+                .HasColumnType("jsonb")
+                .HasColumnName("image");
+            entity.Property(e => e.IncurredAt).HasColumnName("incurred_at");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
+            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasColumnName("status");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
+            entity.Property(e => e.TotalAmount)
+                .HasPrecision(12, 2)
+                .HasColumnName("total_amount");
+            entity.Property(e => e.Unit)
+                .HasMaxLength(50)
+                .HasColumnName("unit");
+            entity.Property(e => e.UnitPrice)
+                .HasPrecision(12, 2)
+                .HasColumnName("unit_price");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.CreateByNavigation).WithMany(p => p.OrderDetailExtraCharges)
+                .HasForeignKey(d => d.CreateBy)
+                .HasConstraintName("order_detail_extra_charge_create_by_fkey");
+
+            entity.HasOne(d => d.ExtraChargeCatalog).WithMany(p => p.OrderDetailExtraCharges)
+                .HasForeignKey(d => d.ExtraChargeCatalogId)
+                .HasConstraintName("order_detail_extra_charge_extra_charge_catalog_id_fkey");
+
+            entity.HasOne(d => d.OrderDetail).WithMany(p => p.OrderDetailExtraCharges)
+                .HasForeignKey(d => d.OrderDetailId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("order_detail_extra_charge_order_detail_id_fkey");
         });
 
         modelBuilder.Entity<OrderDetailStaffTask>(entity =>
@@ -811,6 +948,44 @@ public partial class GSP26SE10DBContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("users_role_id_fkey");
+        });
+
+        modelBuilder.Entity<UserDevice>(entity =>
+        {
+            entity.HasKey(e => e.UserDeviceId).HasName("user_device_pkey");
+
+            entity.ToTable("user_device");
+
+            entity.HasIndex(e => e.ExpoPushToken, "user_device_expo_push_token_key").IsUnique();
+
+            entity.HasIndex(e => new { e.UserId, e.DeviceId }, "user_device_user_id_device_id_key").IsUnique();
+
+            entity.Property(e => e.UserDeviceId).HasColumnName("user_device_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeviceId)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("device_id");
+            entity.Property(e => e.ExpoPushToken)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("expo_push_token");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Platform)
+                .HasMaxLength(50)
+                .HasColumnName("platform");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserDevices)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("user_device_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

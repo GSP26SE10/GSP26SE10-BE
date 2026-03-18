@@ -13,7 +13,8 @@ namespace BookfetSystem.Services.Enum
         REJECTED = 3,
         PREPARING = 4,
         IN_PROGRESS = 5,
-        COMPLETED = 6,
-        CANCELLED = 7
+        BILLING = 6,
+        COMPLETED = 7,
+        CANCELLED = 8
     }
 }

@@ -35,6 +35,30 @@ namespace BookfetSystem.Services.Models.Request
         public List<CreateOrderItemRequest> Items { get; set; } = new();
     }
 
+    public class UpdateCustomerOrderRequest
+    {
+        public List<UpdateCustomerOrderItemRequest> Items { get; set; } = new();
+    }
+
+    public class UpdateCustomerOrderItemRequest
+    {
+        public int MenuId { get; set; }
+
+        public int PartyCategoryId { get; set; }
+
+        public int NumberOfGuests { get; set; }
+
+        public string Address { get; set; } = string.Empty;
+
+        public DateTime StartTime { get; set; }
+
+        public DateTime EndTime { get; set; }
+
+        public string? NoteOrderDetail { get; set; }
+
+        public List<ServiceItemRequest>? Services { get; set; }
+    }
+
     public class CreateOrderItemRequest
     {
         public int MenuId { get; set; }

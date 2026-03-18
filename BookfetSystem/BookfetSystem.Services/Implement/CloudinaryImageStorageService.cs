@@ -91,6 +91,9 @@ public class CloudinaryImageStorageService : IImageStorageService
             CloudinaryFolder.Menu => "menu",
             CloudinaryFolder.Dish => "dish",
             CloudinaryFolder.Service => "service",
+            CloudinaryFolder.FeedbackMenu => "feedbackMenu",
+            CloudinaryFolder.FeedbackService => "feedbackService",
+            CloudinaryFolder.ExtraCharge => "extraCharge",
             _ => throw new InvalidOperationException("Unsupported cloudinary folder.")
         };
     }

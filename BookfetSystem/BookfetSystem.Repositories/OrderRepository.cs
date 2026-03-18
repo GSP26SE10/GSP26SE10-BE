@@ -21,6 +21,8 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.Menu)
                 .Include(x => x.OrderDetails)
                     .ThenInclude(od => od.PartyCategory)
+                .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailExtraCharges)
                 .Include(x => x.Payments)
                 .AsQueryable();
 
@@ -50,6 +52,8 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.Menu)
                 .Include(x => x.OrderDetails)
                     .ThenInclude(od => od.PartyCategory)
+                .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailExtraCharges)
                 .Include(x => x.Payments)
                 .FirstOrDefaultAsync(x => x.OrderId == id);
         }
@@ -70,6 +74,8 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.Menu)
                 .Include(x => x.OrderDetails)
                     .ThenInclude(od => od.PartyCategory)
+                .Include(x => x.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailExtraCharges)
                 .Include(x => x.Payments)
                 .Where(x => x.Status == "PENDING")  
                 .Where(x => (x.DepositAmount ?? 0) > 0 ||
