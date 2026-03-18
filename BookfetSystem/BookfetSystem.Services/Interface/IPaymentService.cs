@@ -12,5 +12,6 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<PaymentResponse>> UpdateAsync(int id, PaymentUpdateRequest request);
         Task<ApiResponse<bool>> DeleteAsync(int id);
         Task<ApiResponse<object>> CreateDepositQR(int orderId);
+        Task<ApiResponse<object>> CreateFullQR(int orderId);
     }
 }

@@ -39,10 +39,11 @@ namespace BookfetSystem.Services.Implement
                 return true;
             }
 
-            var payment = await _paymentRepository.GetUnpaidDepositByOrderIdAsync(orderId.Value);
+            var paymentType = ExtractPaymentType(payload.Code) ?? ExtractPaymentType(payload.Content) ?? PaymentType.DEPOSIT;
+            var payment = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(orderId.Value, paymentType.ToString());
             if (payment == null)
             {
-                _logger.LogWarning("No unpaid deposit found for orderId={OrderId}", orderId.Value);
+                _logger.LogWarning("No unpaid {PaymentType} payment found for orderId={OrderId}", paymentType, orderId.Value);
                 return true;
             }
 
@@ -61,13 +62,24 @@ namespace BookfetSystem.Services.Implement
             var order = await _orderRepository.GetByIdAsync(orderId.Value);
             if (order != null)
             {
-                var depositAmount = payment.Amount ?? 0;
-                var totalPrice = order.TotalPrice ?? 0;
-                order.DepositAmount = depositAmount;
-                order.RemainingAmount = totalPrice - depositAmount;
-                await _orderRepository.UpdateAsync(order);
-                _logger.LogInformation("Order {OrderId} updated: DepositAmount={Deposit}, RemainingAmount={Remaining}",
-                    orderId.Value, depositAmount, order.RemainingAmount);
+                if (paymentType == PaymentType.DEPOSIT)
+                {
+                    var depositAmount = payment.Amount ?? 0;
+                    var totalPrice = order.TotalPrice ?? 0;
+                    order.DepositAmount = depositAmount;
+                    order.RemainingAmount = totalPrice - depositAmount;
+                    await _orderRepository.UpdateAsync(order);
+                    _logger.LogInformation("Order {OrderId} updated after DEPOSIT: DepositAmount={Deposit}, RemainingAmount={Remaining}",
+                        orderId.Value, depositAmount, order.RemainingAmount);
+                }
+                else if (paymentType == PaymentType.FULL)
+                {
+                    order.RemainingAmount = 0;
+                    order.Status = OrderStatus.COMPLETED.ToString();
+                    await _orderRepository.UpdateAsync(order);
+                    _logger.LogInformation("Order {OrderId} updated after FULL payment: RemainingAmount={Remaining}, Status={Status}",
+                        orderId.Value, order.RemainingAmount, order.Status);
+                }
             }
 
             return true;
@@ -78,8 +90,28 @@ namespace BookfetSystem.Services.Implement
             if (string.IsNullOrWhiteSpace(text))
                 return null;
 
-            var match = Regex.Match(text, @"BOOKFET_?(\d+)", RegexOptions.IgnoreCase);
+            var match = Regex.Match(text, @"BOOKFET(?:_(?:FULL|DEPOSIT))?_?(\d+)", RegexOptions.IgnoreCase);
             return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
+        }
+
+        private static PaymentType? ExtractPaymentType(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return null;
+            }
+
+            if (Regex.IsMatch(text, @"BOOKFET_FULL_?\d+", RegexOptions.IgnoreCase))
+            {
+                return PaymentType.FULL;
+            }
+
+            if (Regex.IsMatch(text, @"BOOKFET(?:_DEPOSIT)?_?\d+", RegexOptions.IgnoreCase))
+            {
+                return PaymentType.DEPOSIT;
+            }
+
+            return null;
         }
     }
 }

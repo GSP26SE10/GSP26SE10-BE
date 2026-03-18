@@ -6,5 +6,6 @@ public enum CloudinaryFolder
     Dish,
     Service,
     FeedbackMenu,
-    FeedbackService
+    FeedbackService,
+    ExtraCharge
 }

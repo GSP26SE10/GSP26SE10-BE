@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories;
+using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using System;
@@ -15,12 +16,18 @@ namespace BookfetSystem.Services.Implement
 {
     public class PaymentService : IPaymentService
     {
+        private readonly GSP26SE10DBContext _dbContext;
         private readonly PaymentRepository _paymentRepository;
         private readonly OrderRepository _orderRepository;
         private readonly IConfiguration _configuration;
 
-        public PaymentService(PaymentRepository paymentRepository, OrderRepository orderRepository, IConfiguration configuration)
+        public PaymentService(
+            GSP26SE10DBContext dbContext,
+            PaymentRepository paymentRepository,
+            OrderRepository orderRepository,
+            IConfiguration configuration)
         {
+            _dbContext = dbContext;
             _paymentRepository = paymentRepository;
             _orderRepository = orderRepository;
             _configuration = configuration;
@@ -241,6 +248,116 @@ namespace BookfetSystem.Services.Implement
                     orderId = order.OrderId,
                     paymentCode,
                     amount = depositAmount,
+                    qrUrl
+                }
+            };
+        }
+
+        public async Task<ApiResponse<object>> CreateFullQR(int orderId)
+        {
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+
+            if (order == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order not found"
+                };
+            }
+
+            var remainingAmount = order.RemainingAmount ?? ((order.TotalPrice ?? 0m) - (order.DepositAmount ?? 0m));
+            if (remainingAmount < 0)
+            {
+                remainingAmount = 0;
+            }
+
+            var extraChargeAmount = await _dbContext.OrderDetails
+                .Where(x => x.OrderId == orderId)
+                .SelectMany(x => x.OrderDetailExtraCharges)
+                .SumAsync(x => x.TotalAmount) ?? 0m;
+
+            var fullAmount = remainingAmount + extraChargeAmount;
+            if (fullAmount <= 0)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order has no remaining amount to pay."
+                };
+            }
+
+            var hasPaidFull = await _dbContext.Payments.AnyAsync(x =>
+                x.OrderId == order.OrderId &&
+                x.PaymentType == PaymentType.FULL.ToString() &&
+                x.PaymentStatus == PaymentStatus.PAID.ToString());
+            if (hasPaidFull)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order is already fully paid."
+                };
+            }
+
+            var paymentCode = $"BOOKFET_FULL_{order.OrderId}";
+            var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
+            var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
+            var qrBank = _configuration["SePay:QrBankCode"] ?? string.Empty;
+
+            var existingUnpaid = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(order.OrderId, PaymentType.FULL.ToString());
+            if (existingUnpaid != null)
+            {
+                if ((existingUnpaid.Amount ?? 0m) != fullAmount)
+                {
+                    existingUnpaid.Amount = fullAmount;
+                    await _paymentRepository.UpdateAsync(existingUnpaid);
+                }
+
+                var amt = (int)Math.Round(fullAmount);
+                var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
+
+                return new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "QR already exists for this order. Use existing full payment.",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentCode,
+                        remainingAmount,
+                        extraChargeAmount,
+                        amount = fullAmount,
+                        qrUrl = url
+                    }
+                };
+            }
+
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                Amount = fullAmount,
+                PaymentType = PaymentType.FULL.ToString(),
+                PaymentMethod = PaymentMethod.BANK_TRANSFER.ToString(),
+                PaymentStatus = PaymentStatus.UNPAID.ToString(),
+            };
+
+            await _paymentRepository.CreateAsync(payment);
+
+            var amountInt = (int)Math.Round(fullAmount);
+            var qrUrl = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amountInt}&des={Uri.EscapeDataString(paymentCode)}";
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Full QR created",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentCode,
+                    remainingAmount,
+                    extraChargeAmount,
+                    amount = fullAmount,
                     qrUrl
                 }
             };

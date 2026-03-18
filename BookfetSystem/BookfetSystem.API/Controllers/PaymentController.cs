@@ -79,6 +79,17 @@ namespace BookfetSystem.API.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("create-full-qr/{orderId}")]
+        public async Task<ActionResult> CreateFullQR(int orderId)
+        {
+            var result = await _paymentService.CreateFullQR(orderId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
         [HttpPost("sepay-webhook")]
         public async Task<IActionResult> SePayWebhook([FromBody] SePayWebhookPayload payload)
         {

@@ -28,7 +28,9 @@ namespace BookfetSystem.Services.Mappings
                 .Map(dest => dest.Status,
                     src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
                 .Map(dest => dest.Type,
-                    src => EnumHelper.TryParseToInt<OrderDetailType>(src.Type));
+                    src => EnumHelper.TryParseToInt<OrderDetailType>(src.Type))
+                .Map(dest => dest.ExtraChargeCost,
+                    src => src.OrderDetailExtraCharges.Sum(ec => ec.TotalAmount));
         }
     }
 }
