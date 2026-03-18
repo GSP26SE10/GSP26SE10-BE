@@ -24,7 +24,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateFeedbackService([FromBody] FeedbackServiceCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateFeedbackService([FromForm] FeedbackServiceCreateRequest request)
         {
             var result = await _feedbackServiceService.CreateAsync(request);
             if (result.Success)

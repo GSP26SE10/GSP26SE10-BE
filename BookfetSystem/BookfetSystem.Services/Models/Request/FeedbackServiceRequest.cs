@@ -1,5 +1,7 @@
 using BookfetSystem.Services.Enum;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -18,6 +20,8 @@ namespace BookfetSystem.Services.Models.Request
         public int Rating { get; set; }
 
         public string? Comment { get; set; }
+
+        public List<IFormFile>? ImgFiles { get; set; }
     }
 
     public class FeedbackServiceUpdateRequest
@@ -47,7 +51,7 @@ namespace BookfetSystem.Services.Models.Request
         public int? ServiceId { get; set; }
         public int? CustomerId { get; set; }
         public int? Rating { get; set; }
-        public string? Status { get; set; }
+        public FeedbackServiceStatus? Status { get; set; }
         public string? Comment { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace BookfetSystem.Services.Models.Response
         public int? CustomerId { get; set; }
         public int Rating { get; set; }
         public string? Comment { get; set; }
+        public object? Img { get; set; }
         public int? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? ServiceName { get; set; }
