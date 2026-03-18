@@ -7,6 +7,7 @@ using BookfetSystem.API.Middlewares;
 using BookfetSystem.Services.Options;
 using BookfetSystem.API.BackgroundJobs;
 using Hangfire;
+using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -226,7 +227,11 @@ app.UseGlobalException();
 
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    // Allow dashboard access from deployed environments (not only localhost).
+    Authorization = [new AllowAllHangfireDashboardAuthorizationFilter()]
+});
 
 app.UseHttpsRedirection();
 
@@ -241,3 +246,8 @@ app.MapControllers();
 app.Run();
 
 app.MapGet("/", () => Results.Ok("BookfetSystem API is running"));
+
+internal sealed class AllowAllHangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context) => true;
+}
