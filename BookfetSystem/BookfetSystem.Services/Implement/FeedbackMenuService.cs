@@ -8,27 +8,34 @@ using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
 {
     public class FeedbackMenuService : IFeedbackMenuService
     {
+        private const int MaxFeedbackMenuImagesPerRequest = 3;
         private readonly FeedbackMenuRepository _feedbackMenuRepository;
         private readonly MenuRepository _menuRepository;
         private readonly UserRepository _userRepository;
         private readonly OrderRepository _orderRepository;
+        private readonly IImageStorageService _imageStorageService;
 
         public FeedbackMenuService(
             FeedbackMenuRepository feedbackMenuRepository,
             MenuRepository menuRepository,
             UserRepository userRepository,
-            OrderRepository orderRepository)
+            OrderRepository orderRepository,
+            IImageStorageService imageStorageService)
         {
             _feedbackMenuRepository = feedbackMenuRepository;
             _menuRepository = menuRepository;
             _userRepository = userRepository;
             _orderRepository = orderRepository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<FeedbackMenuResponse>> GetAllFeedbackMenuFilteredAsync(FeedbackMenuFilterRequest request, int page, int pageSize)
@@ -100,6 +107,41 @@ namespace BookfetSystem.Services.Implement
                 Status = FeedbackMenuStatus.ACTIVE.ToString(),
                 CreatedAt = DateTime.UtcNow
             };
+
+            try
+            {
+                var files = NormalizeFeedbackMenuImageFiles(request.ImgFiles);
+                if (files.Count > MaxFeedbackMenuImagesPerRequest)
+                {
+                    return new ApiResponse<FeedbackMenuResponse>
+                    {
+                        Success = false,
+                        Message = $"You can upload up to {MaxFeedbackMenuImagesPerRequest} images at once.",
+                        Data = null
+                    };
+                }
+
+                if (files.Count > 0)
+                {
+                    var uploadedUrls = new List<string>(files.Count);
+                    foreach (var file in files)
+                    {
+                        var uploadedUrl = await _imageStorageService.UploadImageAsync(file, CloudinaryFolder.FeedbackMenu);
+                        uploadedUrls.Add(uploadedUrl);
+                    }
+
+                    entity.Img = JsonSerializer.Serialize(uploadedUrls);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to upload feedback menu images: {ex.Message}",
+                    Data = null
+                };
+            }
 
             var affected = await _feedbackMenuRepository.CreateAsync(entity);
             if (affected > 0)
@@ -235,6 +277,19 @@ namespace BookfetSystem.Services.Implement
                 Message = "Failed to delete feedback menu.",
                 Data = false
             };
+        }
+
+        private static List<Microsoft.AspNetCore.Http.IFormFile> NormalizeFeedbackMenuImageFiles(
+            List<Microsoft.AspNetCore.Http.IFormFile>? fileList)
+        {
+            var files = new List<Microsoft.AspNetCore.Http.IFormFile>();
+
+            if (fileList != null && fileList.Count > 0)
+            {
+                files.AddRange(fileList.Where(f => f != null && f.Length > 0));
+            }
+
+            return files;
         }
     }
 }

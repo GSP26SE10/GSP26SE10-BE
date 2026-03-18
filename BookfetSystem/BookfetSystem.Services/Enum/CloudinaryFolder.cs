@@ -4,5 +4,7 @@ public enum CloudinaryFolder
 {
     Menu,
     Dish,
-    Service
+    Service,
+    FeedbackMenu,
+    FeedbackService
 }
