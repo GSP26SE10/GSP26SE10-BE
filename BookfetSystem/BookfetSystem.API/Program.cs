@@ -98,6 +98,7 @@ builder.Services.AddScoped<OrderDetailCustomRepository>();
 builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<PaymentRepository>();
 builder.Services.AddScoped<OrderServiceRepository>();
+builder.Services.AddScoped<ContactRequestRepository>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICache, MemoryCacheService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -136,6 +137,7 @@ builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>();
 builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddSignalR();
 
 // JWT Authentication
@@ -214,7 +216,6 @@ builder.Services.AddCors(options =>
         }
     });
 });
-
 var app = builder.Build();
 
 // Trust reverse proxy (Fly, Nginx, etc.) for scheme/host
