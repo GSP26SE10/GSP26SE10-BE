@@ -168,6 +168,21 @@ builder.Services.AddAuthentication(options =>
     // Custom response when the token is invalid or missing
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        },
+
         OnChallenge = async context =>
         {
             // Skip default behavior
@@ -210,7 +225,8 @@ builder.Services.AddCors(options =>
             policy
                 .WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();
         }
         else
         {
@@ -225,7 +241,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 });
-app.MapHub<ChatHub>("/chatHub");
+
 app.UseGlobalException();
 
 app.UseSwagger();
@@ -238,11 +254,15 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.MapControllers();
 
