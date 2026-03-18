@@ -70,5 +70,13 @@ namespace BookfetSystem.Repositories
 
             return await _context.PartyCategoryMenus.AnyAsync(pcm => pcm.MenuId == menuId);
         }
+
+        public async Task<List<Menu>> GetMenusWithDishAsync()
+        {
+            return await _context.Menus
+                .Include(m => m.MenuDishes)
+                    .ThenInclude(md => md.Dish)
+                .ToListAsync();
+        }
     }
 }

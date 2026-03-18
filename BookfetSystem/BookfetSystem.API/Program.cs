@@ -138,6 +138,8 @@ builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>(
 builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
+builder.Services.AddScoped<IAIMenuRecommendationService, AIMenuRecommendationService>();
+builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
 builder.Services.AddSignalR();
 
 // JWT Authentication
