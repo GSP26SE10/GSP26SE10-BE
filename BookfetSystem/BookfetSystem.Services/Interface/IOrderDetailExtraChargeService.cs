@@ -10,5 +10,6 @@ namespace BookfetSystem.Services.Interface
     {
         Task<ApiResponse<OrderDetailExtraChargeResponse>> CreateAsync(OrderDetailExtraChargeCreateRequest request, int leaderId);
         Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogAsync();
+        Task<List<OrderDetailExtraChargeResponse>> GetByOrderIdAsync(int orderId);
     }
 }

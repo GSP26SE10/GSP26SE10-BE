@@ -25,6 +25,13 @@ namespace BookfetSystem.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("order/{orderId}")]
+        public async Task<ActionResult> GetByOrderId(int orderId)
+        {
+            var result = await _orderDetailExtraChargeService.GetByOrderIdAsync(orderId);
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]

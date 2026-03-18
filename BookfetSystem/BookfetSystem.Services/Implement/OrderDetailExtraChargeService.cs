@@ -219,6 +219,36 @@ namespace BookfetSystem.Services.Implement
             return items;
         }
 
+        public async Task<List<OrderDetailExtraChargeResponse>> GetByOrderIdAsync(int orderId)
+        {
+            var items = await _orderDetailExtraChargeRepository
+                .GetByOrderId(orderId)
+                .Select(x => new OrderDetailExtraChargeResponse
+                {
+                    OrderDetailExtraChargeId = x.OrderDetailExtraChargeId,
+                    OrderDetailId = x.OrderDetailId,
+                    ExtraChargeCatalogId = x.ExtraChargeCatalogId,
+                    ChargeType = x.ChargeType,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Quantity = x.Quantity,
+                    TotalAmount = x.TotalAmount,
+                    Status = x.Status,
+                    CreateBy = x.CreateBy,
+                    CreatorName = x.CreateByNavigation != null ? x.CreateByNavigation.FullName : null,
+                    IncurredAt = x.IncurredAt,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt,
+                    Image = SnapshotParser.TryParseJsonToObject(x.Image),
+                    Note = x.Note
+                })
+                .ToListAsync();
+
+            return items;
+        }
+
         private static List<Microsoft.AspNetCore.Http.IFormFile> NormalizeImageFiles(
             List<Microsoft.AspNetCore.Http.IFormFile>? fileList)
         {
