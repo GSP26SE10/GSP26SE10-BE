@@ -371,5 +371,96 @@ namespace BookfetSystem.Services.Implement
                 }
             };
         }
+
+        public async Task<ApiResponse<object>> CreateFullCashPayment(int orderId)
+        {
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+
+            if (order == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order not found"
+                };
+            }
+
+            if (!string.Equals(order.Status, OrderStatus.BILLING.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order must be BILLING before creating full cash payment."
+                };
+            }
+
+            var hasPaidFull = await _dbContext.Payments.AnyAsync(x =>
+                x.OrderId == order.OrderId &&
+                x.PaymentType == PaymentType.FULL.ToString() &&
+                x.PaymentStatus == PaymentStatus.PAID.ToString());
+            if (hasPaidFull)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order is already fully paid."
+                };
+            }
+
+            var remainingAmount = order.RemainingAmount ?? ((order.TotalPrice ?? 0m) - (order.DepositAmount ?? 0m));
+            if (remainingAmount < 0)
+            {
+                remainingAmount = 0;
+            }
+
+            var extraChargeAmount = await _dbContext.OrderDetails
+                .Where(x => x.OrderId == orderId)
+                .SelectMany(x => x.OrderDetailExtraCharges)
+                .SumAsync(x => x.TotalAmount) ?? 0m;
+
+            var fullAmount = remainingAmount + extraChargeAmount;
+            if (fullAmount <= 0)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order has no remaining amount to pay."
+                };
+            }
+
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                Amount = fullAmount,
+                PaymentType = PaymentType.FULL.ToString(),
+                PaymentMethod = PaymentMethod.CASH.ToString(),
+                PaymentStatus = PaymentStatus.PAID.ToString(),
+                PaidAt = DateTime.UtcNow
+            };
+
+            await _paymentRepository.CreateAsync(payment);
+
+            order.RemainingAmount = 0;
+            order.Status = OrderStatus.COMPLETED.ToString();
+            await _orderRepository.UpdateAsync(order);
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Full cash payment created successfully.",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentId = payment.PaymentId,
+                    remainingAmount,
+                    extraChargeAmount,
+                    amount = fullAmount,
+                    paymentType = payment.PaymentType,
+                    paymentMethod = payment.PaymentMethod,
+                    paymentStatus = payment.PaymentStatus,
+                    paidAt = payment.PaidAt
+                }
+            };
+        }
     }
 }

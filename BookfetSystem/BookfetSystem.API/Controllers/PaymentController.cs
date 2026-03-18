@@ -2,7 +2,9 @@ using System;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.SePay;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
@@ -79,10 +81,45 @@ namespace BookfetSystem.API.Controllers
             return BadRequest(result);
         }
 
+        [Authorize]
         [HttpPost("create-full-qr/{orderId}")]
         public async Task<ActionResult> CreateFullQR(int orderId)
         {
+            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(roleValue, out var roleId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing role id." });
+            }
+
+            if (roleId != 2)
+            {
+                return StatusCode(403, new { Message = "Only leader role can create full payment QR." });
+            }
+
             var result = await _paymentService.CreateFullQR(orderId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPost("create-full-cash/{orderId}")]
+        public async Task<ActionResult> CreateFullCash(int orderId)
+        {
+            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(roleValue, out var roleId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing role id." });
+            }
+
+            if (roleId != 2)
+            {
+                return StatusCode(403, new { Message = "Only leader role can create full cash payment." });
+            }
+
+            var result = await _paymentService.CreateFullCashPayment(orderId);
             if (result.Success)
             {
                 return Ok(result);
