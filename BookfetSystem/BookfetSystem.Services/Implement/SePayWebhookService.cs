@@ -90,7 +90,8 @@ namespace BookfetSystem.Services.Implement
             if (string.IsNullOrWhiteSpace(text))
                 return null;
 
-            var match = Regex.Match(text, @"BOOKFET(?:_(?:FULL|DEPOSIT))?_?(\d+)", RegexOptions.IgnoreCase);
+            var normalized = NormalizePaymentText(text);
+            var match = Regex.Match(normalized, @"BOOKFET(?:FULL|DEPOSIT)?(\d+)", RegexOptions.IgnoreCase);
             return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
         }
 
@@ -101,17 +102,24 @@ namespace BookfetSystem.Services.Implement
                 return null;
             }
 
-            if (Regex.IsMatch(text, @"BOOKFET_FULL_?\d+", RegexOptions.IgnoreCase))
+            var normalized = NormalizePaymentText(text);
+
+            if (Regex.IsMatch(normalized, @"BOOKFETFULL\d+", RegexOptions.IgnoreCase))
             {
                 return PaymentType.FULL;
             }
 
-            if (Regex.IsMatch(text, @"BOOKFET(?:_DEPOSIT)?_?\d+", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(normalized, @"BOOKFET(?:DEPOSIT)?\d+", RegexOptions.IgnoreCase))
             {
                 return PaymentType.DEPOSIT;
             }
 
             return null;
+        }
+
+        private static string NormalizePaymentText(string text)
+        {
+            return Regex.Replace(text, "[^a-zA-Z0-9]", string.Empty).ToUpperInvariant();
         }
     }
 }

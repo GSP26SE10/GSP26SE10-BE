@@ -266,6 +266,15 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (!string.Equals(order.Status, OrderStatus.BILLING.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order must be BILLING before creating full payment QR."
+                };
+            }
+
             var remainingAmount = order.RemainingAmount ?? ((order.TotalPrice ?? 0m) - (order.DepositAmount ?? 0m));
             if (remainingAmount < 0)
             {
