@@ -27,8 +27,9 @@ namespace BookfetSystem.Services.Services
         private readonly MenuDishRepository _menuDishRepository;
         private readonly PartyCategoryRepository _partyCategoryRepository;
         private readonly IOrderStatusSchedulerService _orderStatusSchedulerService;
+        private readonly INotificationService _notificationService;
 
-        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService)
+        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService, INotificationService notificationService)
         {
             _dbContext = dbContext;
             _orderRepository = orderRepository;
@@ -41,6 +42,7 @@ namespace BookfetSystem.Services.Services
             _menuDishRepository = menuDishRepository;
             _partyCategoryRepository = partyCategoryRepository;
             _orderStatusSchedulerService = orderStatusSchedulerService;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<OrderResponse>> GetAllFilteredAsync(OrderFilterRequest filter, int page, int pageSize)
@@ -858,6 +860,20 @@ namespace BookfetSystem.Services.Services
 
             order.Status = OrderStatus.PREPARING.ToString();
             await _orderRepository.UpdateAsync(order);
+
+            if (staffGroup.LeaderId.HasValue)
+            {
+                await _notificationService.SendToUserAsync(
+                    staffGroup.LeaderId.Value,
+                    "Ban duoc giao tiec moi",
+                    $"Don tiec #{order.OrderId} da duoc giao cho nhom cua ban.",
+                    NotificationType.Order,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.OrderId.ToString(),
+                        ["staffGroupId"] = staffGroup.StaffGroupId.ToString()
+                    });
+            }
 
             var updated = await GetById(orderId);
             return new ApiResponse<OrderResponse>

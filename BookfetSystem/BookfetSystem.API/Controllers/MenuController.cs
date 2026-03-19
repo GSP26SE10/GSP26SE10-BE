@@ -1,3 +1,4 @@
+using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,11 @@ namespace BookfetSystem.API.Controllers
     public class MenuController : ControllerBase
     {
         private readonly IMenuService _menuService;
-
-        public MenuController(IMenuService menuService)
+        private readonly IMenuSuggestionService _menuSuggestionService;
+        public MenuController(IMenuService menuService, IMenuSuggestionService menuSuggestionService)
         {
             _menuService = menuService;
+            _menuSuggestionService = menuSuggestionService;
         }
 
         [HttpGet]
@@ -44,7 +46,8 @@ namespace BookfetSystem.API.Controllers
             if (result.Success)
             {
                 return Ok(result);
-            }
+            } 
+
 
             return BadRequest(result);
         }
@@ -59,6 +62,13 @@ namespace BookfetSystem.API.Controllers
             }
 
             return NotFound(result);
+        }
+
+        [HttpPost("ai-suggest")]
+        public async Task<IActionResult> SuggestMenu([FromBody] AIMenuRequest request)
+        {
+            var result = await _menuSuggestionService.SuggestMenu(request);
+            return Ok(result);
         }
     }
 }
