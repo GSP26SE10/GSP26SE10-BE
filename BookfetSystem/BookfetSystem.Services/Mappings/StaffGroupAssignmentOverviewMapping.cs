@@ -33,6 +33,10 @@ namespace BookfetSystem.Services.Mappings
             config.NewConfig<OrderDetail, StaffGroupAssignmentOrderResponse>()
                   .Map(dest => dest.OrderStatus,
                        src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+                  .Map(dest => dest.CustomerName,
+                       src => src.Order != null && src.Order.Customer != null ? src.Order.Customer.FullName : null)
+                  .Map(dest => dest.CustomerPhone,
+                       src => src.Order != null && src.Order.Customer != null ? src.Order.Customer.Phone : null)
                   .Map(dest => dest.TotalPrice,
                        src => src.TotalPrice ?? (src.Order != null ? src.Order.TotalPrice : null))
                   .Map(dest => dest.DepositAmount,
