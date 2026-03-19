@@ -19,19 +19,22 @@ namespace BookfetSystem.Services.Implement
         private readonly UserRepository _userRepository;
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
+        private readonly INotificationService _notificationService;
 
         public OrderDetailStaffTaskService(
             OrderDetailStaffTaskRepository taskRepository,
             OrderDetailRepository orderDetailRepository,
             UserRepository userRepository,
             StaffGroupRepository staffGroupRepository,
-            StaffGroupMemberRepository staffGroupMemberRepository)
+            StaffGroupMemberRepository staffGroupMemberRepository,
+            INotificationService notificationService)
         {
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
             _userRepository = userRepository;
             _staffGroupRepository = staffGroupRepository;
             _staffGroupMemberRepository = staffGroupMemberRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<StaffMyTaskResponse>> GetMyTasksAsync(int staffId, int page, int pageSize)
@@ -164,6 +167,17 @@ namespace BookfetSystem.Services.Implement
                     Note = entity.Note,
                     StaffName = staff.FullName
                 };
+
+                await _notificationService.SendToUserAsync(
+                    request.StaffId,
+                    "Ban co cong viec moi",
+                    $"Nhiem vu '{entity.TaskName ?? "Task"}' da duoc giao cho ban.",
+                    NotificationType.Task,
+                    new Dictionary<string, string>
+                    {
+                        ["taskId"] = entity.TaskId.ToString(),
+                        ["orderDetailId"] = entity.OrderDetailId?.ToString() ?? string.Empty
+                    });
 
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
@@ -307,6 +321,29 @@ namespace BookfetSystem.Services.Implement
                 Note = entity.Note,
                 StaffName = staff?.FullName
             };
+
+            if (request.TaskStatus == StaffTaskStatus.COMPLETED && entity.OrderDetailId.HasValue)
+            {
+                var orderDetail = await _orderDetailRepository.GetByIdAsync(entity.OrderDetailId.Value);
+                if (orderDetail?.StaffGroupId.HasValue == true)
+                {
+                    var staffGroup = await _staffGroupRepository.GetByIdAsync(orderDetail.StaffGroupId.Value);
+                    if (staffGroup?.LeaderId.HasValue == true)
+                    {
+                        await _notificationService.SendToUserAsync(
+                            staffGroup.LeaderId.Value,
+                            "Staff da hoan thanh cong viec",
+                            $"{staff?.FullName ?? "Mot staff"} da hoan thanh nhiem vu '{entity.TaskName ?? "Task"}'.",
+                            NotificationType.Task,
+                            new Dictionary<string, string>
+                            {
+                                ["taskId"] = entity.TaskId.ToString(),
+                                ["orderDetailId"] = entity.OrderDetailId.Value.ToString(),
+                                ["staffId"] = staffId.ToString()
+                            });
+                    }
+                }
+            }
 
             return new ApiResponse<OrderDetailStaffTaskResponse>
             {

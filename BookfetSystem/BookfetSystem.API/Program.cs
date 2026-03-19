@@ -99,7 +99,10 @@ builder.Services.AddScoped<OrderDetailRepository>();
 builder.Services.AddScoped<PaymentRepository>();
 builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<ContactRequestRepository>();
+builder.Services.AddScoped<UserDeviceRepository>();
+builder.Services.AddScoped<NotificationRepository>();
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<ICache, MemoryCacheService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -140,6 +143,8 @@ builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<IAIMenuRecommendationService, AIMenuRecommendationService>();
 builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
+builder.Services.AddScoped<IDeviceService, DeviceService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSignalR();
 
 // JWT Authentication
