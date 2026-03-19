@@ -20,6 +20,8 @@ namespace BookfetSystem.Services.Models.Response
     {
         public int OrderDetailId { get; set; }
         public int? OrderStatus { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
         public decimal? TotalPrice { get; set; }
         public decimal? DepositAmount { get; set; }
         public decimal? RemainingAmount { get; set; }

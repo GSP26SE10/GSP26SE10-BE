@@ -61,6 +61,7 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.PartyCategory)
                 .Include(sg => sg.OrderDetails)
                     .ThenInclude(od => od.Order)
+                        .ThenInclude(o => o.Customer)
                 .Include(sg => sg.OrderDetails)
                     .ThenInclude(od => od.OrderDetailStaffTasks)
                         .ThenInclude(task => task.Staff)
