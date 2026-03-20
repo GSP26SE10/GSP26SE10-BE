@@ -31,15 +31,6 @@ namespace BookfetSystem.API.BackgroundJobs
             }
 
             var actualStartUtc = ToUtc(detail.StartTime.Value);
-            if (!IsSameMoment(actualStartUtc, expectedStartTimeUtc))
-            {
-                return;
-            }
-
-            if (DateTime.UtcNow < actualStartUtc)
-            {
-                return;
-            }
 
             if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
@@ -69,15 +60,6 @@ namespace BookfetSystem.API.BackgroundJobs
             }
 
             var actualEndUtc = ToUtc(detail.EndTime.Value);
-            if (!IsSameMoment(actualEndUtc, expectedEndTimeUtc))
-            {
-                return;
-            }
-
-            if (DateTime.UtcNow < actualEndUtc)
-            {
-                return;
-            }
 
             if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
@@ -147,10 +129,6 @@ namespace BookfetSystem.API.BackgroundJobs
             };
         }
 
-        private static bool IsSameMoment(DateTime a, DateTime b)
-        {
-            return Math.Abs((a - b).TotalSeconds) < 1;
-        }
     }
 
     public class OrderStatusSchedulerService : IOrderStatusSchedulerService

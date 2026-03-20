@@ -253,6 +253,63 @@ namespace BookfetSystem.Services.Implement
             }
         }
 
+        public async Task<ApiResponse<OrderDetailResponse>> EndEarlyByLeaderAsync(int orderDetailId)
+        {
+            var detail = await _repository.GetByIdAsync(orderDetailId);
+            if (detail == null)
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            if (!string.Equals(detail.Status, OrderStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Only IN_PROGRESS order detail can be ended early.",
+                    Data = null
+                };
+            }
+
+            detail.Status = OrderStatus.COMPLETED.ToString();
+            detail.EndTime = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(detail);
+
+            if (detail.OrderId.HasValue)
+            {
+                var order = await _orderRepository.GetByIdWithRelationAsync(detail.OrderId.Value);
+                if (order != null && order.OrderDetails != null && order.OrderDetails.Any())
+                {
+                    var allCompleted = order.OrderDetails.All(x =>
+                        string.Equals(x.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
+
+                    var targetOrderStatus = allCompleted
+                        ? OrderStatus.BILLING.ToString()
+                        : OrderStatus.IN_PROGRESS.ToString();
+
+                    if (!string.Equals(order.Status, targetOrderStatus, StringComparison.OrdinalIgnoreCase))
+                    {
+                        order.Status = targetOrderStatus;
+                        await _orderRepository.UpdateAsync(order);
+                    }
+                }
+            }
+
+            var updated = await GetById(orderDetailId);
+            return new ApiResponse<OrderDetailResponse>
+            {
+                Success = true,
+                Message = "Order detail ended early successfully.",
+                Data = updated
+            };
+        }
+
         public async Task<OrderDetailResponse?> GetById(int id)
         {
             var entity = await _repository.GetByIdWithRelationAsync(id);

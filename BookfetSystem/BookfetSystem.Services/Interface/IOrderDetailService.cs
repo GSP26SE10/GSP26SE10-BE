@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 
@@ -15,5 +15,7 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<OrderDetailResponse>> Update(int id, OrderDetailUpdateRequest request);
 
         Task<ApiResponse<bool>> Delete(int id);
+
+        Task<ApiResponse<OrderDetailResponse>> EndEarlyByLeaderAsync(int orderDetailId);
     }
 }

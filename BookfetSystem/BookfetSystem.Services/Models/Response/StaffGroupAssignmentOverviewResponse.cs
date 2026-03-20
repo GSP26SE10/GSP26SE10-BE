@@ -19,7 +19,10 @@ namespace BookfetSystem.Services.Models.Response
     public class StaffGroupAssignmentOrderResponse
     {
         public int OrderDetailId { get; set; }
-        public int? OrderStatus { get; set; }
+    public int? OrderDetailStatus { get; set; }
+    public int? OrderStatus { get; set; }
+        public decimal? ExtraChargeCost { get; set; }
+        public List<StaffGroupAssignmentExtraChargeResponse> ExtraCharges { get; set; } = new();
         public string? CustomerName { get; set; }
         public string? CustomerPhone { get; set; }
         public decimal? TotalPrice { get; set; }
@@ -33,6 +36,27 @@ namespace BookfetSystem.Services.Models.Response
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public List<StaffGroupAssignmentTaskResponse> Tasks { get; set; } = new();
+    }
+
+    public class StaffGroupAssignmentExtraChargeResponse
+    {
+        public int OrderDetailExtraChargeId { get; set; }
+        public int? ExtraChargeCatalogId { get; set; }
+        public string? ChargeType { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public string? Unit { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public string? Status { get; set; }
+        public int? CreateBy { get; set; }
+        public string? CreatorName { get; set; }
+        public DateTime? IncurredAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public object? Image { get; set; }
+        public string? Note { get; set; }
     }
 
     public class StaffGroupAssignmentTaskResponse

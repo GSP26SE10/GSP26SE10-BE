@@ -239,6 +239,9 @@ builder.Services.AddCors(options =>
         }
     });
 });
+
+//builder.WebHost.UseUrls("http://0.0.0.0:5121"); // for public access with tunnel 
+
 var app = builder.Build();
 
 // Trust reverse proxy (Fly, Nginx, etc.) for scheme/host
@@ -267,9 +270,9 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapHub<ChatHub>("/chatHub");
-
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
 
