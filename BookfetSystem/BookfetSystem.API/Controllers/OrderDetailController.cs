@@ -1,6 +1,8 @@
-﻿using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.API.Controllers
@@ -71,6 +73,35 @@ namespace BookfetSystem.API.Controllers
         {
             var result = await _orderDetailService.Delete(id);
 
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order detail not found.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPost("end-early/{id}")]
+        public async Task<ActionResult> EndOrderDetailEarly(int id)
+        {
+            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(roleValue, out var roleId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing role id." });
+            }
+
+            if (roleId != 2)
+            {
+                return StatusCode(403, new { Message = "Only leader role can end order detail early." });
+            }
+
+            var result = await _orderDetailService.EndEarlyByLeaderAsync(id);
             if (result.Success)
             {
                 return Ok(result);

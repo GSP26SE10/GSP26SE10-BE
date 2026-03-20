@@ -31,12 +31,20 @@ namespace BookfetSystem.Services.Mappings
                        src => src.Staff != null ? src.Staff.FullName : null);
 
             config.NewConfig<OrderDetail, StaffGroupAssignmentOrderResponse>()
-                  .Map(dest => dest.OrderStatus,
+                  .Map(dest => dest.OrderDetailStatus,
                        src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+                  .Map(dest => dest.OrderStatus,
+                       src => src.Order != null
+                           ? EnumHelper.TryParseToInt<OrderStatus>(src.Order.Status)
+                           : null)
                   .Map(dest => dest.CustomerName,
                        src => src.Order != null && src.Order.Customer != null ? src.Order.Customer.FullName : null)
                   .Map(dest => dest.CustomerPhone,
                        src => src.Order != null && src.Order.Customer != null ? src.Order.Customer.Phone : null)
+                  .Map(dest => dest.ExtraChargeCost,
+                       src => src.OrderDetailExtraCharges.Sum(ec => ec.TotalAmount))
+                  .Map(dest => dest.ExtraCharges,
+                       src => src.OrderDetailExtraCharges.OrderByDescending(ec => ec.CreatedAt))
                   .Map(dest => dest.TotalPrice,
                        src => src.TotalPrice ?? (src.Order != null ? src.Order.TotalPrice : null))
                   .Map(dest => dest.DepositAmount,
@@ -64,6 +72,12 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.Status,
                         src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus))
                .Map(dest => dest.Note, src => src.Note);
+
+            config.NewConfig<OrderDetailExtraCharge, StaffGroupAssignmentExtraChargeResponse>()
+                 .Map(dest => dest.CreatorName,
+                      src => src.CreateByNavigation != null ? src.CreateByNavigation.FullName : null)
+                 .Map(dest => dest.Image,
+                      src => SnapshotParser.TryParseJsonToObject(src.Image));
         }
 
           private static string? GetFirstMenuImage(string? rawImgUrl)
