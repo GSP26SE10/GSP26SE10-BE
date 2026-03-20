@@ -87,7 +87,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [Authorize]
-        [HttpPost("end-early/{id}")]
+        [HttpPut("end-early/{id}")]
         public async Task<ActionResult> EndOrderDetailEarly(int id)
         {
             var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
