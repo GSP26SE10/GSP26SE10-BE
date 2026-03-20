@@ -3,6 +3,7 @@ using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -56,7 +57,7 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.MenuName,
                        src => src.Menu != null ? src.Menu.MenuName : null)
                   .Map(dest => dest.MenuImage,
-                       src => GetFirstMenuImage(src.Menu != null ? src.Menu.ImgUrl : null))
+                       src => GetSnapshotMenuImage(src.MenuSnapshot))
                   .Map(dest => dest.Tasks,
                        src => src.OrderDetailStaffTasks.OrderBy(t => t.TaskId));
 
@@ -79,6 +80,56 @@ namespace BookfetSystem.Services.Mappings
                  .Map(dest => dest.Image,
                       src => SnapshotParser.TryParseJsonToObject(src.Image));
         }
+
+          private static string? GetSnapshotMenuImage(string? menuSnapshotJson)
+          {
+               var snapshot = SnapshotParser.TryParseMenuSnapshot(menuSnapshotJson);
+               return GetFirstMenuImageFromSnapshot(snapshot?.ImgUrl);
+          }
+
+          private static string? GetFirstMenuImageFromSnapshot(object? imgUrl)
+          {
+               if (imgUrl == null)
+               {
+                    return null;
+               }
+
+               if (imgUrl is string str)
+               {
+                    return GetFirstMenuImage(str);
+               }
+
+               if (imgUrl is IEnumerable<string> strList)
+               {
+                    return strList.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+               }
+
+               if (imgUrl is JsonElement element)
+               {
+                    if (element.ValueKind == JsonValueKind.String)
+                    {
+                         var value = element.GetString();
+                         return string.IsNullOrWhiteSpace(value) ? null : value;
+                    }
+
+                    if (element.ValueKind == JsonValueKind.Array)
+                    {
+                         foreach (var item in element.EnumerateArray())
+                         {
+                              if (item.ValueKind == JsonValueKind.String)
+                              {
+                                   var value = item.GetString();
+                                   if (!string.IsNullOrWhiteSpace(value))
+                                   {
+                                        return value;
+                                   }
+                              }
+                         }
+                    }
+               }
+
+               return null;
+          }
 
           private static string? GetFirstMenuImage(string? rawImgUrl)
           {
