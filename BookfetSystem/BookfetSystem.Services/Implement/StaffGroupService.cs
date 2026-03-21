@@ -213,7 +213,7 @@ namespace BookfetSystem.Services.Implement
 
             var response = staffGroup.Adapt<StaffGroupAssignmentOverviewResponse>();
 
-            response.Members = response.Members
+            response.StaffGroup.Members = response.StaffGroup.Members
                 .Where(m => m.StaffId.HasValue)
                 .ToList();
 
