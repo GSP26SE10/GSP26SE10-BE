@@ -865,8 +865,8 @@ namespace BookfetSystem.Services.Services
             {
                 await _notificationService.SendToUserAsync(
                     staffGroup.LeaderId.Value,
-                    "Ban duoc giao tiec moi",
-                    $"Don tiec #{order.OrderId} da duoc giao cho nhom cua ban.",
+                    "Bạn được giao tiệc mới",
+                    $"Đơn tiệc #{order.OrderId} đã được giao cho nhóm của bạn.",
                     NotificationType.Order,
                     new Dictionary<string, string>
                     {
