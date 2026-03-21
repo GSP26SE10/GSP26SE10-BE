@@ -65,5 +65,12 @@ namespace BookfetSystem.Repositories
                     p.PaymentType != null && p.PaymentType.ToLower() == paymentType.ToLower() &&
                     p.PaymentStatus != null && p.PaymentStatus.ToLower() == "unpaid");
         }
+
+        public IQueryable<Payment> GetPaidPayments()
+        {
+            return _context.Payments
+                .Where(p => p.PaidAt.HasValue && p.PaymentStatus != null && p.PaymentStatus.ToLower() == "paid")
+                .AsQueryable();
+        }
     }
 }
