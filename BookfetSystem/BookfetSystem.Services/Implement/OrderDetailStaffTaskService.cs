@@ -170,8 +170,8 @@ namespace BookfetSystem.Services.Implement
 
                 await _notificationService.SendToUserAsync(
                     request.StaffId,
-                    "Ban co cong viec moi",
-                    $"Nhiem vu '{entity.TaskName ?? "Task"}' da duoc giao cho ban.",
+                    "Bạn có nhiệm vụ mới",
+                    $"Nhiệm vụ '{entity.TaskName ?? "Task"}' đã được giao cho bạn.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -332,8 +332,8 @@ namespace BookfetSystem.Services.Implement
                     {
                         await _notificationService.SendToUserAsync(
                             staffGroup.LeaderId.Value,
-                            "Staff da hoan thanh cong viec",
-                            $"{staff?.FullName ?? "Mot staff"} da hoan thanh nhiem vu '{entity.TaskName ?? "Task"}'.",
+                            "Staff đã hoàn thành công việc",
+                            $"{staff?.FullName ?? "Một staff"} đã hoàn thành nhiệm vụ '{entity.TaskName ?? "Task"}'.",
                             NotificationType.Task,
                             new Dictionary<string, string>
                             {
