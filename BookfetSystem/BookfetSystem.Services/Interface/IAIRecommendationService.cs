@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Interface
 {
-    public interface IAIMenuRecommendationService
+    public interface IAIRecommendationService
     {
-        Task<string> RecommendMenuAsync(AIMenuRequest request);
+        Task<string> GetRecommendationAsync(string prompt);
     }
 }

@@ -19,6 +19,7 @@ using BookfetSystem.Services.Interfaces;
 using BookfetSystem.Services.Services;
 using BookfetSystem.Services.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using BookfetSystem.Services.Helpers;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -101,6 +102,7 @@ builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<ContactRequestRepository>();
 builder.Services.AddScoped<UserDeviceRepository>();
 builder.Services.AddScoped<NotificationRepository>();
+builder.Services.AddScoped<AISuggestionHandler>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ICache, MemoryCacheService>();
@@ -142,10 +144,9 @@ builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>(
 builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
-builder.Services.AddScoped<IAIMenuRecommendationService, AIMenuRecommendationService>();
-builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAIRecommendationService, GeminiRecommendationService>();
 builder.Services.AddSignalR();
 
 // JWT Authentication

@@ -65,7 +65,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost("ai-suggest")]
-        public async Task<IActionResult> SuggestMenu([FromBody] AIMenuRequest request)
+        public async Task<IActionResult> SuggestMenu([FromBody] MenuSuggestionRequest request)
         {
             var result = await _menuSuggestionService.SuggestMenu(request);
             return Ok(result);
