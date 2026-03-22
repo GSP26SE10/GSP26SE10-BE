@@ -187,6 +187,8 @@ CREATE TABLE orders (
     deposit_amount NUMERIC(12,2),
     remaining_amount NUMERIC(12,2),
     note_order TEXT,
+    reviewed_by INT REFERENCES users(user_id),
+    reviewed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -530,8 +532,8 @@ INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES
 ('Service Team A', 'ACTIVE', 2);
 
 -- ORDER
-INSERT INTO orders (customer_id, status, total_price, deposit_amount, remaining_amount, note_order)
-VALUES (4, 'PENDING', 7500000, 0, 7500000, NULL);
+INSERT INTO orders (customer_id, status, total_price, deposit_amount, remaining_amount, note_order, reviewed_by, reviewed_at)
+VALUES (4, 'PENDING', 7500000, 0, 7500000, NULL, NULL, NULL);
 
 -- ORDER DETAIL (quy ước sample: type='CUSTOM_ORDER' thì custom_dish_snapshot có dữ liệu; type='ORDER' thì custom_dish_snapshot = NULL)
 INSERT INTO order_detail 
