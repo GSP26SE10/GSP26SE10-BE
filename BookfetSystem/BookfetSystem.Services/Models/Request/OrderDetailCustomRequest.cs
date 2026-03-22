@@ -10,10 +10,6 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "DishId is required.")]
         public int DishId { get; set; }
 
-        [Required(ErrorMessage = "Quantity is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
-        public int Quantity { get; set; }
-
         public decimal? TotalAmount { get; set; }
     }
 
@@ -25,10 +21,6 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "DishId is required.")]
         public int DishId { get; set; }
 
-        [Required(ErrorMessage = "Quantity is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
-        public int Quantity { get; set; }
-
         public decimal? TotalAmount { get; set; }
     }
 
@@ -37,6 +29,5 @@ namespace BookfetSystem.Services.Models.Request
         public int OrderDetailCustomId { get; set; }
         public int? OrderDetailId { get; set; }
         public int? DishId { get; set; }
-        public int? Quantity { get; set; }
     }
 }

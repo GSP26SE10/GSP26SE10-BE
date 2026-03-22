@@ -25,8 +25,10 @@ namespace BookfetSystem.Services.Mappings
                     src => SnapshotParser.TryParseMenuSnapshot(src.MenuSnapshot))
                 .Map(dest => dest.ServiceSnapshot,
                     src => SnapshotParser.TryParseServiceSnapshot(src.ServiceSnapshot))
+                .Map(dest => dest.CustomDishSnapshot,
+                    src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                 .Map(dest => dest.Status,
-                    src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+                    src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status))
                 .Map(dest => dest.Type,
                     src => EnumHelper.TryParseToInt<OrderDetailType>(src.Type))
                 .Map(dest => dest.ExtraChargeCost,

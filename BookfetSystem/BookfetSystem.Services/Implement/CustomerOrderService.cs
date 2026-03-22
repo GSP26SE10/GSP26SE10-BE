@@ -21,6 +21,8 @@ namespace BookfetSystem.Services.Services
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly OrderServiceRepository _orderServiceRepository;
         private readonly ServiceRepository _serviceRepository;
+        private readonly OrderDetailCustomRepository _orderDetailCustomRepository;
+        private readonly DishRepository _dishRepository;
         private readonly UserRepository _userRepository;
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly MenuRepository _menuRepository;
@@ -29,7 +31,7 @@ namespace BookfetSystem.Services.Services
         private readonly IOrderStatusSchedulerService _orderStatusSchedulerService;
         private readonly INotificationService _notificationService;
 
-        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService, INotificationService notificationService)
+        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, OrderDetailCustomRepository orderDetailCustomRepository, DishRepository dishRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService, INotificationService notificationService)
         {
             _dbContext = dbContext;
             _orderRepository = orderRepository;
@@ -37,6 +39,8 @@ namespace BookfetSystem.Services.Services
             _orderDetailRepository = orderDetailRepository;
             _orderServiceRepository = orderServiceRepository;
             _serviceRepository = serviceRepository;
+            _orderDetailCustomRepository = orderDetailCustomRepository;
+            _dishRepository = dishRepository;
             _staffGroupRepository = staffGroupRepository;
             _menuRepository = menuRepository;
             _menuDishRepository = menuDishRepository;
@@ -339,9 +343,19 @@ namespace BookfetSystem.Services.Services
                     partyCategoryId = itemRequest.PartyCategoryId;
                 }
 
+                var menuDishes = await _menuDishRepository
+                    .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
+                    .ToListAsync();
+                var menuDishIdSet = menuDishes
+                    .Where(md => md.DishId.HasValue)
+                    .Select(md => md.DishId!.Value)
+                    .ToHashSet();
+
                 var menuPrice = menu.BasePrice ?? 0;
                 decimal itemServiceTotal = 0;
+                decimal itemCustomDishTotal = 0;
                 var serviceItems = new List<ServiceItemSnapshotDto>();
+                var customDishItems = new List<CustomDishItemSnapshotDto>();
 
                 if (itemRequest.Services != null && itemRequest.Services.Any())
                 {
@@ -365,11 +379,47 @@ namespace BookfetSystem.Services.Services
                     }
                 }
 
-                var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+                if (itemRequest.CustomDishes != null && itemRequest.CustomDishes.Any())
+                {
+                    foreach (var customDish in itemRequest.CustomDishes)
+                    {
+                        if (customDish.DishId <= 0)
+                            continue;
 
-                var menuDishes = await _menuDishRepository
-                    .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
-                    .ToListAsync();
+                        if (menuDishIdSet.Contains(customDish.DishId))
+                        {
+                            return new ApiResponse<int>
+                            {
+                                Success = false,
+                                Message = $"DishId {customDish.DishId} already exists in menu {itemRequest.MenuId}. Please remove it from custom dishes.",
+                                Data = 0
+                            };
+                        }
+
+                        var dish = await _dishRepository.GetByIdAsync(customDish.DishId);
+                        if (dish == null)
+                            continue;
+
+                        var computedTotal = (dish.Price ?? 0) * itemRequest.NumberOfGuests;
+                        decimal? normalizedTotal = computedTotal > 0 ? computedTotal : (decimal?)null;
+                        customDishItems.Add(new CustomDishItemSnapshotDto
+                        {
+                            DishId = customDish.DishId,
+                            DishName = dish.DishName,
+                            UnitPrice = dish.Price,
+                            TotalAmount = normalizedTotal,
+                            Img = dish.Img
+                        });
+
+                        if (normalizedTotal.HasValue)
+                        {
+                            itemCustomDishTotal += normalizedTotal.Value;
+                        }
+                    }
+                }
+
+                var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal + itemCustomDishTotal;
+
                 var dishSnapshots = menuDishes
                     .Where(md => md.Dish != null)
                     .Select(md => new DishSnapshotDto
@@ -409,20 +459,30 @@ namespace BookfetSystem.Services.Services
                     CapturedAt = DateTime.UtcNow.ToString("o")
                 };
 
+                var hasCustomDishes = customDishItems.Any();
+                var customDishSnapshot = hasCustomDishes
+                    ? new CustomDishSnapshotDto
+                    {
+                        CustomDishes = customDishItems,
+                        CapturedAt = DateTime.UtcNow.ToString("o")
+                    }
+                    : null;
+
                 var orderDetail = new OrderDetail
                 {
                     OrderId = order.OrderId,
                     Address = itemRequest.Address ?? string.Empty,
                     NumberOfGuests = itemRequest.NumberOfGuests,
-                    Status = OrderStatus.PENDING.ToString(),
+                    Status = OrderDetailStatus.PENDING.ToString(),
                     TotalPrice = itemTotal,
-                    Type = OrderDetailType.ORDER.ToString(),
+                    Type = hasCustomDishes ? OrderDetailType.CUSTOM_ORDER.ToString() : OrderDetailType.ORDER.ToString(),
                     StartTime = itemRequest.StartTime,
                     EndTime = itemRequest.EndTime,
                     MenuId = itemRequest.MenuId,
                     PartyCategoryId = partyCategoryId,
                     MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
-                    ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot)
+                    ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot),
+                    CustomDishSnapshot = hasCustomDishes ? JsonSerializer.Serialize(customDishSnapshot) : null
                 };
 
                 await _orderDetailRepository.CreateAsync(orderDetail);
@@ -447,6 +507,21 @@ namespace BookfetSystem.Services.Services
                         };
 
                         await _orderServiceRepository.CreateAsync(orderService);
+                    }
+                }
+
+                if (hasCustomDishes)
+                {
+                    foreach (var customDishItem in customDishItems)
+                    {
+                        var orderDetailCustom = new OrderDetailCustom
+                        {
+                            OrderDetailId = orderDetail.OrderDetailId,
+                            DishId = customDishItem.DishId,
+                            TotalAmount = customDishItem.TotalAmount
+                        };
+
+                        await _orderDetailCustomRepository.CreateAsync(orderDetailCustom);
                     }
                 }
 
@@ -667,7 +742,7 @@ namespace BookfetSystem.Services.Services
                         OrderId = order.OrderId,
                         Address = itemRequest.Address ?? string.Empty,
                         NumberOfGuests = itemRequest.NumberOfGuests,
-                        Status = OrderStatus.PENDING.ToString(),
+                        Status = OrderDetailStatus.PENDING.ToString(),
                         TotalPrice = itemTotal,
                         Type = OrderDetailType.ORDER.ToString(),
                         StartTime = itemRequest.StartTime,
@@ -856,7 +931,7 @@ namespace BookfetSystem.Services.Services
                 };
             }
 
-            await _orderDetailRepository.AssignOrderToStaffGroupAsync(orderId, staffGroup.StaffGroupId, OrderStatus.PREPARING.ToString());
+            await _orderDetailRepository.AssignOrderToStaffGroupAsync(orderId, staffGroup.StaffGroupId, OrderDetailStatus.PREPARING.ToString());
 
             order.Status = OrderStatus.PREPARING.ToString();
             await _orderRepository.UpdateAsync(order);

@@ -52,6 +52,25 @@ namespace BookfetSystem.Services.Helpers
         }
 
         /// <summary>
+        /// Parses a raw JSON string to <see cref="CustomDishSnapshotDto"/>.
+        /// Returns null if input is null/empty or parse fails.
+        /// </summary>
+        public static CustomDishSnapshotDto? TryParseCustomDishSnapshot(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<CustomDishSnapshotDto>(json, JsonOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Parses a raw JSON string to object (array, object, etc.).
         /// Returns null if input is null/empty or parse fails.
         /// Use for JSONB fields like ImgUrl.

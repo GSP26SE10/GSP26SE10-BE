@@ -26,10 +26,12 @@ namespace BookfetSystem.Services.Mappings
                        src => src.Menu != null ? src.Menu.MenuName : null)
                       .Map(dest => dest.MenuImage,
                                    src => GetMenuImage(src))
+                  .Map(dest => dest.CustomDishSnapshot,
+                       src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                   .Map(dest => dest.PartyCategory,
                        src => src.PartyCategory != null ? src.PartyCategory.PartyCategoryName : null)
                   .Map(dest => dest.Status,
-                       src => EnumHelper.TryParseToInt<OrderStatus>(src.Status));
+                       src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status));
         }
 
           private static string? GetMenuImage(OrderDetail src)
