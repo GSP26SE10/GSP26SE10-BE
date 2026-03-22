@@ -74,7 +74,7 @@ namespace BookfetSystem.Services.Implement
                 OrderId = request.OrderId,
                 Address = request.Address.Trim(),
                 NumberOfGuests = request.NumberOfGuests,
-                Status = (request.Status ?? OrderStatus.PENDING).ToString(),
+                Status = (request.Status ?? OrderDetailStatus.PENDING).ToString(),
                 TotalPrice = request.TotalPrice,
                 Type = request.Type.Trim(),
                 StartTime = request.StartTime,
@@ -190,7 +190,7 @@ namespace BookfetSystem.Services.Implement
 
             if (string.IsNullOrWhiteSpace(entity.Status))
             {
-                entity.Status = OrderStatus.PENDING.ToString();
+                entity.Status = OrderDetailStatus.PENDING.ToString();
             }
 
             try
@@ -266,7 +266,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            if (!string.Equals(detail.Status, OrderStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(detail.Status, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return new ApiResponse<OrderDetailResponse>
                 {
@@ -276,7 +276,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            detail.Status = OrderStatus.COMPLETED.ToString();
+            detail.Status = OrderDetailStatus.COMPLETED.ToString();
             detail.EndTime = DateTime.UtcNow;
 
             await _repository.UpdateAsync(detail);
@@ -287,7 +287,7 @@ namespace BookfetSystem.Services.Implement
                 if (order != null && order.OrderDetails != null && order.OrderDetails.Any())
                 {
                     var allCompleted = order.OrderDetails.All(x =>
-                        string.Equals(x.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
+                        string.Equals(x.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
 
                     var targetOrderStatus = allCompleted
                         ? OrderStatus.BILLING.ToString()

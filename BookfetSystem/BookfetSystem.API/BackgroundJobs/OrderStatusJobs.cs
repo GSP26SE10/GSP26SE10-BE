@@ -32,19 +32,19 @@ namespace BookfetSystem.API.BackgroundJobs
 
             var actualStartUtc = ToUtc(detail.StartTime.Value);
 
-            if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            if (string.Equals(detail.Status, OrderStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            detail.Status = OrderStatus.IN_PROGRESS.ToString();
+            detail.Status = OrderDetailStatus.IN_PROGRESS.ToString();
             await _dbContext.SaveChangesAsync();
 
             await RecalculateParentOrderStatusAsync(detail.OrderId);
@@ -61,14 +61,14 @@ namespace BookfetSystem.API.BackgroundJobs
 
             var actualEndUtc = ToUtc(detail.EndTime.Value);
 
-            if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            detail.Status = OrderStatus.COMPLETED.ToString();
+            detail.Status = OrderDetailStatus.COMPLETED.ToString();
             await _dbContext.SaveChangesAsync();
 
             await RecalculateParentOrderStatusAsync(detail.OrderId);
@@ -100,7 +100,7 @@ namespace BookfetSystem.API.BackgroundJobs
                 return;
             }
 
-            var allCompleted = detailStatuses.All(x => string.Equals(x, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
+            var allCompleted = detailStatuses.All(x => string.Equals(x, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
             if (allCompleted)
             {
                 if (!string.Equals(order.Status, OrderStatus.BILLING.ToString(), StringComparison.OrdinalIgnoreCase))
