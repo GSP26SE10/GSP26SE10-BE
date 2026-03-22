@@ -22,6 +22,6 @@ namespace BookfetSystem.Services.Interface
         Task<PagedResponse<OrderResponse>> GetDepositedApprovedForAssignmentAsync(int page, int pageSize);
 
         Task<ApiResponse<OrderResponse>> AssignOrderToStaffGroupAsync(int orderId, int staffGroupId);
-        Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status);
+        Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status, int reviewerId);
     }
 }

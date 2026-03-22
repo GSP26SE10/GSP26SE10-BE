@@ -92,6 +92,8 @@ namespace BookfetSystem.Services.Services
                 DepositAmount = entity.DepositAmount,
                 RemainingAmount = entity.RemainingAmount,
                 NoteOrder = entity.NoteOrder,
+                ReviewedBy = entity.ReviewedBy,
+                ReviewedAt = entity.ReviewedAt,
                 CreatedAt = entity.CreatedAt,
                 OrderDetails = entity.OrderDetails?.Select(od => od.Adapt<OrderDetailResponse>()).ToList() ?? new List<OrderDetailResponse>()
             };
@@ -1057,8 +1059,18 @@ namespace BookfetSystem.Services.Services
             };
         }
 
-        public async Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status)
+        public async Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status, int reviewerId)
         {
+            if (reviewerId <= 0)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Invalid reviewer id.",
+                    Data = null
+                };
+            }
+
             if (!System.Enum.IsDefined(typeof(OrderStatus), status))
             {
                 return new ApiResponse<OrderResponse>
@@ -1102,6 +1114,8 @@ namespace BookfetSystem.Services.Services
             }
 
             order.Status = targetStatus.ToString();
+            order.ReviewedBy = reviewerId;
+            order.ReviewedAt = DateTime.UtcNow;
 
             if (targetStatus == OrderStatus.REJECTED && order.OrderDetails != null && order.OrderDetails.Any())
             {
