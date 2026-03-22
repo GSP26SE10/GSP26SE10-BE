@@ -4,6 +4,11 @@ using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Response;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BookfetSystem.Services.Implement
@@ -46,6 +51,61 @@ namespace BookfetSystem.Services.Implement
             }
         }
 
+        public async Task<PagedResponse<NotificationResponse>> GetAllNotificationFilteredAsync(NotificationFilterRequest request, int userId, int page, int pageSize)
+        {
+
+            var entityFilter = request.Adapt<Notification>();
+            var query = _notificationRepository.GetAllNotificationFiltered(entityFilter, userId);
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<NotificationResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<NotificationResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<ApiResponse<NotificationResponse>> MarkAsReadAsync(int notificationId, int userId)
+        {
+            var entity = await _notificationRepository.GetByIdAndUserIdAsync(notificationId, userId);
+            if (entity == null)
+            {
+                return new ApiResponse<NotificationResponse>
+                {
+                    Success = false,
+                    Message = "Notification not found.",
+                    Data = null
+                };
+            }
+
+            entity.IsRead = true;
+            var updated = await _notificationRepository.UpdateAsync(entity);
+            if (updated > 0)
+            {
+                return new ApiResponse<NotificationResponse>
+                {
+                    Success = true,
+                    Message = "Marked as read successfully.",
+                    Data = entity.Adapt<NotificationResponse>()
+                };
+            }
+
+            return new ApiResponse<NotificationResponse>
+            {
+                Success = false,
+                Message = "Failed to mark as read.",
+                Data = null
+            };
+        }
+
         private async Task SaveInAppNotificationAsync(int userId, string title, string body, NotificationType type)
         {
             var entity = new Notification
@@ -54,6 +114,8 @@ namespace BookfetSystem.Services.Implement
                 Title = title,
                 Content = body,
                 Type = ((int)type).ToString(),
+                IsRead = false,
+                IsSent = true,
                 CreatedAt = DateTime.UtcNow
             };
 
