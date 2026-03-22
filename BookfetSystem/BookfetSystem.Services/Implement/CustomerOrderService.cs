@@ -530,6 +530,7 @@ namespace BookfetSystem.Services.Services
 
             order.TotalPrice = orderTotal;
             await _orderRepository.UpdateAsync(order);
+            await _orderStatusSchedulerService.ScheduleOrderDepositTimeoutAsync(order.OrderId, order.CreatedAt);
 
             return new ApiResponse<int>
             {
