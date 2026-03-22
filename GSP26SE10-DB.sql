@@ -206,7 +206,8 @@ CREATE TABLE order_detail (
     menu_id INT REFERENCES menu(menu_id),
     note_order_detail TEXT,
     menu_snapshot JSONB,
-    service_snapshot JSONB
+    service_snapshot JSONB,
+    custom_dish_snapshot JSONB
 );
 
 CREATE TABLE staff_group_member (
@@ -222,7 +223,6 @@ CREATE TABLE order_detail_custom (
     order_detail_custom_id SERIAL PRIMARY KEY,
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
     dish_id INT REFERENCES dish(dish_id),
-    quantity INT,
     total_amount NUMERIC(12,2)
 );
 
@@ -278,6 +278,7 @@ CREATE TABLE payment (
 CREATE TABLE feedback_menu (
     feedback_menu_id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(order_id),
+    order_detail_id INT,
     menu_id INT REFERENCES menu(menu_id) ON DELETE CASCADE,
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
@@ -290,6 +291,7 @@ CREATE TABLE feedback_menu (
 CREATE TABLE feedback_service (
     feedback_service_id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(order_id),
+    order_detail_id INT,
     service_id INT REFERENCES service(service_id) ON DELETE CASCADE,
     customer_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     rating INT NOT NULL,
@@ -324,6 +326,8 @@ CREATE TABLE message (
     conversation_id INT REFERENCES conversation(conversation_id) ON DELETE CASCADE,
     sender_id INT REFERENCES users(user_id),
     content TEXT,
+    message_type VARCHAR(20) NOT NULL DEFAULT 'TEXT',
+    menu_id INT REFERENCES menu(menu_id) ON DELETE SET NULL,
     sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -384,7 +388,7 @@ INSERT INTO role (role_name) VALUES
 
 -- USERS
 INSERT INTO users (full_name, email, password_hash, user_name, phone, address, status, role_id) VALUES
-('System Administrator', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
+('Admin', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
 ('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', '456 Leader St', 'ACTIVE', 2),
 ('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', '789 Staff St', 'ACTIVE', 3),
 ('Nguyen Van A', 'user@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', '321 User St', 'ACTIVE', 4);
@@ -407,6 +411,11 @@ INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, 
 ('Beef Steak', 200000, 'Premium beef steak', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Cooked to order'),
 ('Coconut Ice Cream', 50000, 'Fresh coconut ice cream', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 2, 'Contains dairy'),
 ('Fresh Orange Juice', 30000, 'Freshly squeezed orange juice', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 3, 'No added sugar');
+
+-- DISH TEST (2.5k + 2.5k)
+INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
+('dish1 test 2.5k', 2500, 'Sample dish for test menu', 'AVAILABLE', NULL, 1, 'test data'),
+('dish2 test 2.5k', 2500, 'Sample dish for test menu', 'AVAILABLE', NULL, 1, 'test data');
 
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
@@ -439,6 +448,10 @@ INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALU
 ('Combo Hải Sản Đặc Sản', 750000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
 ('Combo Hải Sản Premium', 620000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
 ('Combo Hải Sản Đại Dương', 850000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2);
+
+-- MENU TEST 5K
+INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
+('menu test 5k', 5000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1);
 
 -- MENU - DISH
 INSERT INTO menu_dish (menu_id, dish_id) VALUES
@@ -473,6 +486,14 @@ INSERT INTO menu_dish (menu_id, dish_id) VALUES
 (10, 3),
 (10, 4);
 
+-- MENU_DISH cho menu test 5k và 2 dish test 2.5k
+INSERT INTO menu_dish (menu_id, dish_id)
+SELECT m.menu_id, d.dish_id
+FROM menu m
+CROSS JOIN dish d
+WHERE m.menu_name = 'menu test 5k'
+  AND d.dish_name IN ('dish1 test 2.5k', 'dish2 test 2.5k');
+
 -- PARTY CATEGORY - MENU
 INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 (1, 1),
@@ -488,13 +509,13 @@ INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 
 -- SERVICE
 INSERT INTO service (service_name, description, base_price, status, img) VALUES
-('Stage Decoration', 'Professional stage setup and decoration', 2000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png'),
+('Stage Decoration', 'Professional stage setup and decoration', 1000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png'),
 ('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png'),
 ('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421422/service/service3.png');
 
 -- EXTRA CHARGE CATALOG
 INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_price, status) VALUES
-('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'item', 0, 'ACTIVE'),
+('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'item', 1000, 'ACTIVE'),
 ('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'hour', 500000, 'ACTIVE'),
 ('EXTRA_SERVICE', 'Phát sinh thêm dịch vụ', 'Phụ thu cho các dịch vụ phát sinh ngoài gói', 'service', 300000, 'ACTIVE'),
 ('EXTRA_EQUIPMENT', 'Phát sinh thêm thiết bị', 'Phụ thu cho thiết bị phát sinh thêm', 'item', 400000, 'ACTIVE'),
@@ -512,9 +533,9 @@ INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES
 INSERT INTO orders (customer_id, status, total_price, deposit_amount, remaining_amount, note_order)
 VALUES (4, 'PENDING', 7500000, 0, 7500000, NULL);
 
--- ORDER DETAIL (menu_snapshot, service_snapshot lưu tại thời điểm tạo order)
+-- ORDER DETAIL (quy ước sample: type='CUSTOM_ORDER' thì custom_dish_snapshot có dữ liệu; type='ORDER' thì custom_dish_snapshot = NULL)
 INSERT INTO order_detail 
-(order_id, address, number_of_guests, start_time, end_time, status, total_price, type, staff_group_id, party_category_id, menu_id, menu_snapshot, service_snapshot)
+(order_id, address, number_of_guests, start_time, end_time, status, total_price, type, staff_group_id, party_category_id, menu_id, menu_snapshot, service_snapshot, custom_dish_snapshot)
 VALUES 
 (1,
 '123 Nguyen Trai, District 1, Ho Chi Minh City',
@@ -523,12 +544,13 @@ NOW(),
 NOW() + INTERVAL '5 hours',
 'PENDING',
 7500000,
-'ORDER',
+'CUSTOM_ORDER',
 1,
 1,
 1,
 '{"menuName":"Combo Bò Úc","basePrice":350000,"imgUrl":["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"],"dishes":[{"dishId":1,"dishName":"Honey Grilled Chicken","price":150000},{"dishId":2,"dishName":"Beef Steak","price":200000},{"dishId":3,"dishName":"Coconut Ice Cream","price":50000},{"dishId":4,"dishName":"Fresh Orange Juice","price":30000}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb,
-'{"services":[{"serviceId":1,"serviceName":"Stage Decoration","basePrice":2000000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png"},{"serviceId":2,"serviceName":"Sound & Lighting System","basePrice":1500000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png"}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb);
+'{"services":[{"serviceId":1,"serviceName":"Stage Decoration","basePrice":2000000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png"},{"serviceId":2,"serviceName":"Sound & Lighting System","basePrice":1500000,"quantity":1,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png"}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb,
+'{"customDishes":[{"dishId":1,"dishName":"Honey Grilled Chicken","unitPrice":150000,"totalAmount":300000,"img":"https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png"}],"capturedAt":"2025-03-03T10:00:00Z"}'::jsonb);
 
 -- ORDER SERVICE
 INSERT INTO order_service (order_detail_id, service_id, quantity) VALUES 
@@ -553,23 +575,23 @@ VALUES
 (1, 3, 'Setup tables and serve guests', 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
 
 -- ORDER DETAIL CUSTOM
-INSERT INTO order_detail_custom (order_detail_id, dish_id, quantity, total_amount) VALUES
-(1, 1, 2, 300000);
+INSERT INTO order_detail_custom (order_detail_id, dish_id, total_amount) VALUES
+(1, 1, 300000);
 
 -- PAYMENT
 INSERT INTO payment (order_id, amount, payment_type, payment_method, payment_status)
 VALUES (1, 7500000, 'Full', 'BANK_TRANSFER', 'UNPAID');
 
 -- FEEDBACK MENU (đánh giá menu từ khách hàng, gắn với order_id)
-INSERT INTO feedback_menu (order_id, menu_id, customer_id, rating, comment, img, status) VALUES
-(1, 1, 4, 5, 'Menu Standard rất ngon và đa dạng!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-2.png"]'::jsonb, 'ACTIVE'),
-(1, 2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-3.png"]'::jsonb, 'ACTIVE');
+INSERT INTO feedback_menu (order_id, order_detail_id, menu_id, customer_id, rating, comment, img, status) VALUES
+(1, 1, 1, 4, 5, 'Menu Standard rất ngon và đa dạng!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-2.png"]'::jsonb, 'ACTIVE'),
+(1, 1, 2, 4, 4, 'Premium Menu chất lượng tốt, giá hợp lý.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/menu-feedback-3.png"]'::jsonb, 'ACTIVE');
 
 -- FEEDBACK SERVICE (đánh giá dịch vụ, gắn với order_id)
-INSERT INTO feedback_service (order_id, service_id, customer_id, rating, comment, img, status) VALUES
-(1, 1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-2.png"]'::jsonb, 'ACTIVE'),
-(1, 2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-3.png"]'::jsonb, 'ACTIVE'),
-(1, 3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-4.png"]'::jsonb, 'ACTIVE');
+INSERT INTO feedback_service (order_id, order_detail_id, service_id, customer_id, rating, comment, img, status) VALUES
+(1, 1, 1, 4, 5, 'Stage Decoration rất chuyên nghiệp, setup đẹp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-2.png"]'::jsonb, 'ACTIVE'),
+(1, 1, 2, 4, 4, 'Âm thanh ánh sáng chất lượng tốt.', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-3.png"]'::jsonb, 'ACTIVE'),
+(1, 1, 3, 4, 5, 'MC rất nhiệt tình và chuyên nghiệp!', '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/feedback/service-feedback-4.png"]'::jsonb, 'ACTIVE');
 
 -- CONTACT REQUEST
 INSERT INTO contact_request (customer_id, full_name, email, phone, subject, content, status) VALUES
@@ -577,13 +599,14 @@ INSERT INTO contact_request (customer_id, full_name, email, phone, subject, cont
 
 -- CONVERSATION
 INSERT INTO conversation (customer_id, owner_id)
-VALUES (4, 2);
+VALUES (4, 1);
 
 -- MESSAGE
-INSERT INTO message (conversation_id, sender_id, content)
+INSERT INTO message (conversation_id, sender_id, content, message_type, menu_id)
 VALUES 
-(1, 4, 'I would like to change the event time.'),
-(1, 2, 'Sure, please provide the new schedule.');
+(1, 4, 'I would like to change the event time.', 'TEXT', NULL),
+(1, 2, 'Sure, please provide the new schedule.', 'TEXT', NULL),
+(1, 2, 'I recommend this menu for your event.', 'MENU', 1);
 
 -- USER DEVICE
 INSERT INTO user_device (user_id, device_id, expo_push_token, platform, is_active) VALUES
