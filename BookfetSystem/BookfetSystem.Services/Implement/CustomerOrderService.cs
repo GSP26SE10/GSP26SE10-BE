@@ -280,6 +280,45 @@ namespace BookfetSystem.Services.Services
                 };
             }
 
+            var vietnamNow = GetVietnamNow();
+            var minimumPartyDate = vietnamNow.Date.AddDays(2);
+            var firstPartyDate = ToVietnamTime(request.Items[0].StartTime).Date;
+
+            if (firstPartyDate < minimumPartyDate)
+            {
+                return new ApiResponse<int>
+                {
+                    Success = false,
+                    Message = "First party date must be at least 2 days from today (Vietnam time).",
+                    Data = 0
+                };
+            }
+
+            for (var i = 0; i < request.Items.Count; i++)
+            {
+                var partyDate = ToVietnamTime(request.Items[i].StartTime).Date;
+                if (partyDate < minimumPartyDate)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = $"Item {i + 1}: party date must be at least 2 days from today (Vietnam time).",
+                        Data = 0
+                    };
+                }
+
+                var dayDiffFromFirstParty = Math.Abs((partyDate - firstPartyDate).TotalDays);
+                if (dayDiffFromFirstParty > 1)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = "All party dates must be within 1 day from the first party date.",
+                        Data = 0
+                    };
+                }
+            }
+
             var order = new Order
             {
                 CustomerId = request.CustomerId,
@@ -1014,6 +1053,35 @@ namespace BookfetSystem.Services.Services
                 Message = $"Order has been {targetStatus} successfully.",
                 Data = updated
             };
+        }
+
+        private static DateTime GetVietnamNow()
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetVietnamTimeZone());
+        }
+
+        private static DateTime ToVietnamTime(DateTime input)
+        {
+            var utc = input.Kind switch
+            {
+                DateTimeKind.Utc => input,
+                DateTimeKind.Local => input.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(input, DateTimeKind.Utc)
+            };
+
+            return TimeZoneInfo.ConvertTimeFromUtc(utc, GetVietnamTimeZone());
+        }
+
+        private static TimeZoneInfo GetVietnamTimeZone()
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            }
         }
 
         private async Task AttachExtraChargeCostsAsync(List<OrderResponse> orders)
