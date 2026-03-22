@@ -507,6 +507,8 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.RemainingAmount)
                 .HasPrecision(12, 2)
                 .HasColumnName("remaining_amount");
+            entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
@@ -514,9 +516,13 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasPrecision(12, 2)
                 .HasColumnName("total_price");
 
-            entity.HasOne(d => d.Customer).WithMany(p => p.Orders)
+            entity.HasOne(d => d.Customer).WithMany(p => p.OrderCustomers)
                 .HasForeignKey(d => d.CustomerId)
                 .HasConstraintName("orders_customer_id_fkey");
+
+            entity.HasOne(d => d.ReviewedByNavigation).WithMany(p => p.OrderReviewedByNavigations)
+                .HasForeignKey(d => d.ReviewedBy)
+                .HasConstraintName("orders_reviewed_by_fkey");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>

@@ -41,6 +41,16 @@ namespace BookfetSystem.Repositories
                 query = query.Where(x => x.Status == filter.Status);
             }
 
+            if (filter.ReviewedBy.HasValue && filter.ReviewedBy.Value != 0)
+            {
+                query = query.Where(x => x.ReviewedBy == filter.ReviewedBy);
+            }
+
+            if (filter.ReviewedAt.HasValue)
+            {
+                query = query.Where(x => x.ReviewedAt == filter.ReviewedAt);
+            }
+
             return query.OrderByDescending(x => x.CreatedAt);
         }
 
