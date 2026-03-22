@@ -456,6 +456,12 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
+            entity.Property(e => e.IsRead)
+                .HasDefaultValue(false)
+                .HasColumnName("is_read");
+            entity.Property(e => e.IsSent)
+                .HasDefaultValue(false)
+                .HasColumnName("is_sent");
             entity.Property(e => e.Title)
                 .IsRequired()
                 .HasMaxLength(255)

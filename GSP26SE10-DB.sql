@@ -333,6 +333,8 @@ CREATE TABLE notification (
     title VARCHAR(255) NOT NULL,
     content TEXT,
     type VARCHAR(50),
+    is_read BOOLEAN DEFAULT FALSE,
+    is_sent BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -589,6 +591,6 @@ INSERT INTO user_device (user_id, device_id, expo_push_token, platform, is_activ
 (4, 'ios-device-001', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx2]', 'ios', TRUE);
 
 -- NOTIFICATION
-INSERT INTO notification (user_id, title, content, type) VALUES
-(4, 'Đơn hàng đã được xác nhận', 'Đơn hàng #1 của bạn đã được xác nhận.', 'ORDER'),
-(4, 'Nhắc nhở thanh toán', 'Vui lòng thanh toán đơn hàng #1 trước ngày sự kiện.', 'PAYMENT');
+INSERT INTO notification (user_id, title, content, type, is_read, is_sent) VALUES
+(4, 'Đơn hàng đã được xác nhận', 'Đơn hàng #1 của bạn đã được xác nhận.', 'ORDER', FALSE, TRUE),
+(4, 'Nhắc nhở thanh toán', 'Vui lòng thanh toán đơn hàng #1 trước ngày sự kiện.', 'PAYMENT', FALSE, FALSE);
