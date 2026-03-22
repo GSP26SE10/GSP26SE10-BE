@@ -22,6 +22,8 @@ namespace BookfetSystem.Services.Implement
         private readonly ServiceRepository _serviceRepository;
         private readonly UserRepository _userRepository;
         private readonly OrderRepository _orderRepository;
+        private readonly OrderDetailRepository _orderDetailRepository;
+        private readonly OrderServiceRepository _orderServiceRepository;
         private readonly IImageStorageService _imageStorageService;
 
         public FeedbackServiceService(
@@ -29,12 +31,16 @@ namespace BookfetSystem.Services.Implement
             ServiceRepository serviceRepository,
             UserRepository userRepository,
             OrderRepository orderRepository,
+            OrderDetailRepository orderDetailRepository,
+            OrderServiceRepository orderServiceRepository,
             IImageStorageService imageStorageService)
         {
             _feedbackServiceRepository = feedbackServiceRepository;
             _serviceRepository = serviceRepository;
             _userRepository = userRepository;
             _orderRepository = orderRepository;
+            _orderDetailRepository = orderDetailRepository;
+            _orderServiceRepository = orderServiceRepository;
             _imageStorageService = imageStorageService;
         }
 
@@ -86,6 +92,45 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<FeedbackServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            if (orderDetail.OrderId != request.OrderId)
+            {
+                return new ApiResponse<FeedbackServiceResponse>
+                {
+                    Success = false,
+                    Message = "Order detail does not belong to the specified order.",
+                    Data = null
+                };
+            }
+
+            var hasServiceInOrderDetail = await _orderServiceRepository
+                .GetAllOrderServiceFiltered(new OrderService
+                {
+                    OrderDetailId = request.OrderDetailId,
+                    ServiceId = request.ServiceId
+                })
+                .AnyAsync();
+
+            if (!hasServiceInOrderDetail)
+            {
+                return new ApiResponse<FeedbackServiceResponse>
+                {
+                    Success = false,
+                    Message = "Service does not belong to the specified order detail.",
+                    Data = null
+                };
+            }
+
             var customer = await _userRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
             {
@@ -100,6 +145,7 @@ namespace BookfetSystem.Services.Implement
             var entity = new FeedbackService
             {
                 OrderId = request.OrderId,
+                OrderDetailId = request.OrderDetailId,
                 ServiceId = request.ServiceId,
                 CustomerId = request.CustomerId,
                 Rating = request.Rating,
