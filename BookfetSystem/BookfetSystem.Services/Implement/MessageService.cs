@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
@@ -20,17 +21,20 @@ namespace BookfetSystem.Services.Implement
         private readonly ConversationRepository _conversationRepository;
         private readonly UserRepository _userRepository;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly INotificationService _notificationService;
 
         public MessageService(
             MessageRepository messageRepository,
             ConversationRepository conversationRepository,
             UserRepository userRepository,
-            IHubContext<ChatHub> hubContext)
+            IHubContext<ChatHub> hubContext,
+            INotificationService notificationService)
         {
             _messageRepository = messageRepository;
             _conversationRepository = conversationRepository;
             _userRepository = userRepository;
             _hubContext = hubContext;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<MessageResponse>> GetAllMessageFilteredAsync(MessageFilterRequest request, int page, int pageSize)
@@ -116,19 +120,37 @@ namespace BookfetSystem.Services.Implement
                     .Group(entity.ConversationId.ToString())
                     .SendAsync("ReceiveMessage", response);
 
-                // ?? PUSH NOTI (optional n�ng cao)
                 var receiverId = request.SenderId == conversation.CustomerId
                     ? conversation.OwnerId
                     : conversation.CustomerId;
 
-                await _hubContext.Clients
-                    .User(receiverId.ToString())
-                    .SendAsync("PushNotification", new
-                    {
-                        Title = "New Message",
-                        Body = response.Content,
-                        ConversationId = response.ConversationId
-                    });
+                if (receiverId.HasValue)
+                {
+                    await _hubContext.Clients
+                        .User(receiverId.Value.ToString())
+                        .SendAsync("PushNotification", new
+                        {
+                            Title = "Bạn có tin nhắn mới",
+                            Body = response.Content,
+                            ConversationId = response.ConversationId
+                        });
+
+                    var notificationBody = string.IsNullOrWhiteSpace(response.Content)
+                        ? $"{sender.FullName} đã gửi cho bạn một tin nhắn mới."
+                        : $"{sender.FullName}: {response.Content}";
+
+                    await _notificationService.SendToUserAsync(
+                        receiverId.Value,
+                        "Bạn có tin nhắn mới",
+                        notificationBody,
+                        NotificationType.Message,
+                        new Dictionary<string, string>
+                        {
+                            ["conversationId"] = response.ConversationId.ToString(),
+                            ["messageId"] = response.MessageId.ToString(),
+                            ["senderId"] = response.SenderId?.ToString() ?? string.Empty
+                        });
+                }
 
                 return new ApiResponse<MessageResponse>
                 {

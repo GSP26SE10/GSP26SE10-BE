@@ -170,8 +170,8 @@ namespace BookfetSystem.Services.Implement
 
                 await _notificationService.SendToUserAsync(
                     request.StaffId,
-                    "Ban co cong viec moi",
-                    $"Nhiem vu '{entity.TaskName ?? "Task"}' da duoc giao cho ban.",
+                    "Bạn có nhiệm vụ mới",
+                    $"Nhiệm vụ '{entity.TaskName ?? "Task"}' đã được giao cho bạn.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -322,7 +322,7 @@ namespace BookfetSystem.Services.Implement
                 StaffName = staff?.FullName
             };
 
-            if (request.TaskStatus == StaffTaskStatus.COMPLETED && entity.OrderDetailId.HasValue)
+            if (entity.OrderDetailId.HasValue)
             {
                 var orderDetail = await _orderDetailRepository.GetByIdAsync(entity.OrderDetailId.Value);
                 if (orderDetail?.StaffGroupId.HasValue == true)
@@ -330,10 +330,21 @@ namespace BookfetSystem.Services.Implement
                     var staffGroup = await _staffGroupRepository.GetByIdAsync(orderDetail.StaffGroupId.Value);
                     if (staffGroup?.LeaderId.HasValue == true)
                     {
+                        var notificationTitle = request.TaskStatus switch
+                        {
+                            StaffTaskStatus.COMPLETED => "Staff đã hoàn thành công việc",
+                            _ => "Trạng thái nhiệm vụ được cập nhật"
+                        };
+                        var notificationBody = request.TaskStatus switch
+                        {
+                            StaffTaskStatus.COMPLETED => $"{staff?.FullName ?? "Một staff"} đã hoàn thành nhiệm vụ '{entity.TaskName ?? "Task"}'.",
+                            _ => $"{staff?.FullName ?? "Một staff"} đã cập nhật trạng thái nhiệm vụ '{entity.TaskName ?? "Task"}'."
+                        };
+
                         await _notificationService.SendToUserAsync(
                             staffGroup.LeaderId.Value,
-                            "Staff da hoan thanh cong viec",
-                            $"{staff?.FullName ?? "Mot staff"} da hoan thanh nhiem vu '{entity.TaskName ?? "Task"}'.",
+                            notificationTitle,
+                            notificationBody,
                             NotificationType.Task,
                             new Dictionary<string, string>
                             {
