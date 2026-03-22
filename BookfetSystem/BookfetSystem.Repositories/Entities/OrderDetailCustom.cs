@@ -13,8 +13,6 @@ public partial class OrderDetailCustom
 
     public int? DishId { get; set; }
 
-    public int? Quantity { get; set; }
-
     public decimal? TotalAmount { get; set; }
 
     public virtual Dish Dish { get; set; }

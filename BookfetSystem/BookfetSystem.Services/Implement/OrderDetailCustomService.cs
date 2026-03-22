@@ -76,7 +76,6 @@ namespace BookfetSystem.Services.Implement
             {
                 OrderDetailId = request.OrderDetailId,
                 DishId = request.DishId,
-                Quantity = request.Quantity,
                 TotalAmount = request.TotalAmount
             };
 
@@ -140,7 +139,6 @@ namespace BookfetSystem.Services.Implement
 
             entity.OrderDetailId = request.OrderDetailId;
             entity.DishId = request.DishId;
-            entity.Quantity = request.Quantity;
             entity.TotalAmount = request.TotalAmount;
 
             var affected = await _orderDetailCustomRepository.UpdateAsync(entity);

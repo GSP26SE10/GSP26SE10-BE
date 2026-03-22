@@ -64,4 +64,34 @@ namespace BookfetSystem.Services.Models
         [JsonPropertyName("img")]
         public string? Img { get; set; }
     }
+
+    /// <summary>
+    /// Custom dish snapshot at order creation (customDishes[], capturedAt)
+    /// </summary>
+    public class CustomDishSnapshotDto
+    {
+        [JsonPropertyName("customDishes")]
+        public List<CustomDishItemSnapshotDto> CustomDishes { get; set; } = new();
+
+        [JsonPropertyName("capturedAt")]
+        public string? CapturedAt { get; set; }
+    }
+
+    public class CustomDishItemSnapshotDto
+    {
+        [JsonPropertyName("dishId")]
+        public int DishId { get; set; }
+
+        [JsonPropertyName("dishName")]
+        public string? DishName { get; set; }
+
+        [JsonPropertyName("unitPrice")]
+        public decimal? UnitPrice { get; set; }
+
+        [JsonPropertyName("totalAmount")]
+        public decimal? TotalAmount { get; set; }
+
+        [JsonPropertyName("img")]
+        public string? Img { get; set; }
+    }
 }

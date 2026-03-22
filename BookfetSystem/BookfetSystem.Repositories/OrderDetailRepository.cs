@@ -74,6 +74,7 @@ namespace BookfetSystem.Repositories
             foreach (var orderDetail in orderDetails)
             {
                 orderDetail.StaffGroupId = staffGroupId;
+                // Repository layer should not depend on Services enums.
                 if (string.IsNullOrWhiteSpace(orderDetail.Status) ||
                     orderDetail.Status == "PENDING" ||
                     orderDetail.Status == "APPROVED")

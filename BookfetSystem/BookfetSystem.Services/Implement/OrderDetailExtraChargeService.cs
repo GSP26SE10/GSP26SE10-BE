@@ -78,8 +78,8 @@ namespace BookfetSystem.Services.Implement
 
             var orderDetailStatus = orderDetail.Status ?? string.Empty;
             var isAllowedStatus =
-                string.Equals(orderDetailStatus, OrderStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(orderDetailStatus, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase);
+                string.Equals(orderDetailStatus, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(orderDetailStatus, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase);
 
             if (!isAllowedStatus)
             {

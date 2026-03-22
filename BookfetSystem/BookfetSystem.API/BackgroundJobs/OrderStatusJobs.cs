@@ -12,6 +12,11 @@ namespace BookfetSystem.API.BackgroundJobs
         Task MoveToCompletedAsync(int orderDetailId, DateTime expectedEndTimeUtc);
     }
 
+    public interface IOrderDepositTimeoutJob
+    {
+        Task CancelOrderIfDepositUnpaidAsync(int orderId, DateTime expectedCreatedAtUtc);
+    }
+
     public class OrderStatusTransitionJob : IOrderStatusTransitionJob
     {
         private readonly GSP26SE10DBContext _dbContext;
@@ -32,19 +37,19 @@ namespace BookfetSystem.API.BackgroundJobs
 
             var actualStartUtc = ToUtc(detail.StartTime.Value);
 
-            if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            if (string.Equals(detail.Status, OrderStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            detail.Status = OrderStatus.IN_PROGRESS.ToString();
+            detail.Status = OrderDetailStatus.IN_PROGRESS.ToString();
             await _dbContext.SaveChangesAsync();
 
             await RecalculateParentOrderStatusAsync(detail.OrderId);
@@ -61,14 +66,14 @@ namespace BookfetSystem.API.BackgroundJobs
 
             var actualEndUtc = ToUtc(detail.EndTime.Value);
 
-            if (string.Equals(detail.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(detail.Status, OrderStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.REJECTED.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            detail.Status = OrderStatus.COMPLETED.ToString();
+            detail.Status = OrderDetailStatus.COMPLETED.ToString();
             await _dbContext.SaveChangesAsync();
 
             await RecalculateParentOrderStatusAsync(detail.OrderId);
@@ -100,7 +105,7 @@ namespace BookfetSystem.API.BackgroundJobs
                 return;
             }
 
-            var allCompleted = detailStatuses.All(x => string.Equals(x, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
+            var allCompleted = detailStatuses.All(x => string.Equals(x, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase));
             if (allCompleted)
             {
                 if (!string.Equals(order.Status, OrderStatus.BILLING.ToString(), StringComparison.OrdinalIgnoreCase))
@@ -129,6 +134,79 @@ namespace BookfetSystem.API.BackgroundJobs
             };
         }
 
+    }
+
+    public class OrderDepositTimeoutJob : IOrderDepositTimeoutJob
+    {
+        private readonly GSP26SE10DBContext _dbContext;
+
+        public OrderDepositTimeoutJob(GSP26SE10DBContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public async Task CancelOrderIfDepositUnpaidAsync(int orderId, DateTime expectedCreatedAtUtc)
+        {
+            var order = await _dbContext.Orders
+                .Include(x => x.OrderDetails)
+                .Include(x => x.Payments)
+                .FirstOrDefaultAsync(x => x.OrderId == orderId);
+
+            if (order == null || !order.CreatedAt.HasValue)
+            {
+                return;
+            }
+
+            var orderCreatedAtUtc = ToUtc(order.CreatedAt.Value);
+            // Ignore stale jobs that don't match the actual order creation timestamp.
+            if (Math.Abs((orderCreatedAtUtc - expectedCreatedAtUtc).TotalSeconds) > 5)
+            {
+                return;
+            }
+
+            if (!string.Equals(order.Status, OrderStatus.PENDING.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var hasPaidDeposit = order.Payments.Any(p =>
+                string.Equals(p.PaymentType, PaymentType.DEPOSIT.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(p.PaymentStatus, PaymentStatus.PAID.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            if (hasPaidDeposit || (order.DepositAmount ?? 0) > 0)
+            {
+                return;
+            }
+
+            // Final check right before cancellation to reduce webhook race conditions.
+            var hasPaidDepositFinal = await _dbContext.Payments.AnyAsync(p =>
+                p.OrderId == orderId &&
+                p.PaymentType == PaymentType.DEPOSIT.ToString() &&
+                p.PaymentStatus == PaymentStatus.PAID.ToString());
+
+            if (hasPaidDepositFinal)
+            {
+                return;
+            }
+
+            order.Status = OrderStatus.CANCELLED.ToString();
+            foreach (var detail in order.OrderDetails)
+            {
+                detail.Status = OrderDetailStatus.CANCELLED.ToString();
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        private static DateTime ToUtc(DateTime input)
+        {
+            return input.Kind switch
+            {
+                DateTimeKind.Utc => input,
+                DateTimeKind.Local => input.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(input, DateTimeKind.Utc)
+            };
+        }
     }
 
     public class OrderStatusSchedulerService : IOrderStatusSchedulerService
@@ -170,6 +248,31 @@ namespace BookfetSystem.API.BackgroundJobs
                         x => x.MoveToCompletedAsync(orderDetailId, endUtc),
                         endUtc - DateTime.UtcNow);
                 }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task ScheduleOrderDepositTimeoutAsync(int orderId, DateTime? createdAt)
+        {
+            if (orderId <= 0 || !createdAt.HasValue)
+            {
+                return Task.CompletedTask;
+            }
+
+            var createdAtUtc = ToUtc(createdAt.Value);
+            var executeAtUtc = createdAtUtc.AddMinutes(5);
+
+            if (executeAtUtc <= DateTime.UtcNow)
+            {
+                _backgroundJobClient.Enqueue<IOrderDepositTimeoutJob>(
+                    x => x.CancelOrderIfDepositUnpaidAsync(orderId, createdAtUtc));
+            }
+            else
+            {
+                _backgroundJobClient.Schedule<IOrderDepositTimeoutJob>(
+                    x => x.CancelOrderIfDepositUnpaidAsync(orderId, createdAtUtc),
+                    executeAtUtc - DateTime.UtcNow);
             }
 
             return Task.CompletedTask;

@@ -12,7 +12,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public int? NumberOfGuests { get; set; }
 
-        public OrderStatus? Status { get; set; }
+        public OrderDetailStatus? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
 
@@ -37,7 +37,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public int? NumberOfGuests { get; set; }
 
-        public OrderStatus? Status { get; set; }
+        public OrderDetailStatus? Status { get; set; }
 
         public decimal? TotalPrice { get; set; }
 
@@ -60,7 +60,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public int? OrderId { get; set; }
 
-        public OrderStatus? Status { get; set; }
+        public OrderDetailStatus? Status { get; set; }
 
         public OrderDetailType? Type { get; set; }
 
