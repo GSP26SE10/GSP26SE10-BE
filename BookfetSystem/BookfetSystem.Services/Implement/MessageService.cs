@@ -22,17 +22,20 @@ namespace BookfetSystem.Services.Implement
         private readonly UserRepository _userRepository;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly INotificationService _notificationService;
+        private readonly MenuRepository _menuRepository;
 
         public MessageService(
             MessageRepository messageRepository,
             ConversationRepository conversationRepository,
             UserRepository userRepository,
+            MenuRepository menuRepository,
             IHubContext<ChatHub> hubContext,
             INotificationService notificationService)
         {
             _messageRepository = messageRepository;
             _conversationRepository = conversationRepository;
             _userRepository = userRepository;
+            _menuRepository = menuRepository;
             _hubContext = hubContext;
             _notificationService = notificationService;
         }
@@ -63,6 +66,7 @@ namespace BookfetSystem.Services.Implement
         {
             var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
             var sender = await _userRepository.GetByIdAsync(request.SenderId);
+
             if (conversation == null)
             {
                 return new ApiResponse<MessageResponse>
@@ -93,11 +97,45 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            // VALIDATE MENU
+            if (request.MessageType == "MENU")
+            {
+                if (request.MenuId == null)
+                {
+                    return new ApiResponse<MessageResponse>
+                    {
+                        Success = false,
+                        Message = "MenuId is required for MENU message",
+                        Data = null
+                    };
+                }
+
+                request.Content = null;
+            }
+
+            // LOAD MENU
+            var menu = request.MenuId != null
+                ? await _menuRepository.GetByIdAsync(request.MenuId.Value)
+                : null;
+
+            // check menu tồn tại
+            if (request.MessageType == "MENU" && menu == null)
+            {
+                return new ApiResponse<MessageResponse>
+                {
+                    Success = false,
+                    Message = "Menu not found",
+                    Data = null
+                };
+            }
+
             var entity = new Message
             {
                 ConversationId = request.ConversationId,
                 SenderId = request.SenderId,
                 Content = request.Content?.Trim(),
+                MessageType = request.MessageType ?? "TEXT",
+                MenuId = request.MenuId,
                 SentAt = DateTime.UtcNow
             };
 
@@ -105,6 +143,7 @@ namespace BookfetSystem.Services.Implement
 
             if (affected > 0)
             {
+                // MAP RESPONSE (CÓ MENU)
                 var response = new MessageResponse
                 {
                     MessageId = entity.MessageId,
@@ -112,10 +151,17 @@ namespace BookfetSystem.Services.Implement
                     SenderId = entity.SenderId,
                     Content = entity.Content,
                     SentAt = entity.SentAt,
-                    SenderName = sender.FullName
+                    SenderName = sender.FullName,
+
+                    MessageType = entity.MessageType,
+                    MenuId = entity.MenuId,
+
+                    MenuName = menu?.MenuName,
+                    MenuPrice = menu?.BasePrice,
+                    MenuImage = menu?.ImgUrl
                 };
 
-                // ?? REALTIME (ROOM)
+                //  REALTIME
                 await _hubContext.Clients
                     .Group(entity.ConversationId.ToString())
                     .SendAsync("ReceiveMessage", response);
@@ -126,23 +172,23 @@ namespace BookfetSystem.Services.Implement
 
                 if (receiverId.HasValue)
                 {
+                    var notificationText = response.MessageType == "MENU"
+                        ? $"{sender.FullName} đã gửi một menu cho bạn"
+                        : $"{sender.FullName}: {response.Content}";
+
                     await _hubContext.Clients
                         .User(receiverId.Value.ToString())
                         .SendAsync("PushNotification", new
                         {
                             Title = "Bạn có tin nhắn mới",
-                            Body = response.Content,
+                            Body = notificationText,
                             ConversationId = response.ConversationId
                         });
-
-                    var notificationBody = string.IsNullOrWhiteSpace(response.Content)
-                        ? $"{sender.FullName} đã gửi cho bạn một tin nhắn mới."
-                        : $"{sender.FullName}: {response.Content}";
 
                     await _notificationService.SendToUserAsync(
                         receiverId.Value,
                         "Bạn có tin nhắn mới",
-                        notificationBody,
+                        notificationText,
                         NotificationType.Message,
                         new Dictionary<string, string>
                         {

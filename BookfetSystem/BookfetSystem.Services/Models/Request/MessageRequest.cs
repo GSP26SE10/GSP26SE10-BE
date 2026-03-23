@@ -12,6 +12,8 @@ namespace BookfetSystem.Services.Models.Request
 
         [Required(ErrorMessage = "Content is required.")]
         public string? Content { get; set; }
+        public string? MessageType { get; set; } // TEXT | MENU
+        public int? MenuId { get; set; }
     }
 
     public class MessageUpdateRequest
