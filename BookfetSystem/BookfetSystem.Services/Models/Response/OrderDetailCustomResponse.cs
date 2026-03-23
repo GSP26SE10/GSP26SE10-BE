@@ -1,4 +1,4 @@
-﻿namespace BookfetSystem.Services.Models.Response
+namespace BookfetSystem.Services.Models.Response
 {
     public class OrderDetailCustomResponse
     {
@@ -7,8 +7,6 @@
         public int? OrderDetailId { get; set; }
 
         public int? DishId { get; set; }
-
-        public int? Quantity { get; set; }
 
         public decimal? TotalAmount { get; set; }
 

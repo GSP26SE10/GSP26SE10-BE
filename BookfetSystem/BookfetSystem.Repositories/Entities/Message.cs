@@ -15,9 +15,15 @@ public partial class Message
 
     public string Content { get; set; }
 
+    public string MessageType { get; set; }
+
+    public int? MenuId { get; set; }
+
     public DateTime? SentAt { get; set; }
 
     public virtual Conversation Conversation { get; set; }
+
+    public virtual Menu Menu { get; set; }
 
     public virtual User Sender { get; set; }
 }

@@ -25,6 +25,8 @@ namespace BookfetSystem.Services.Models.Request
         public int? OrderId { get; set; }
         public int? CustomerId { get; set; }
         public OrderStatus? Status { get; set; }
+        public int? ReviewedBy { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 
     // FOR ORDER CREATE BUSSINESS LOGIC
@@ -74,6 +76,8 @@ namespace BookfetSystem.Services.Models.Request
         public DateTime EndTime { get; set; }
 
         public List<ServiceItemRequest>? Services { get; set; }
+
+        public List<CustomDishItemRequest>? CustomDishes { get; set; }
     }
 
     public class ServiceItemRequest
@@ -81,6 +85,11 @@ namespace BookfetSystem.Services.Models.Request
         public int ServiceId { get; set; }
 
         public int Quantity { get; set; }
+    }
+
+    public class CustomDishItemRequest
+    {
+        public int DishId { get; set; }
     }
 
     public class AssignOrderStaffGroupRequest

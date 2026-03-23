@@ -1,5 +1,7 @@
 namespace BookfetSystem.Services.Models.Response
 {
+    using BookfetSystem.Services.Models;
+
     public class StaffGroupAssignmentOverviewResponse
     {
         public StaffGroupAssignmentGroupResponse StaffGroup { get; set; } = new();
@@ -29,6 +31,7 @@ namespace BookfetSystem.Services.Models.Response
         public StaffGroupAssignmentPricingResponse Pricing { get; set; } = new();
         public StaffGroupAssignmentCustomerResponse Customer { get; set; } = new();
         public StaffGroupAssignmentMenuResponse Menu { get; set; } = new();
+        public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
         public StaffGroupAssignmentPartyResponse Party { get; set; } = new();
         public StaffGroupAssignmentScheduleResponse Schedule { get; set; } = new();
         public List<StaffGroupAssignmentExtraChargeResponse> ExtraCharges { get; set; } = new();

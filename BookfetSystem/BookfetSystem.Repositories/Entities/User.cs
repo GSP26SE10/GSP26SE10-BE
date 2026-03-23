@@ -41,11 +41,13 @@ public partial class User
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
+    public virtual ICollection<Order> OrderCustomers { get; set; } = new List<Order>();
+
     public virtual ICollection<OrderDetailExtraCharge> OrderDetailExtraCharges { get; set; } = new List<OrderDetailExtraCharge>();
 
     public virtual ICollection<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; } = new List<OrderDetailStaffTask>();
 
-    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+    public virtual ICollection<Order> OrderReviewedByNavigations { get; set; } = new List<Order>();
 
     public virtual Role Role { get; set; }
 

@@ -46,7 +46,7 @@ namespace BookfetSystem.Services.Mappings
                        src => new StaffGroupAssignmentStatusResponse
                        {
                                  Order = src.Order != null ? EnumHelper.TryParseToInt<OrderStatus>(src.Order.Status) : null,
-                                 OrderDetail = EnumHelper.TryParseToInt<OrderStatus>(src.Status)
+                                 OrderDetail = EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status)
                        })
                   .Map(dest => dest.Pricing,
                        src => new StaffGroupAssignmentPricingResponse
@@ -68,6 +68,8 @@ namespace BookfetSystem.Services.Mappings
                            Name = src.Menu != null ? src.Menu.MenuName : null,
                            Image = GetSnapshotMenuImage(src.MenuSnapshot)
                        })
+                  .Map(dest => dest.CustomDishSnapshot,
+                       src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                   .Map(dest => dest.Party,
                        src => new StaffGroupAssignmentPartyResponse
                        {

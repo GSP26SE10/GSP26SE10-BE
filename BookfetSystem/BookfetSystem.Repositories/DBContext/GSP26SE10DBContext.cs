@@ -274,6 +274,7 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasColumnType("jsonb")
                 .HasColumnName("img");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
+            entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.Status)
@@ -310,6 +311,7 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.Img)
                 .HasColumnType("jsonb")
                 .HasColumnName("img");
+            entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
@@ -430,6 +432,12 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
+            entity.Property(e => e.MenuId).HasColumnName("menu_id");
+            entity.Property(e => e.MessageType)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'TEXT'::character varying")
+                .HasColumnName("message_type");
             entity.Property(e => e.SenderId).HasColumnName("sender_id");
             entity.Property(e => e.SentAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -439,6 +447,11 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasForeignKey(d => d.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("message_conversation_id_fkey");
+
+            entity.HasOne(d => d.Menu).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.MenuId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("message_menu_id_fkey");
 
             entity.HasOne(d => d.Sender).WithMany(p => p.Messages)
                 .HasForeignKey(d => d.SenderId)
@@ -494,6 +507,8 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.RemainingAmount)
                 .HasPrecision(12, 2)
                 .HasColumnName("remaining_amount");
+            entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
@@ -501,9 +516,13 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasPrecision(12, 2)
                 .HasColumnName("total_price");
 
-            entity.HasOne(d => d.Customer).WithMany(p => p.Orders)
+            entity.HasOne(d => d.Customer).WithMany(p => p.OrderCustomers)
                 .HasForeignKey(d => d.CustomerId)
                 .HasConstraintName("orders_customer_id_fkey");
+
+            entity.HasOne(d => d.ReviewedByNavigation).WithMany(p => p.OrderReviewedByNavigations)
+                .HasForeignKey(d => d.ReviewedBy)
+                .HasConstraintName("orders_reviewed_by_fkey");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
@@ -514,6 +533,9 @@ public partial class GSP26SE10DBContext : DbContext
 
             entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
             entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.CustomDishSnapshot)
+                .HasColumnType("jsonb")
+                .HasColumnName("custom_dish_snapshot");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.MenuSnapshot)
@@ -565,7 +587,6 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.OrderDetailCustomId).HasColumnName("order_detail_custom_id");
             entity.Property(e => e.DishId).HasColumnName("dish_id");
             entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
-            entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.TotalAmount)
                 .HasPrecision(12, 2)
                 .HasColumnName("total_amount");

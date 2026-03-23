@@ -37,6 +37,8 @@ public partial class OrderDetail
 
     public string ServiceSnapshot { get; set; }
 
+    public string CustomDishSnapshot { get; set; }
+
     public virtual Menu Menu { get; set; }
 
     public virtual Order Order { get; set; }

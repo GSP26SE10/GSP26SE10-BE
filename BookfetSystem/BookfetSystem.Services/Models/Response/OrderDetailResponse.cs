@@ -36,6 +36,8 @@ namespace BookfetSystem.Services.Models.Response
 
         public ServiceSnapshotDto? ServiceSnapshot { get; set; }
 
+        public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
+
         public string? NoteOrderDetail { get; set; }
 
         public decimal? ExtraChargeCost { get; set; }

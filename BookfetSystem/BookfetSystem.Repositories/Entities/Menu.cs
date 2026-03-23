@@ -27,6 +27,8 @@ public partial class Menu
 
     public virtual ICollection<MenuDish> MenuDishes { get; set; } = new List<MenuDish>();
 
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<PartyCategoryMenu> PartyCategoryMenus { get; set; } = new List<PartyCategoryMenu>();

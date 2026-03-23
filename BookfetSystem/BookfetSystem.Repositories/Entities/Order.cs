@@ -21,6 +21,10 @@ public partial class Order
 
     public string NoteOrder { get; set; }
 
+    public int? ReviewedBy { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual User Customer { get; set; }
@@ -32,4 +36,6 @@ public partial class Order
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public virtual User ReviewedByNavigation { get; set; }
 }

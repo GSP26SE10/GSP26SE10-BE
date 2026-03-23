@@ -22,6 +22,7 @@ namespace BookfetSystem.Services.Implement
         private readonly MenuRepository _menuRepository;
         private readonly UserRepository _userRepository;
         private readonly OrderRepository _orderRepository;
+        private readonly OrderDetailRepository _orderDetailRepository;
         private readonly IImageStorageService _imageStorageService;
 
         public FeedbackMenuService(
@@ -29,12 +30,14 @@ namespace BookfetSystem.Services.Implement
             MenuRepository menuRepository,
             UserRepository userRepository,
             OrderRepository orderRepository,
+            OrderDetailRepository orderDetailRepository,
             IImageStorageService imageStorageService)
         {
             _feedbackMenuRepository = feedbackMenuRepository;
             _menuRepository = menuRepository;
             _userRepository = userRepository;
             _orderRepository = orderRepository;
+            _orderDetailRepository = orderDetailRepository;
             _imageStorageService = imageStorageService;
         }
 
@@ -86,6 +89,37 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            if (orderDetail.OrderId != request.OrderId)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = "Order detail does not belong to the specified order.",
+                    Data = null
+                };
+            }
+
+            if (orderDetail.MenuId != request.MenuId)
+            {
+                return new ApiResponse<FeedbackMenuResponse>
+                {
+                    Success = false,
+                    Message = "Menu does not belong to the specified order detail.",
+                    Data = null
+                };
+            }
+
             var customer = await _userRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
             {
@@ -100,6 +134,7 @@ namespace BookfetSystem.Services.Implement
             var entity = new FeedbackMenu
             {
                 OrderId = request.OrderId,
+                OrderDetailId = request.OrderDetailId,
                 MenuId = request.MenuId,
                 CustomerId = request.CustomerId,
                 Rating = request.Rating,

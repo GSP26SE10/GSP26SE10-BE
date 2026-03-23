@@ -11,6 +11,8 @@ public partial class FeedbackMenu
 
     public int? OrderId { get; set; }
 
+    public int? OrderDetailId { get; set; }
+
     public int? MenuId { get; set; }
 
     public int? CustomerId { get; set; }

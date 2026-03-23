@@ -34,11 +34,6 @@ namespace BookfetSystem.Repositories
                 query = query.Where(x => x.DishId == filter.DishId);
             }
 
-            if (filter.Quantity.HasValue)
-            {
-                query = query.Where(x => x.Quantity == filter.Quantity);
-            }
-
             return query.OrderByDescending(x => x.OrderDetailCustomId);
         }
     }

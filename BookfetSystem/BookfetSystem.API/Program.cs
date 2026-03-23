@@ -141,6 +141,7 @@ builder.Services.AddScoped<IRevenueService, RevenueService>();
 builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>();
+builder.Services.AddScoped<IOrderDepositTimeoutJob, OrderDepositTimeoutJob>();
 builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
