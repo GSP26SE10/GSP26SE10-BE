@@ -17,6 +17,7 @@ namespace BookfetSystem.Repositories
             var query = _context.Messages
                 .Include(m => m.Conversation)
                 .Include(m => m.Sender)
+                .Include(m => m.Menu)
                 .AsQueryable();
 
             if (filter.MessageId != 0)

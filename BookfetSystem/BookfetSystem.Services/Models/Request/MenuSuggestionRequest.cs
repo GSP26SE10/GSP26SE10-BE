@@ -7,15 +7,13 @@ using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Models.Request
 {
-    public class AIMenuRequest
+    public class MenuSuggestionRequest
     {
         public int GuestCount { get; set; }
         public string PartyType { get; set; }
         public decimal Budget { get; set; }
 
-        public List<string> PreferredDishes { get; set; } = new();
+        public List<string> FavoriteDishes { get; set; } = new();
         public List<string> Allergies { get; set; } = new();
-
-        public List<Menu> Menus { get; set; } = new();
     }
 }

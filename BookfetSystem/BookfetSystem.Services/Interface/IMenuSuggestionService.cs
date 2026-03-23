@@ -9,6 +9,6 @@ namespace BookfetSystem.Services.Interface
 {
     public interface IMenuSuggestionService
     {
-        Task<string> SuggestMenu(AIMenuRequest request);
+        Task<string> SuggestMenu(MenuSuggestionRequest request);
     }
 }

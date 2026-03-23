@@ -14,7 +14,13 @@ namespace BookfetSystem.Services.Mappings
 
             config.NewConfig<Message, MessageResponse>()
                   .Map(dest => dest.SenderName,
-                       src => src.Sender != null ? src.Sender.FullName : null);
+                       src => src.Sender != null ? src.Sender.FullName : null)
+                  .Map(dest => dest.MenuName,
+                       src => src.Menu != null ? src.Menu.MenuName : null)
+                  .Map(dest => dest.MenuPrice,
+                       src => src.Menu != null ? src.Menu.BasePrice : null)
+                  .Map(dest => dest.MenuImage,
+                       src => src.Menu != null ? src.Menu.ImgUrl : null);
         }
     }
 }
