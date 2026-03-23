@@ -10,5 +10,10 @@ namespace BookfetSystem.Services.Models.Response
         public string Content { get; set; }
         public DateTime? SentAt { get; set; }
         public string SenderName { get; set; }
+        public string MessageType { get; set; } // TEXT | MENU
+        public int? MenuId { get; set; }
+        public string MenuName { get; set; }
+        public decimal? MenuPrice { get; set; }
+        public string MenuImage { get; set; }
     }
 }
