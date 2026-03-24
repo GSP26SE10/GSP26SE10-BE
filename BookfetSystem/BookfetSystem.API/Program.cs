@@ -148,6 +148,7 @@ builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAIRecommendationService, GeminiRecommendationService>();
+builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
 builder.Services.AddSignalR();
 
 // JWT Authentication
