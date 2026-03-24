@@ -1,4 +1,5 @@
-﻿using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace BookfetSystem.Services.Interface
 {
     public interface IMenuSuggestionService
     {
-        Task<string> SuggestMenu(MenuSuggestionRequest request);
+        Task<MenuSuggestionResponse> SuggestMenu(MenuSuggestionRequest request);
     }
 }
