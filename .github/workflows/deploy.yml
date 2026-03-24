@@ -8,18 +8,21 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     defaults:
       run:
         shell: powershell
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
+          dotnet-install-dir: "${{ runner.temp }}\\dotnet"
 
       - name: Restore and build API
         run: |
