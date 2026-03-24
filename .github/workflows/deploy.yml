@@ -1,0 +1,25 @@
+name: Auto Deploy to Local Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull code
+        uses: actions/checkout@v3
+
+      - name: Build project
+        run: dotnet publish -c Release -o publish
+
+      - name: Kill old app
+        run: |
+          taskkill /IM BookfetSystem.API.exe /F || echo "No app running"
+
+      - name: Start new app
+        run: |
+          cd publish
+          start BookfetSystem.API.exe
