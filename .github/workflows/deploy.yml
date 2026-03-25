@@ -21,19 +21,22 @@ jobs:
         shell: powershell
         run: |
           $port = 5121
-          $connections = netstat -ano | findstr ":$port"
+
+          $connections = netstat -ano | findstr ":$port" | findstr "LISTENING"
 
           if ($connections) {
           $processIds = $connections | ForEach-Object {
           ($_ -split "\s+")[-1]
           } | Sort-Object -Unique
 
-          foreach ($procId in $processIds) {
-          Write-Host "Killing PID $procId"
-          taskkill /F /PID $procId /T
-          }
+           foreach ($procId in $processIds) {
+           if ($procId -ne "0" -and $procId -ne "4") {
+            Write-Host "Killing PID $procId"
+            taskkill /F /PID $procId /T
+            }
+           }
           } else {
-           Write-Host "No process using port $port"
+           Write-Host "No LISTENING process on port $port"
           }
 
       - name: Start new app
