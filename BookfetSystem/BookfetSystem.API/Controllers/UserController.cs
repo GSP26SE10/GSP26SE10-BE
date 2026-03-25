@@ -1,8 +1,11 @@
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BookfetSystem.API.Controllers
 {
@@ -11,9 +14,11 @@ namespace BookfetSystem.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly IAuthenticationService _authenticationService;
+        public UserController(IUserService userService, IAuthenticationService authenticationService)
         {
             _userService = userService;
+            _authenticationService = authenticationService;
         }
 
         [HttpGet]
@@ -58,6 +63,44 @@ namespace BookfetSystem.API.Controllers
             }
 
             return NotFound(result);
+        }
+
+        [Authorize]
+        [HttpPost("change-password/send-otp")]
+        public async Task<ActionResult> RequestChangePasswordOtp([FromBody] ChangePasswordRequest request)
+        {
+            var userIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing user id." });
+            }
+
+            var result = await _authenticationService.RequestChangePasswordOtp(userId, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPost("change-password/verify-otp")]
+        public async Task<ActionResult> VerifyChangePasswordOtp([FromBody] VerifyChangePasswordOtpRequest request)
+        {
+            var userIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing user id." });
+            }
+
+            var result = await _authenticationService.VerifyChangePasswordOtp(userId, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }
