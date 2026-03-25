@@ -21,20 +21,19 @@ jobs:
         shell: powershell
         run: |
           $port = 5121
-
           $connections = netstat -ano | findstr ":$port"
 
           if ($connections) {
-          $pids = $connections | ForEach-Object {
-            ($_ -split "\s+")[-1]
+          $processIds = $connections | ForEach-Object {
+          ($_ -split "\s+")[-1]
           } | Sort-Object -Unique
 
-          foreach ($pid in $pids) {
-            Write-Host "Killing PID $pid"
-            taskkill /F /PID $pid /T
+          foreach ($procId in $processIds) {
+          Write-Host "Killing PID $procId"
+          taskkill /F /PID $procId /T
           }
           } else {
-          Write-Host "No process using port $port"
+           Write-Host "No process using port $port"
           }
 
       - name: Start new app
