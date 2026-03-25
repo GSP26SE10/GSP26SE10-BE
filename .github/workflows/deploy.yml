@@ -24,7 +24,7 @@ jobs:
           $connections = netstat -ano | Select-String ":$port"
           foreach ($conn in $connections) {
           $parts = $conn -split "\s+"
-          $pid = $parts[-1]
+          $procId = $parts[-1]
           Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
           }
           
