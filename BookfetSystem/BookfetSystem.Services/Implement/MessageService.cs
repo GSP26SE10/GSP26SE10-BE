@@ -97,7 +97,11 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            // VALIDATE MENU
+            var cleanContent = string.IsNullOrWhiteSpace(request.Content)
+                ? null
+                : request.Content.Trim();
+
+            // VALIDATE THEO TYPE
             if (request.MessageType == "MENU")
             {
                 if (request.MenuId == null)
@@ -109,16 +113,25 @@ namespace BookfetSystem.Services.Implement
                         Data = null
                     };
                 }
-
-                request.Content = null;
+            }
+            else // TEXT hoặc null
+            {
+                if (string.IsNullOrWhiteSpace(cleanContent))
+                {
+                    return new ApiResponse<MessageResponse>
+                    {
+                        Success = false,
+                        Message = "Content is required for TEXT message",
+                        Data = null
+                    };
+                }
             }
 
-            // LOAD MENU
+            // LOAD MENU 
             var menu = request.MenuId != null
                 ? await _menuRepository.GetByIdAsync(request.MenuId.Value)
                 : null;
 
-            // check menu tồn tại
             if (request.MessageType == "MENU" && menu == null)
             {
                 return new ApiResponse<MessageResponse>
@@ -133,7 +146,7 @@ namespace BookfetSystem.Services.Implement
             {
                 ConversationId = request.ConversationId,
                 SenderId = request.SenderId,
-                Content = request.Content?.Trim(),
+                Content = cleanContent,
                 MessageType = request.MessageType ?? "TEXT",
                 MenuId = request.MenuId,
                 SentAt = DateTime.UtcNow
@@ -143,7 +156,6 @@ namespace BookfetSystem.Services.Implement
 
             if (affected > 0)
             {
-                // MAP RESPONSE (CÓ MENU)
                 var response = new MessageResponse
                 {
                     MessageId = entity.MessageId,
@@ -153,15 +165,16 @@ namespace BookfetSystem.Services.Implement
                     SentAt = entity.SentAt,
                     SenderName = sender.FullName,
 
+                     
+
                     MessageType = entity.MessageType,
                     MenuId = entity.MenuId,
-
                     MenuName = menu?.MenuName,
                     MenuPrice = menu?.BasePrice,
                     MenuImage = menu?.ImgUrl
                 };
 
-                //  REALTIME
+                // REALTIME (SignalR)
                 await _hubContext.Clients
                     .Group(entity.ConversationId.ToString())
                     .SendAsync("ReceiveMessage", response);
@@ -321,6 +334,7 @@ namespace BookfetSystem.Services.Implement
                 Success = false,
                 Message = "Failed to delete message.",
                 Data = false
+
             };
         }
     }

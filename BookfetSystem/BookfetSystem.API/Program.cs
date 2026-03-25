@@ -244,7 +244,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-//builder.WebHost.UseUrls("http://0.0.0.0:5121"); // for public access with tunnel 
+builder.WebHost.UseUrls("http://0.0.0.0:5121"); // for public access with tunnel 
 
 var app = builder.Build();
 
