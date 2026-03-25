@@ -20,7 +20,6 @@ jobs:
       - name: Kill old API (force by port)
         shell: powershell
         run: |
-          run: |
           Write-Host "Stopping all dotnet processes..."
           taskkill /F /IM dotnet.exe /T 2>$null
 
