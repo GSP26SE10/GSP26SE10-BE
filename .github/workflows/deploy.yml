@@ -13,7 +13,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build project
-        run: dotnet publish -c Release -o publish
+        run: |
+          cd BookfetSystem/BookfetSystem.API
+          dotnet publish -c Release -o publish
 
       - name: Kill old app
         run: |
