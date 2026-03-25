@@ -9,6 +9,7 @@ using Mapster;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using BookfetSystem.Services.Hubs;
+using BookfetSystem.Services.Helpers;
 using System;
 using System.Threading.Tasks;
 using System.Reflection;
@@ -171,7 +172,7 @@ namespace BookfetSystem.Services.Implement
                     MenuId = entity.MenuId,
                     MenuName = menu?.MenuName,
                     MenuPrice = menu?.BasePrice,
-                    MenuImage = menu?.ImgUrl
+                    MenuImage = SnapshotParser.TryParseJsonToObject(menu?.ImgUrl)
                 };
 
                 // REALTIME (SignalR)

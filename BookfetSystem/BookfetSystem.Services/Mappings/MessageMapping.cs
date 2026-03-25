@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -20,7 +21,7 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.MenuPrice,
                        src => src.Menu != null ? src.Menu.BasePrice : null)
                   .Map(dest => dest.MenuImage,
-                       src => src.Menu != null ? src.Menu.ImgUrl : null);
+                       src => src.Menu != null ? SnapshotParser.TryParseJsonToObject(src.Menu.ImgUrl) : null);
         }
     }
 }

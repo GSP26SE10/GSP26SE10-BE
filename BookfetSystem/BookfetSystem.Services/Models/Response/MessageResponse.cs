@@ -14,6 +14,6 @@ namespace BookfetSystem.Services.Models.Response
         public int? MenuId { get; set; }
         public string MenuName { get; set; }
         public decimal? MenuPrice { get; set; }
-        public string MenuImage { get; set; }
+        public object? MenuImage { get; set; }
     }
 }
