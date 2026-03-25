@@ -31,21 +31,12 @@ namespace BookfetSystem.Services.Models.Request
 
     public class UserUpdateRequest
     {
-        [Required(ErrorMessage = "Password is required.")]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
-        public string? Password { get; set; }
-        [Required(ErrorMessage = "FullName is required.")]
         public string? FullName { get; set; }
-        [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string? Email { get; set; }
-        [Required(ErrorMessage = "Address is required.")]
         public string? Address { get; set; }
-        [Required(ErrorMessage = "Phone is required.")]
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone must start with 0 and contain exactly 10 digits")]
         public string? Phone { get; set; }
-        [Required(ErrorMessage = "RoleId is required.")]
-        public int RoleId { get; set; }
         [EnumDataType(typeof(UserStatus), ErrorMessage = "Invalid status value.")]
         public UserStatus? Status { get; set; }
     }

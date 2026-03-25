@@ -18,5 +18,7 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<bool>> ResendVerificationCode(ResendVerificationRequest request);
         Task<ApiResponse<bool>> ForgotPassword(ForgotPasswordRequest request);
         Task<ApiResponse<bool>> ResetPassword(ResetPasswordRequest request);
+        Task<ApiResponse<bool>> RequestChangePasswordOtp(int userId, ChangePasswordRequest request);
+        Task<ApiResponse<bool>> VerifyChangePasswordOtp(int userId, VerifyChangePasswordOtpRequest request);
     }
 }

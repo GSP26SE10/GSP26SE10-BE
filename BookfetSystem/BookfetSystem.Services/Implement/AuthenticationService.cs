@@ -24,6 +24,7 @@ namespace BookfetSystem.Services.Implement
     {
         private const string VerifyCodeCacheKeyPrefix = "verify:";
         private const string ResetPasswordCacheKeyPrefix = "reset:";
+        private const string ChangePasswordCacheKeyPrefix = "change-password:";
         private const string DefaultVerifyCodeChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         private const int DefaultVerifyCodeLength = 6;
 
@@ -649,6 +650,207 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<ApiResponse<bool>> RequestChangePasswordOtp(int userId, ChangePasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.OldPassword) ||
+                string.IsNullOrWhiteSpace(request.NewPassword) ||
+                string.IsNullOrWhiteSpace(request.ConfirmNewPassword))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Old password, new password and confirm new password are required.",
+                    Data = false
+                };
+            }
+
+            if (!string.Equals(request.NewPassword, request.ConfirmNewPassword, StringComparison.Ordinal))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Confirm new password does not match new password.",
+                    Data = false
+                };
+            }
+
+            if (request.NewPassword.Length < 6)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "New password must be at least 6 characters long.",
+                    Data = false
+                };
+            }
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                    Data = false
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User does not have a valid email.",
+                    Data = false
+                };
+            }
+
+            var isOldPasswordValid = BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash);
+            if (!isOldPasswordValid)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Old password is incorrect.",
+                    Data = false
+                };
+            }
+
+            var isSameAsOldPassword = BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PasswordHash);
+            if (isSameAsOldPassword)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "New password must be different from old password.",
+                    Data = false
+                };
+            }
+
+            var otpCode = GenerateVerifyCode();
+            var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            var cacheKey = ChangePasswordCacheKeyPrefix + user.Email.Trim();
+            var payload = JsonSerializer.Serialize(new ChangePasswordOtpCacheData
+            {
+                Code = otpCode,
+                NewPasswordHash = newPasswordHash
+            });
+
+            _cache.Set(cacheKey, payload, TimeSpan.FromMinutes(10));
+
+            var subject = "Xác nhận đổi mật khẩu - Bookfet System";
+            var htmlBody = BuildChangePasswordEmailBody(user.FullName ?? user.Email, otpCode);
+
+            try
+            {
+                await _emailService.SendAsync(user.Email, subject, htmlBody);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Failed to send change password OTP: {ex.Message}",
+                    Data = false
+                };
+            }
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "OTP has been sent to your email.",
+                Data = true
+            };
+        }
+
+        public async Task<ApiResponse<bool>> VerifyChangePasswordOtp(int userId, VerifyChangePasswordOtpRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Code))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "OTP code is required.",
+                    Data = false
+                };
+            }
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User not found.",
+                    Data = false
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "User does not have a valid email.",
+                    Data = false
+                };
+            }
+
+            var cacheKey = ChangePasswordCacheKeyPrefix + user.Email.Trim();
+            var cachedPayload = _cache.Get(cacheKey);
+            if (cachedPayload == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "OTP has expired or does not exist. Please request a new OTP.",
+                    Data = false
+                };
+            }
+
+            ChangePasswordOtpCacheData? payload;
+            try
+            {
+                payload = JsonSerializer.Deserialize<ChangePasswordOtpCacheData>(cachedPayload);
+            }
+            catch
+            {
+                payload = null;
+            }
+
+            if (payload == null || string.IsNullOrWhiteSpace(payload.Code) || string.IsNullOrWhiteSpace(payload.NewPasswordHash))
+            {
+                _cache.Remove(cacheKey);
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Invalid OTP data. Please request a new OTP.",
+                    Data = false
+                };
+            }
+
+            if (!string.Equals(payload.Code, request.Code.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Invalid OTP code.",
+                    Data = false
+                };
+            }
+
+            user.PasswordHash = payload.NewPasswordHash;
+            await _userRepository.UpdateAsync(user);
+            _cache.Remove(cacheKey);
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Password changed successfully.",
+                Data = true
+            };
+        }
+
         private static string BuildVerificationEmailBody(string fullName, string verifyCode)
         {
             return $@"
@@ -683,6 +885,30 @@ namespace BookfetSystem.Services.Implement
     <p style='font-size: 12px; color: #666;'>Bookfet System</p>
 </body>
 </html>";
+        }
+
+        private static string BuildChangePasswordEmailBody(string fullName, string otpCode)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'></head>
+<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+    <h2>Xin chào {fullName}!</h2>
+    <p>Bạn vừa yêu cầu đổi mật khẩu tại <strong>Bookfet System</strong>.</p>
+    <p>Vui lòng sử dụng mã OTP bên dưới để xác nhận:</p>
+    <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #dc2626;'>{otpCode}</p>
+    <p>Mã có hiệu lực trong <strong>10 phút</strong>. Nếu bạn không thực hiện thao tác này, vui lòng đổi mật khẩu ngay và liên hệ hỗ trợ.</p>
+    <hr/>
+    <p style='font-size: 12px; color: #666;'>Bookfet System</p>
+</body>
+</html>";
+        }
+
+        private sealed class ChangePasswordOtpCacheData
+        {
+            public string Code { get; set; } = string.Empty;
+            public string NewPasswordHash { get; set; } = string.Empty;
         }
     }
 }
