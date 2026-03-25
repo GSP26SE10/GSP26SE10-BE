@@ -20,23 +20,14 @@ jobs:
       - name: Kill old API (force by port)
         shell: powershell
         run: |
-          $port = 5121
+          run: |
+          Write-Host "Stopping all dotnet processes..."
+          taskkill /F /IM dotnet.exe /T 2>$null
 
-          $connections = netstat -ano | findstr ":$port" | findstr "LISTENING"
-
-          if ($connections) {
-          $processIds = $connections | ForEach-Object {
-          ($_ -split "\s+")[-1]
-          } | Sort-Object -Unique
-
-           foreach ($procId in $processIds) {
-           if ($procId -ne "0" -and $procId -ne "4") {
-            Write-Host "Killing PID $procId"
-            taskkill /F /PID $procId /T
-            }
-           }
+           if ($LASTEXITCODE -eq 0) {
+          Write-Host "Killed existing dotnet processes"
           } else {
-           Write-Host "No LISTENING process on port $port"
+          Write-Host "No dotnet process running"
           }
 
       - name: Start new app
