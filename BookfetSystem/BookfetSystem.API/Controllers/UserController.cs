@@ -36,6 +36,7 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateRequest request)
         {
             var result = await _userService.UpdateAsync(id, request);

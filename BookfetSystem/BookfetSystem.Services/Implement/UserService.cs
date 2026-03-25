@@ -151,33 +151,36 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
-            if (!await _userRepository.CheckRoleExistAsync(request.RoleId))
+
+            if (!string.IsNullOrWhiteSpace(request.Email))
             {
-                return new ApiResponse<UserResponse>
+                var existEmail = await _userRepository.GetUserByEmailAsync(request.Email);
+                if (existEmail != null && existEmail.UserId != id)
                 {
-                    Success = false,
-                    Message = "Role not exist, try correct input role id.",
-                    Data = null
-                };
-            }
-            var existEmail = await _userRepository.GetUserByEmailAsync(request.Email);
-            if (existEmail != null && existEmail.UserId != id)
-            {
-                return new ApiResponse<UserResponse>
-                {
-                    Success = false,
-                    Message = "Email is existed.",
-                    Data = null
-                };
+                    return new ApiResponse<UserResponse>
+                    {
+                        Success = false,
+                        Message = "Email is existed.",
+                        Data = null
+                    };
+                }
             }
 
-            entity.FullName = request.FullName;
-            entity.Address = request.Address;
-            entity.Email = request.Email;
-            entity.Phone = request.Phone;
-            entity.RoleId = request.RoleId;
-            if(request.Status != null)
+            if (!string.IsNullOrWhiteSpace(request.FullName))
+                entity.FullName = request.FullName;
+
+            if (!string.IsNullOrWhiteSpace(request.Address))
+                entity.Address = request.Address;
+
+            if (!string.IsNullOrWhiteSpace(request.Email))
+                entity.Email = request.Email;
+
+            if (!string.IsNullOrWhiteSpace(request.Phone))
+                entity.Phone = request.Phone;
+
+            if (request.Status != null)
                 entity.Status = request.Status.ToString();
+
             var affected = await _userRepository.UpdateAsync(entity);
             if (affected > 0)
             {
