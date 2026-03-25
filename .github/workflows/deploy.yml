@@ -45,8 +45,8 @@ jobs:
       - name: Start new app
         shell: powershell
         run: |
-          projectDir = "$env:GITHUB_WORKSPACE/BookfetSystem/BookfetSystem.API"
+          $projectDir = "$env:GITHUB_WORKSPACE/BookfetSystem/BookfetSystem.API"
 
-          Start-Process -FilePath "cmd.exe" `
-           -ArgumentList "/c dotnet run --configuration Release" `
-           -WorkingDirectory $projectDir
+          Start-Process -FilePath "dotnet" `
+            -ArgumentList "run --configuration Release" `
+            -WorkingDirectory $projectDir
