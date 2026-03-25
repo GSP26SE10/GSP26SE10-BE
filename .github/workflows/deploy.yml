@@ -9,6 +9,12 @@ jobs:
     runs-on: self-hosted
 
     steps:
+
+      - name: Fix git safe directory
+        shell: powershell
+        run: |
+          git config --global --add safe.directory C:/Code/GSP26SE10-BE
+          
       - name: Pull latest code (REAL)
         shell: powershell
         run: |
