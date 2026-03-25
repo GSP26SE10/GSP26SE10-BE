@@ -23,11 +23,12 @@ jobs:
           git reset --hard origin/main
 
       - name: Build project
+        shell: powershell
         run: |
-          cd BookfetSystem/BookfetSystem.API
+          cd C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API
           dotnet publish -c Release -o publish
 
-      - name: Kill old API (force by port)
+      - name: Kill old API
         shell: powershell
         run: |
           Write-Host "Stopping all dotnet processes..."
@@ -37,8 +38,10 @@ jobs:
       - name: Start new app
         shell: powershell
         run: |
-          $projectDir = "$env:GITHUB_WORKSPACE/BookfetSystem/BookfetSystem.API"
+          $projectDir = "C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API"
+
+          Write-Host "Starting app from $projectDir"
 
           Start-Process -FilePath "dotnet" `
-            -ArgumentList "run --configuration Release" `
+            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:5121" `
             -WorkingDirectory $projectDir
