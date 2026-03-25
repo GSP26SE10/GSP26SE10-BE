@@ -17,15 +17,29 @@ jobs:
           cd BookfetSystem/BookfetSystem.API
           dotnet publish -c Release -o publish
 
-      - name: Kill old app
+      - name: Kill old API (safe)
         shell: powershell
         run: |
-         $port = 5121
-          $connections = netstat -ano | Select-String ":$port"
-          foreach ($conn in $connections) {
-          $parts = $conn -split "\s+"
+          $port = 5121
+          $lines = netstat -ano | findstr ":$port"
+
+          if (-not $lines) {
+          Write-Host "No process using port $port"
+          exit 0
+          }
+
+          foreach ($line in $lines) {
+          $parts = $line -split "\s+"
           $procId = $parts[-1]
-          Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+
+           if ($procId -match "^\d+$") {
+           try {
+           Stop-Process -Id $procId -Force -ErrorAction Stop
+           Write-Host "Killed process $procId"
+          } catch {
+          Write-Host "Cannot kill process $procId"
+             }
+            }
           }
           
 
