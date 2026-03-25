@@ -18,8 +18,10 @@ jobs:
           dotnet publish -c Release -o publish
 
       - name: Kill old app
+        shell: powershell
         run: |
-          taskkill /IM BookfetSystem.API.exe /F || echo "No app running"
+         taskkill /IM BookfetSystem.API.exe /F
+          
 
       - name: Start new app
         shell: powershell
