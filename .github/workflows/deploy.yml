@@ -20,7 +20,13 @@ jobs:
       - name: Kill old app
         shell: powershell
         run: |
-         taskkill /IM BookfetSystem.API.exe /F
+         $port = 5121
+          $connections = netstat -ano | Select-String ":$port"
+          foreach ($conn in $connections) {
+          $parts = $conn -split "\s+"
+          $pid = $parts[-1]
+          Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+          }
           
 
       - name: Start new app
