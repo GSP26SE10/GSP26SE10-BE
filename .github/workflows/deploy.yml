@@ -21,13 +21,8 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Stopping all dotnet processes..."
-          taskkill /F /IM dotnet.exe /T 2>$null
-
-           if ($LASTEXITCODE -eq 0) {
-          Write-Host "Killed existing dotnet processes"
-          } else {
-          Write-Host "No dotnet process running"
-          }
+          taskkill /F /IM dotnet.exe /T
+          exit 0
 
       - name: Start new app
         shell: powershell
