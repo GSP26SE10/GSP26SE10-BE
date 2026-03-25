@@ -1,45 +1,27 @@
-name: Deploy BookfetSystem.API
+name: Auto Deploy to Local Server
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: self-hosted
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    defaults:
-      run:
-        shell: powershell
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v5
+      - name: Pull code
+        uses: actions/checkout@v3
 
-      - name: Verify existing .NET on runner
-        run: dotnet --info
+      - name: Build project
+        run: dotnet publish -c Release -o publish
 
-      - name: Restore and build API
+      - name: Kill old app
         run: |
-          dotnet restore "BookfetSystem/BookfetSystem.API/BookfetSystem.API.csproj"
-          dotnet build "BookfetSystem/BookfetSystem.API/BookfetSystem.API.csproj" -c Release --no-restore
+          taskkill /IM BookfetSystem.API.exe /F || echo "No app running"
 
-      - name: Stop old API process
-        run: |
-          $running = Get-CimInstance Win32_Process | Where-Object {
-            $_.Name -eq "dotnet.exe" -and $_.CommandLine -like "*BookfetSystem.API*"
-          }
-          if ($running) {
-            $running | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
-            Write-Host "Stopped old BookfetSystem.API dotnet process."
-          } else {
-            Write-Host "No old BookfetSystem.API dotnet process found."
-          }
-
-      - name: Start new API process
+      - name: Start new app
+        shell: powershell
         run: |
           $projectDir = "$env:GITHUB_WORKSPACE/BookfetSystem/BookfetSystem.API"
-          Start-Process -FilePath "dotnet" -ArgumentList "run --no-build --configuration Release" -WorkingDirectory $projectDir
-          Write-Host "Started BookfetSystem.API with dotnet run."
+          cd $projectDir
+          start cmd /c "dotnet run --configuration Release"
