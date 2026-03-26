@@ -1,15 +1,17 @@
-﻿using System.Net.Http.Headers;
+﻿using Microsoft.Extensions.Configuration;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
 public class GeminiService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiKey = "AIzaSyDCMKY-41Lt-xc4TkW8uZLoq7hxxL8cYMY";
+    private readonly string _apiKey;
 
-    public GeminiService(HttpClient httpClient)
+    public GeminiService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
+        _apiKey = configuration["Gemini:ApiKey"];
     }
 
     public async Task<string> AskGemini(string prompt)
