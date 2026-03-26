@@ -9,11 +9,12 @@ namespace BookfetSystem.Services.Models.Request
 {
     public class MenuSuggestionRequest
     {
-        public int GuestCount { get; set; }
-        public string PartyType { get; set; }
+        public int NumberOfGuests { get; set; }
         public decimal Budget { get; set; }
+        public int PartyCategoryId { get; set; }
+        public DateTime EventDate { get; set; }
 
-        public List<string> FavoriteDishes { get; set; } = new();
-        public List<string> Allergies { get; set; } = new();
+        public List<string>? FavoriteDishes { get; set; }
+        public List<string>? AllergyDishes { get; set; }
     }
 }
