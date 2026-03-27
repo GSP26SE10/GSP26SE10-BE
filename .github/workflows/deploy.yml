@@ -42,6 +42,9 @@ jobs:
 
           Write-Host "Starting app from $projectDir"
 
+          $env:ASPNETCORE_ENVIRONMENT="Production"
+          $env:Gemini__ApiKey="AIzaSyAriWq-ZLeaOYnk4i1bj7ZK_sAQ4Dr8gG0"
+          
           Start-Process -FilePath "dotnet" `
             -ArgumentList "run --configuration Release --urls=http://0.0.0.0:5121" `
             -WorkingDirectory $projectDir
