@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Models.Response
 {
-    public class MenuSuggestionResponse
+    public class GeminiMenuResponse
     {
         public int MenuId { get; set; }
-        public string MenuName { get; set; }
-        public string ImgUrl { get; set; }
-        public decimal? BasePrice { get; set; }
-        public string Title { get; set; }
         public string Reason { get; set; }
-        public bool IsFromAI { get; set; }
     }
 }
