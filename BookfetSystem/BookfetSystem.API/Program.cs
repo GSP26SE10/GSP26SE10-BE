@@ -20,6 +20,7 @@ using BookfetSystem.Services.Services;
 using BookfetSystem.Services.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using BookfetSystem.Services.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -102,7 +103,7 @@ builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<ContactRequestRepository>();
 builder.Services.AddScoped<UserDeviceRepository>();
 builder.Services.AddScoped<NotificationRepository>();
-builder.Services.AddScoped<AISuggestionHandler>();
+builder.Services.AddHttpClient<GeminiService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ICache, MemoryCacheService>();
@@ -147,7 +148,6 @@ builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IAIRecommendationService, GeminiRecommendationService>();
 builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
 builder.Services.AddSignalR();
 

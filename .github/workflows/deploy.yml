@@ -9,44 +9,39 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Pull code
-        uses: actions/checkout@v3
 
-      - name: Build project
-        run: |
-          cd BookfetSystem/BookfetSystem.API
-          dotnet publish -c Release -o publish
-
-      - name: Kill old API (safe)
+      - name: Fix git safe directory
         shell: powershell
         run: |
-          $port = 5121
-          $lines = netstat -ano | findstr ":$port"
+          git config --global --add safe.directory C:/Code/GSP26SE10-BE
+          
+      - name: Pull latest code (REAL)
+        shell: powershell
+        run: |
+          cd C:\Code\GSP26SE10-BE
+          git fetch origin
+          git reset --hard origin/main
 
-          if (-not $lines) {
-          Write-Host "No process using port $port"
+      - name: Build project
+        shell: powershell
+        run: |
+          cd C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API
+          dotnet publish -c Release -o publish
+
+      - name: Kill old API
+        shell: powershell
+        run: |
+          Write-Host "Stopping all dotnet processes..."
+          taskkill /F /IM dotnet.exe /T
           exit 0
-          }
-
-          foreach ($line in $lines) {
-          $parts = $line -split "\s+"
-          $procId = $parts[-1]
-
-           if ($procId -match "^\d+$") {
-           try {
-           Stop-Process -Id $procId -Force -ErrorAction Stop
-           Write-Host "Killed process $procId"
-          } catch {
-          Write-Host "Cannot kill process $procId"
-             }
-            }
-          }
 
       - name: Start new app
         shell: powershell
         run: |
-          $projectDir = "$env:GITHUB_WORKSPACE/BookfetSystem/BookfetSystem.API"
+          $projectDir = "C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API"
 
+          Write-Host "Starting app from $projectDir"
+          
           Start-Process -FilePath "dotnet" `
-            -ArgumentList "run --configuration Release" `
+            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:5121" `
             -WorkingDirectory $projectDir

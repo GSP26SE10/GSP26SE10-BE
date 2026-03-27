@@ -330,15 +330,18 @@ namespace BookfetSystem.Services.Implement
                     var staffGroup = await _staffGroupRepository.GetByIdAsync(orderDetail.StaffGroupId.Value);
                     if (staffGroup?.LeaderId.HasValue == true)
                     {
+                        var staffDisplayName = staff?.FullName ?? "Một staff";
                         var notificationTitle = request.TaskStatus switch
                         {
-                            StaffTaskStatus.COMPLETED => "Staff đã hoàn thành công việc",
-                            _ => "Trạng thái nhiệm vụ được cập nhật"
+                            StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành công việc",
+                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc",
+                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ"
                         };
                         var notificationBody = request.TaskStatus switch
                         {
-                            StaffTaskStatus.COMPLETED => $"{staff?.FullName ?? "Một staff"} đã hoàn thành nhiệm vụ '{entity.TaskName ?? "Task"}'.",
-                            _ => $"{staff?.FullName ?? "Một staff"} đã cập nhật trạng thái nhiệm vụ '{entity.TaskName ?? "Task"}'."
+                            StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành nhiệm vụ '{entity.TaskName ?? "Task"}'.",
+                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc nhiệm vụ '{entity.TaskName ?? "Task"}'.",
+                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ '{entity.TaskName ?? "Task"}'."
                         };
 
                         await _notificationService.SendToUserAsync(

@@ -1038,10 +1038,19 @@ namespace BookfetSystem.Services.Services
 
             if (staffGroup.LeaderId.HasValue)
             {
+                var assignedParties = order.OrderDetails
+                    .Select(od => $"{od.PartyCategory?.PartyCategoryName ?? "Tiệc chưa xác định"} - {od.Menu?.MenuName ?? "Menu chưa xác định"}")
+                    .Distinct()
+                    .ToList();
+
+                var assignedPartyText = assignedParties.Any()
+                    ? string.Join(", ", assignedParties)
+                    : "Tiệc chưa xác định - Menu chưa xác định";
+
                 await _notificationService.SendToUserAsync(
                     staffGroup.LeaderId.Value,
                     "Bạn được giao tiệc mới",
-                    $"Đơn tiệc #{order.OrderId} đã được giao cho nhóm của bạn.",
+                    $"{assignedPartyText} đã được giao cho nhóm của bạn.",
                     NotificationType.Order,
                     new Dictionary<string, string>
                     {

@@ -63,12 +63,6 @@ namespace BookfetSystem.API.Controllers
 
             return NotFound(result);
         }
-
-        [HttpPost("ai-suggest")]
-        public async Task<IActionResult> SuggestMenu([FromBody] MenuSuggestionRequest request)
-        {
-            var result = await _menuSuggestionService.SuggestMenu(request);
-            return Ok(result);
-        }
+        
     }
 }
