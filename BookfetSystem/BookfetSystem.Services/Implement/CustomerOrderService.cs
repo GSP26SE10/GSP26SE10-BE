@@ -547,6 +547,7 @@ namespace BookfetSystem.Services.Services
                     EndTime = itemRequest.EndTime,
                     MenuId = itemRequest.MenuId,
                     PartyCategoryId = partyCategoryId,
+                    NoteOrderDetail = string.IsNullOrWhiteSpace(itemRequest.NoteOrderDetail) ? null : itemRequest.NoteOrderDetail.Trim(),
                     MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
                     ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot),
                     CustomDishSnapshot = hasCustomDishes ? JsonSerializer.Serialize(customDishSnapshot) : null
@@ -1068,7 +1069,7 @@ namespace BookfetSystem.Services.Services
             };
         }
 
-        public async Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status, int reviewerId)
+        public async Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status, int reviewerId, string? noteOrder)
         {
             if (reviewerId <= 0)
             {
@@ -1125,6 +1126,7 @@ namespace BookfetSystem.Services.Services
             order.Status = targetStatus.ToString();
             order.ReviewedBy = reviewerId;
             order.ReviewedAt = DateTime.UtcNow;
+            order.NoteOrder = string.IsNullOrWhiteSpace(noteOrder) ? null : noteOrder.Trim();
 
             if (targetStatus == OrderStatus.REJECTED && order.OrderDetails != null && order.OrderDetails.Any())
             {

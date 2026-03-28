@@ -75,6 +75,8 @@ namespace BookfetSystem.Services.Models.Request
 
         public DateTime EndTime { get; set; }
 
+        public string? NoteOrderDetail { get; set; }
+
         public List<ServiceItemRequest>? Services { get; set; }
 
         public List<CustomDishItemRequest>? CustomDishes { get; set; }
@@ -102,5 +104,7 @@ namespace BookfetSystem.Services.Models.Request
     {
         [Required(ErrorMessage = "Status is required.")]
         public int Status { get; set; }
+
+        public string? NoteOrder { get; set; }
     }
 }
