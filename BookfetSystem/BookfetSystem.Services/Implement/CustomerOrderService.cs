@@ -1247,7 +1247,10 @@ namespace BookfetSystem.Services.Services
                 };
             }
 
-            var refundPercent = CalculateDepositRefundPercent(isAdmin, firstPartyStart);
+            var isPendingBeforeReview = string.Equals(order.Status, OrderStatus.PENDING.ToString(), StringComparison.OrdinalIgnoreCase);
+            var refundPercent = (!isAdmin && isCustomerOwner && isPendingBeforeReview)
+                ? 1m
+                : CalculateDepositRefundPercent(isAdmin, firstPartyStart);
             var latestPaidDeposit = (order.Payments ?? new List<Payment>())
                 .Where(p =>
                     string.Equals(p.PaymentType, PaymentType.DEPOSIT.ToString(), StringComparison.OrdinalIgnoreCase) &&
