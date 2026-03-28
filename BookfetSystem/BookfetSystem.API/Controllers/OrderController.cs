@@ -118,7 +118,7 @@ namespace BookfetSystem.API.Controllers
                 return Unauthorized(new { Message = "Invalid token: missing reviewer id." });
             }
 
-            var result = await _orderService.ReviewOrderAsync(orderId, request.Status, reviewerId);
+            var result = await _orderService.ReviewOrderAsync(orderId, request.Status, reviewerId, request.NoteOrder);
             if (result.Success)
             {
                 return Ok(result);
