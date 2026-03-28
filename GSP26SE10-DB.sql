@@ -187,6 +187,7 @@ CREATE TABLE orders (
     deposit_amount NUMERIC(12,2),
     remaining_amount NUMERIC(12,2),
     note_order TEXT,
+    mtd_zlp JSONB, -- metadata ZaloPay (app_trans_id, zp_trans_id, refund info...)
     reviewed_by INT REFERENCES users(user_id),
     reviewed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

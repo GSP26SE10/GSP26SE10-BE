@@ -21,6 +21,8 @@ public partial class Order
 
     public string NoteOrder { get; set; }
 
+    public string MtdZlp { get; set; }
+
     public int? ReviewedBy { get; set; }
 
     public DateTime? ReviewedAt { get; set; }
