@@ -31,8 +31,9 @@ namespace BookfetSystem.Services.Services
         private readonly IOrderStatusSchedulerService _orderStatusSchedulerService;
         private readonly INotificationService _notificationService;
         private readonly IEmailService _emailService;
+        private readonly IPaymentService _paymentService;
 
-        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, OrderDetailCustomRepository orderDetailCustomRepository, DishRepository dishRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService, INotificationService notificationService, IEmailService emailService)
+        public CustomerOrderService(GSP26SE10DBContext dbContext, OrderRepository orderRepository, UserRepository userRepository, OrderDetailRepository orderDetailRepository, OrderServiceRepository orderServiceRepository, ServiceRepository serviceRepository, OrderDetailCustomRepository orderDetailCustomRepository, DishRepository dishRepository, StaffGroupRepository staffGroupRepository, MenuRepository menuRepository, MenuDishRepository menuDishRepository, PartyCategoryRepository partyCategoryRepository, IOrderStatusSchedulerService orderStatusSchedulerService, INotificationService notificationService, IEmailService emailService, IPaymentService paymentService)
         {
             _dbContext = dbContext;
             _orderRepository = orderRepository;
@@ -49,6 +50,7 @@ namespace BookfetSystem.Services.Services
             _orderStatusSchedulerService = orderStatusSchedulerService;
             _notificationService = notificationService;
             _emailService = emailService;
+            _paymentService = paymentService;
         }
 
         public async Task<PagedResponse<OrderResponse>> GetAllFilteredAsync(OrderFilterRequest filter, int page, int pageSize)
@@ -1123,6 +1125,29 @@ namespace BookfetSystem.Services.Services
                 };
             }
 
+            decimal refundPercentForEmail = 0m;
+            decimal refundAmountForEmail = 0m;
+            if (targetStatus == OrderStatus.REJECTED)
+            {
+                var refundResult = await _paymentService.RefundRejectedOrderDepositAsync(orderId, noteOrder);
+                if (!refundResult.Success)
+                {
+                    return new ApiResponse<OrderResponse>
+                    {
+                        Success = false,
+                        Message = $"Reject order failed because refund was not completed: {refundResult.Message}",
+                        Data = null
+                    };
+                }
+
+                refundAmountForEmail = ExtractRefundAmount(refundResult);
+                var depositAmount = order.DepositAmount ?? 0m;
+                if (depositAmount > 0m && refundAmountForEmail > 0m)
+                {
+                    refundPercentForEmail = Math.Min(1m, refundAmountForEmail / depositAmount);
+                }
+            }
+
             order.Status = targetStatus.ToString();
             order.ReviewedBy = reviewerId;
             order.ReviewedAt = DateTime.UtcNow;
@@ -1137,7 +1162,7 @@ namespace BookfetSystem.Services.Services
             }
 
             await _dbContext.SaveChangesAsync();
-            await SendOrderReviewEmailAsync(order, targetStatus);
+            await SendOrderReviewEmailAsync(order, targetStatus, refundPercentForEmail, refundAmountForEmail);
 
             var updated = await GetById(orderId);
             return new ApiResponse<OrderResponse>
@@ -1148,7 +1173,163 @@ namespace BookfetSystem.Services.Services
             };
         }
 
-        private async Task SendOrderReviewEmailAsync(Order order, OrderStatus targetStatus)
+        public async Task<ApiResponse<OrderResponse>> CancelOrderAsync(int orderId, int actorRoleId, int actorUserId, CancelOrderRequest request)
+        {
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+            if (order == null)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order not found.",
+                    Data = null
+                };
+            }
+
+            var isAdmin = actorRoleId == 1;
+            var isCustomerOwner = actorRoleId == 4 && order.CustomerId == actorUserId;
+            if (!isAdmin && !isCustomerOwner)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "You do not have permission to cancel this order.",
+                    Data = null
+                };
+            }
+
+            if (string.Equals(order.Status, OrderStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                var cancelledOrder = await GetById(orderId);
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = true,
+                    Message = "Order is already cancelled.",
+                    Data = cancelledOrder
+                };
+            }
+
+            if (string.Equals(order.Status, OrderStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Completed orders cannot be cancelled.",
+                    Data = null
+                };
+            }
+
+            var hasInProgressDetail = (order.OrderDetails ?? new List<OrderDetail>())
+                .Any(x => string.Equals(x.Status, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase));
+            if (hasInProgressDetail)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Cannot cancel order because at least one party is IN_PROGRESS.",
+                    Data = null
+                };
+            }
+
+            var firstPartyStart = (order.OrderDetails ?? new List<OrderDetail>())
+                .Where(x => x.StartTime.HasValue)
+                .Select(x => x.StartTime!.Value)
+                .OrderBy(x => x)
+                .FirstOrDefault();
+
+            if (firstPartyStart == default)
+            {
+                return new ApiResponse<OrderResponse>
+                {
+                    Success = false,
+                    Message = "Order has no valid party schedule for cancellation policy.",
+                    Data = null
+                };
+            }
+
+            var refundPercent = CalculateDepositRefundPercent(isAdmin, firstPartyStart);
+            var latestPaidDeposit = (order.Payments ?? new List<Payment>())
+                .Where(p =>
+                    string.Equals(p.PaymentType, PaymentType.DEPOSIT.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(p.PaymentStatus, PaymentStatus.PAID.ToString(), StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(p => p.PaidAt ?? DateTime.MinValue)
+                .FirstOrDefault();
+            var paidDepositAmount = latestPaidDeposit?.Amount ?? (order.DepositAmount ?? 0m);
+            var depositPaid = paidDepositAmount > 0m;
+            decimal refundAmountForEmail = 0m;
+            var refundCaseNote = "Đơn hàng chưa ghi nhận tiền cọc, không phát sinh hoàn tiền.";
+
+            if (depositPaid && refundPercent > 0m)
+            {
+                var hasPaidZaloPayDeposit = latestPaidDeposit != null &&
+                    string.Equals(latestPaidDeposit.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                if (hasPaidZaloPayDeposit)
+                {
+                    var refundAmount = Math.Round(paidDepositAmount * refundPercent, 0, MidpointRounding.AwayFromZero);
+                    var refundResult = await _paymentService.RefundOrderDepositByAmountAsync(orderId, refundAmount, request.Reason);
+                    if (!refundResult.Success)
+                    {
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = $"Cancel order failed because refund was not completed: {refundResult.Message}",
+                            Data = null
+                        };
+                    }
+
+                    refundAmountForEmail = ExtractRefundAmount(refundResult);
+                    if (refundAmountForEmail <= 0m)
+                    {
+                        refundAmountForEmail = refundAmount;
+                    }
+
+                    refundCaseNote = $"Đã gửi yêu cầu hoàn cọc qua ZaloPay theo chính sách, tỷ lệ {refundPercent:P0}.";
+                }
+                else
+                {
+                    refundAmountForEmail = 0m;
+                    var paymentMethodLabel = latestPaidDeposit?.PaymentMethod ?? "UNKNOWN";
+                    refundCaseNote = $"Đơn cọc thanh toán qua phương thức {paymentMethodLabel}, hệ thống chỉ tự động hoàn qua ZaloPay. Vui lòng liên hệ chúng tôi qua kênh chat trực tuyến để được hỗ trợ hoàn tiền thủ công theo tỷ lệ chính sách {refundPercent:P0}.";
+                }
+            }
+            else if (depositPaid && refundPercent <= 0m)
+            {
+                refundCaseNote = "Theo mốc thời gian hủy hiện tại, chính sách quy định không hoàn tiền cọc.";
+            }
+            else if (!depositPaid && refundPercent > 0m)
+            {
+                refundCaseNote = "Hệ thống chưa ghi nhận thanh toán cọc thành công nên chưa thể áp dụng hoàn tiền.";
+            }
+
+            order.Status = OrderStatus.CANCELLED.ToString();
+            order.NoteOrder = string.IsNullOrWhiteSpace(request.Reason) ? order.NoteOrder : request.Reason.Trim();
+            order.ReviewedBy = actorUserId;
+            order.ReviewedAt = DateTime.UtcNow;
+            await _orderRepository.UpdateAsync(order);
+
+            if (order.OrderDetails != null && order.OrderDetails.Any())
+            {
+                foreach (var detail in order.OrderDetails)
+                {
+                    detail.Status = OrderDetailStatus.CANCELLED.ToString();
+                }
+
+                await _dbContext.SaveChangesAsync();
+            }
+
+            await SendOrderCancellationEmailAsync(order, isAdmin, refundPercent, refundAmountForEmail, refundCaseNote);
+
+            var updated = await GetById(orderId);
+            return new ApiResponse<OrderResponse>
+            {
+                Success = true,
+                Message = $"Order cancelled successfully. Refund percent: {refundPercent:P0}.",
+                Data = updated
+            };
+        }
+
+        private async Task SendOrderReviewEmailAsync(Order order, OrderStatus targetStatus, decimal refundPercent, decimal refundAmount)
         {
             var toEmail = order.Customer?.Email;
             if (string.IsNullOrWhiteSpace(toEmail))
@@ -1167,6 +1348,14 @@ namespace BookfetSystem.Services.Services
             var customerName = string.IsNullOrWhiteSpace(order.Customer?.FullName)
                 ? "Quý khách"
                 : order.Customer!.FullName;
+            var (detailCardsHtml, detailPlainText) = BuildOrderDetailCards(order);
+            var detailSection = string.IsNullOrWhiteSpace(detailCardsHtml)
+                ? string.Empty
+                : $@"
+<div style=""margin:14px 0;"">
+  <p style=""margin:0 0 8px 0;font-weight:700;"">{(isApproved ? "Chúng tôi sẽ chuẩn bị các tiệc sau cho bạn:" : "Thông tin các tiệc trong đơn hàng:")}</p>
+  {detailCardsHtml}
+</div>";
             var rejectProfessionalBlock = isApproved
                 ? string.Empty
                 : @"
@@ -1174,45 +1363,17 @@ namespace BookfetSystem.Services.Services
   <p style=""margin:0 0 8px 0;font-weight:700;"">Rất tiếc, đơn hàng của bạn hiện chưa đáp ứng điều kiện để duyệt.</p>
   <p style=""margin:0;"">Đội ngũ Bookfet luôn sẵn sàng hỗ trợ bạn điều chỉnh thông tin tiệc phù hợp hơn để có thể đặt lại nhanh chóng.</p>
 </div>";
+            var refundBlock = isApproved
+                ? string.Empty
+                : $@"
+<div style=""margin:12px 0 14px 0;padding:12px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;"">
+  <p style=""margin:0 0 8px 0;font-weight:700;"">Thông tin hoàn tiền theo chính sách</p>
+  <p style=""margin:0;"">Tỷ lệ hoàn tiền cọc: <strong>{refundPercent:P0}</strong></p>
+  <p style=""margin:6px 0 0 0;"">Số tiền hoàn: <strong>{FormatVnd(refundAmount)}</strong></p>
+</div>";
             var rejectContactLine = isApproved
                 ? string.Empty
                 : @"<p style=""margin:14px 0 0 0;"">Nếu bạn cần hỗ trợ hoặc muốn trao đổi thêm, vui lòng liên hệ với chúng tôi qua kênh chat hoặc hotline của Bookfet. Chúng tôi sẽ ưu tiên phản hồi sớm nhất để bạn không bỏ lỡ kế hoạch sự kiện.</p>";
-            var approvedPreparationBlock = string.Empty;
-
-            if (isApproved)
-            {
-                var detailCards = (order.OrderDetails ?? new List<OrderDetail>())
-                    .OrderBy(x => x.StartTime)
-                    .Select(detail =>
-                    {
-                        var startTimeText = detail.StartTime.HasValue
-                            ? ToVietnamTime(detail.StartTime.Value).ToString("dd/MM/yyyy HH:mm")
-                            : "Chưa xác định";
-                        var menuName = string.IsNullOrWhiteSpace(detail.Menu?.MenuName) ? "Tiệc đơn giản" : detail.Menu!.MenuName;
-                        var menuImageUrl = GetFirstImageUrl(detail.Menu?.ImgUrl);
-                        var imageHtml = string.IsNullOrWhiteSpace(menuImageUrl)
-                            ? @"<div style=""height:120px;border-radius:10px;background:#e2e8f0;color:#334155;display:flex;align-items:center;justify-content:center;font-weight:600;"">Tiệc đơn giản</div>"
-                            : $@"<img src=""{menuImageUrl}"" alt=""{menuName}"" style=""width:100%;height:120px;object-fit:cover;border-radius:10px;display:block;"" />";
-
-                        return $@"
-<div style=""border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#f8fafc;"">
-  {imageHtml}
-  <p style=""margin:10px 0 4px 0;font-weight:700;"">{menuName}</p>
-  <p style=""margin:0;color:#334155;"">Mã tiệc: <strong>#{detail.OrderDetailId}</strong></p>
-  <p style=""margin:4px 0 0 0;color:#334155;"">Thời gian bắt đầu: <strong>{startTimeText}</strong></p>
-</div>";
-                    })
-                    .ToList();
-
-                if (detailCards.Count > 0)
-                {
-                    approvedPreparationBlock = $@"
-<div style=""margin:14px 0;"">
-  <p style=""margin:0 0 8px 0;font-weight:700;"">Chúng tôi sẽ chuẩn bị các tiệc sau cho bạn:</p>
-  {string.Join(string.Empty, detailCards)}
-</div>";
-                }
-            }
 
             var htmlBody = $@"
 <div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:16px;background:#f8fafc;color:#0f172a;"">
@@ -1226,30 +1387,16 @@ namespace BookfetSystem.Services.Services
         {statusLabel}
       </span>
     </p>
-    {approvedPreparationBlock}
+    {detailSection}
     {rejectProfessionalBlock}
+    {refundBlock}
     {rejectContactLine}
     <p style=""margin:0;"">Cảm ơn bạn đã sử dụng dịch vụ của Bookfet.</p>
   </div>
 </div>";
-
-            var approvedPlainTextLines = isApproved
-                ? string.Join(
-                    "; ",
-                    (order.OrderDetails ?? new List<OrderDetail>())
-                        .OrderBy(x => x.StartTime)
-                        .Select(detail =>
-                        {
-                            var startTimeText = detail.StartTime.HasValue
-                                ? ToVietnamTime(detail.StartTime.Value).ToString("dd/MM/yyyy HH:mm")
-                                : "Chua xac dinh";
-                            return $"tiec #{detail.OrderDetailId} bat dau luc {startTimeText}";
-                        }))
-                : string.Empty;
-
             var plainText = isApproved
-                ? $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Chung toi se chuan bi cac tiec: {approvedPlainTextLines}."
-                : $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Rat tiec don hang hien chua dap ung dieu kien de duyet. Neu ban can ho tro, vui long lien he chung toi qua kenh chat hoac hotline cua Bookfet de duoc uu tien ho tro som nhat.";
+                ? $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Cac tiec duoc ghi nhan: {detailPlainText}."
+                : $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Ti le hoan coc: {refundPercent:P0}, so tien hoan: {FormatVnd(refundAmount)}. Cac tiec trong don: {detailPlainText}.";
 
             try
             {
@@ -1261,9 +1408,161 @@ namespace BookfetSystem.Services.Services
             }
         }
 
+        private async Task SendOrderCancellationEmailAsync(Order order, bool cancelledByAdmin, decimal refundPercent, decimal refundAmount, string refundCaseNote)
+        {
+            var toEmail = order.Customer?.Email;
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                return;
+            }
+
+            var customerName = string.IsNullOrWhiteSpace(order.Customer?.FullName)
+                ? "Quý khách"
+                : order.Customer!.FullName;
+            var cancelledByText = cancelledByAdmin ? "Owner/Quản trị viên" : "Khách hàng";
+            var (detailCardsHtml, detailPlainText) = BuildOrderDetailCards(order);
+            var detailSection = string.IsNullOrWhiteSpace(detailCardsHtml)
+                ? string.Empty
+                : $@"
+<div style=""margin:14px 0;"">
+  <p style=""margin:0 0 8px 0;font-weight:700;"">Thông tin các tiệc trong đơn hàng:</p>
+  {detailCardsHtml}
+</div>";
+
+            var subject = $"[Bookfet] Đơn hàng #{order.OrderId} đã được hủy";
+            var htmlBody = $@"
+<div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:16px;background:#f8fafc;color:#0f172a;"">
+  <div style=""background:#ffffff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;"">
+    <h2 style=""margin:0 0 12px 0;"">Thông báo hủy đơn hàng</h2>
+    <p style=""margin:0 0 10px 0;"">Xin chào <strong>{customerName}</strong>,</p>
+    <p style=""margin:0 0 12px 0;"">Đơn hàng <strong>#{order.OrderId}</strong> đã được ghi nhận hủy bởi <strong>{cancelledByText}</strong>.</p>
+    <p style=""margin:0 0 14px 0;"">
+      Trạng thái:
+      <span style=""display:inline-block;padding:4px 10px;border-radius:999px;background:#f1f5f9;color:#334155;font-weight:700;"">
+        ĐÃ HỦY
+      </span>
+    </p>
+    <div style=""margin:12px 0 14px 0;padding:12px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;"">
+      <p style=""margin:0 0 8px 0;font-weight:700;"">Thông tin hoàn tiền theo chính sách</p>
+      <p style=""margin:0;"">Tỷ lệ hoàn tiền cọc: <strong>{refundPercent:P0}</strong></p>
+      <p style=""margin:6px 0 0 0;"">Số tiền hoàn: <strong>{FormatVnd(refundAmount)}</strong></p>
+      <p style=""margin:6px 0 0 0;"">Kết quả xử lý: <strong>{refundCaseNote}</strong></p>
+    </div>
+    {detailSection}
+    <p style=""margin:0;"">Nếu bạn cần hỗ trợ thêm, vui lòng liên hệ Bookfet qua kênh chat hoặc hotline. Chúng tôi luôn sẵn sàng hỗ trợ.</p>
+  </div>
+</div>";
+
+            var plainText = $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc huy boi {cancelledByText}. Ty le hoan coc: {refundPercent:P0}, so tien hoan: {FormatVnd(refundAmount)}. Ket qua xu ly: {refundCaseNote}. Cac tiec trong don: {detailPlainText}.";
+
+            try
+            {
+                await _emailService.SendAsync(toEmail, subject, htmlBody, plainText);
+            }
+            catch
+            {
+                // Email send failure should not break cancellation result.
+            }
+        }
+
         private static DateTime GetVietnamNow()
         {
             return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetVietnamTimeZone());
+        }
+
+        private static decimal CalculateDepositRefundPercent(bool isOwnerCancellation, DateTime firstPartyStart)
+        {
+            if (isOwnerCancellation)
+            {
+                return 1m;
+            }
+
+            var todayVietnam = GetVietnamNow().Date;
+            var firstPartyDate = ToVietnamTime(firstPartyStart).Date;
+            var daysBefore = (firstPartyDate - todayVietnam).TotalDays;
+
+            if (daysBefore >= 7)
+            {
+                return 1m;
+            }
+
+            if (daysBefore >= 3)
+            {
+                return 0.5m;
+            }
+
+            return 0m;
+        }
+
+        private static decimal ExtractRefundAmount(ApiResponse<object> refundResult)
+        {
+            if (refundResult?.Data == null)
+            {
+                return 0m;
+            }
+
+            try
+            {
+                using var json = JsonDocument.Parse(JsonSerializer.Serialize(refundResult.Data));
+                if (json.RootElement.TryGetProperty("amount", out var amountElement))
+                {
+                    if (amountElement.ValueKind == JsonValueKind.Number && amountElement.TryGetDecimal(out var amountDecimal))
+                    {
+                        return amountDecimal;
+                    }
+
+                    if (amountElement.ValueKind == JsonValueKind.String &&
+                        decimal.TryParse(amountElement.GetString(), out amountDecimal))
+                    {
+                        return amountDecimal;
+                    }
+                }
+            }
+            catch
+            {
+                // keep fallback to 0.
+            }
+
+            return 0m;
+        }
+
+        private static string FormatVnd(decimal amount)
+        {
+            return $"{amount:N0} VND";
+        }
+
+        private static (string Html, string PlainText) BuildOrderDetailCards(Order order)
+        {
+            var detailCards = (order.OrderDetails ?? new List<OrderDetail>())
+                .OrderBy(x => x.StartTime)
+                .Select(detail =>
+                {
+                    var startTimeText = detail.StartTime.HasValue
+                        ? ToVietnamTime(detail.StartTime.Value).ToString("dd/MM/yyyy HH:mm")
+                        : "Chưa xác định";
+                    var menuName = string.IsNullOrWhiteSpace(detail.Menu?.MenuName) ? "Tiệc đơn giản" : detail.Menu!.MenuName;
+                    var menuImageUrl = GetFirstImageUrl(detail.Menu?.ImgUrl);
+                    var imageHtml = string.IsNullOrWhiteSpace(menuImageUrl)
+                        ? @"<div style=""height:120px;border-radius:10px;background:#e2e8f0;color:#334155;display:flex;align-items:center;justify-content:center;font-weight:600;"">Tiệc đơn giản</div>"
+                        : $@"<img src=""{menuImageUrl}"" alt=""{menuName}"" style=""width:100%;height:120px;object-fit:cover;border-radius:10px;display:block;"" />";
+
+                    var html = $@"
+<div style=""border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#f8fafc;"">
+  {imageHtml}
+  <p style=""margin:10px 0 4px 0;font-weight:700;"">{menuName}</p>
+  <p style=""margin:0;color:#334155;"">Mã tiệc: <strong>#{detail.OrderDetailId}</strong></p>
+  <p style=""margin:4px 0 0 0;color:#334155;"">Thời gian bắt đầu: <strong>{startTimeText}</strong></p>
+</div>";
+
+                    var plainText = $"tiec #{detail.OrderDetailId} ({menuName}) bat dau luc {startTimeText}";
+                    return (html, plainText);
+                })
+                .ToList();
+
+            return (
+                string.Join(string.Empty, detailCards.Select(x => x.html)),
+                detailCards.Count == 0 ? "khong co du lieu tiec" : string.Join("; ", detailCards.Select(x => x.plainText))
+            );
         }
 
         private static DateTime ToVietnamTime(DateTime input)

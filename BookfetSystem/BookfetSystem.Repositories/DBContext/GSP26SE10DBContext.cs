@@ -503,6 +503,9 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.DepositAmount)
                 .HasPrecision(12, 2)
                 .HasColumnName("deposit_amount");
+            entity.Property(e => e.MtdZlp)
+                .HasColumnType("jsonb")
+                .HasColumnName("mtd_zlp");
             entity.Property(e => e.NoteOrder).HasColumnName("note_order");
             entity.Property(e => e.RemainingAmount)
                 .HasPrecision(12, 2)

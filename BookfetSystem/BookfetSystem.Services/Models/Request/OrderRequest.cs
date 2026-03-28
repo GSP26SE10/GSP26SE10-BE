@@ -107,4 +107,9 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? NoteOrder { get; set; }
     }
+
+    public class CancelOrderRequest
+    {
+        public string? Reason { get; set; }
+    }
 }

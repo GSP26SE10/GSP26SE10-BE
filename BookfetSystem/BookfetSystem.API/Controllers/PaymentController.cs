@@ -1,7 +1,9 @@
 using System;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.SePay;
+using BookfetSystem.Services.Models.ZaloPay;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -15,15 +17,18 @@ namespace BookfetSystem.API.Controllers
     {
         private readonly IPaymentService _paymentService;
         private readonly ISePayWebhookService _sePayWebhookService;
+        private readonly IZaloPayWebhookService _zaloPayWebhookService;
         private readonly IConfiguration _configuration;
 
         public PaymentController(
             IPaymentService paymentService,
             ISePayWebhookService sePayWebhookService,
+            IZaloPayWebhookService zaloPayWebhookService,
             IConfiguration configuration)
         {
             _paymentService = paymentService;
             _sePayWebhookService = sePayWebhookService;
+            _zaloPayWebhookService = zaloPayWebhookService;
             _configuration = configuration;
         }
 
@@ -71,9 +76,9 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost("create-deposit-qr/{orderId}")]
-        public async Task<ActionResult> CreateDepositQR(int orderId)
+        public async Task<ActionResult> CreateDepositQR(int orderId, [FromQuery] PaymentMethod paymentMethod = PaymentMethod.BANK_TRANSFER)
         {
-            var result = await _paymentService.CreateDepositQR(orderId);
+            var result = await _paymentService.CreateDepositQR(orderId, paymentMethod);
             if (result.Success)
             {
                 return Ok(result);
@@ -83,7 +88,7 @@ namespace BookfetSystem.API.Controllers
 
         [Authorize]
         [HttpPost("create-full-qr/{orderId}")]
-        public async Task<ActionResult> CreateFullQR(int orderId)
+        public async Task<ActionResult> CreateFullQR(int orderId, [FromQuery] PaymentMethod paymentMethod = PaymentMethod.BANK_TRANSFER)
         {
             var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
             if (!int.TryParse(roleValue, out var roleId))
@@ -96,7 +101,7 @@ namespace BookfetSystem.API.Controllers
                 return StatusCode(403, new { Message = "Only leader role can create full payment QR." });
             }
 
-            var result = await _paymentService.CreateFullQR(orderId);
+            var result = await _paymentService.CreateFullQR(orderId, paymentMethod);
             if (result.Success)
             {
                 return Ok(result);
@@ -145,6 +150,18 @@ namespace BookfetSystem.API.Controllers
 
             await _sePayWebhookService.ProcessAsync(payload);
             return Ok(new { success = true });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("zalopay-callback")]
+        public async Task<IActionResult> ZaloPayCallback([FromBody] ZaloPayCallbackPayload payload)
+        {
+            var (returnCode, returnMessage) = await _zaloPayWebhookService.ProcessAsync(payload);
+            return Ok(new
+            {
+                return_code = returnCode,
+                return_message = returnMessage
+            });
         }
     }
 }
