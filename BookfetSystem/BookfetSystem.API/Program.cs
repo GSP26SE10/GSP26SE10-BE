@@ -140,6 +140,7 @@ builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IRevenueService, RevenueService>();
 builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
+builder.Services.AddScoped<IZaloPayWebhookService, ZaloPayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>();
 builder.Services.AddScoped<IOrderDepositTimeoutJob, OrderDepositTimeoutJob>();

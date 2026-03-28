@@ -16,7 +16,7 @@ namespace BookfetSystem.Services.Models.Request
         public PaymentType PaymentType { get; set; }
 
         [Required(ErrorMessage = "PaymentMethod is required.")]
-        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER.")]
+        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER, 3 for ZALOPAY.")]
         public PaymentMethod PaymentMethod { get; set; }
     }
 
@@ -32,7 +32,7 @@ namespace BookfetSystem.Services.Models.Request
         public PaymentType PaymentType { get; set; }
 
         [Required(ErrorMessage = "PaymentMethod is required.")]
-        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER.")]
+        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER, 3 for ZALOPAY.")]
         public PaymentMethod PaymentMethod { get; set; }
 
         [EnumDataType(typeof(PaymentStatus), ErrorMessage = "Invalid payment status. Use 1 for UNPAID, 2 for PAID.")]

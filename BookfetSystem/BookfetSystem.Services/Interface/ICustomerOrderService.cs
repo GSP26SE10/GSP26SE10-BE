@@ -23,5 +23,6 @@ namespace BookfetSystem.Services.Interface
 
         Task<ApiResponse<OrderResponse>> AssignOrderToStaffGroupAsync(int orderId, int staffGroupId);
         Task<ApiResponse<OrderResponse>> ReviewOrderAsync(int orderId, int status, int reviewerId, string? noteOrder);
+        Task<ApiResponse<OrderResponse>> CancelOrderAsync(int orderId, int actorRoleId, int actorUserId, CancelOrderRequest request);
     }
 }

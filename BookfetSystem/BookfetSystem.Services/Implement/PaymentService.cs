@@ -12,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
+using System.Net.Http;
 
 namespace BookfetSystem.Services.Implement
 {
@@ -22,19 +25,22 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderRepository _orderRepository;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public PaymentService(
             GSP26SE10DBContext dbContext,
             PaymentRepository paymentRepository,
             OrderRepository orderRepository,
             IConfiguration configuration,
-            IEmailService emailService)
+            IEmailService emailService,
+            IHttpClientFactory httpClientFactory)
         {
             _dbContext = dbContext;
             _paymentRepository = paymentRepository;
             _orderRepository = orderRepository;
             _configuration = configuration;
             _emailService = emailService;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<PagedResponse<PaymentResponse>> GetAllPaymentFilteredAsync(PaymentFilterRequest request, int page, int pageSize)
@@ -188,7 +194,7 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<object>> CreateDepositQR(int orderId)
+        public async Task<ApiResponse<object>> CreateDepositQR(int orderId, PaymentMethod paymentMethod)
         {
             var order = await _orderRepository.GetByIdAsync(orderId);
 
@@ -201,6 +207,25 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (paymentMethod == PaymentMethod.CASH)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Cash payment is not supported for deposit. Please choose BANK_TRANSFER or ZALOPAY."
+                };
+            }
+
+            if (paymentMethod == PaymentMethod.ZALOPAY)
+            {
+                return await CreateDepositZaloPayOrderAsync(order);
+            }
+
+            return await CreateDepositSePayQrAsync(order);
+        }
+
+        private async Task<ApiResponse<object>> CreateDepositSePayQrAsync(Order order)
+        {
             var paymentCode = $"BOOKFET_{order.OrderId}";
             var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
             var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
@@ -209,6 +234,15 @@ namespace BookfetSystem.Services.Implement
             var existingUnpaid = await _paymentRepository.GetUnpaidDepositByOrderIdAsync(order.OrderId);
             if (existingUnpaid != null)
             {
+                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid deposit already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
                 var amt = (int)Math.Round(existingUnpaid.Amount ?? 0);
                 var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
 
@@ -257,7 +291,152 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<object>> CreateFullQR(int orderId)
+        private async Task<ApiResponse<object>> CreateDepositZaloPayOrderAsync(Order order)
+        {
+            var appId = _configuration["ZaloPay:AppId"];
+            var key1 = _configuration["ZaloPay:Key1"];
+            var createOrderUrl = _configuration["ZaloPay:CreateOrderUrl"];
+            var callbackUrl = _configuration["ZaloPay:CallbackUrl"] ?? string.Empty;
+            var redirectUrl = _configuration["ZaloPay:RedirectUrl"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(key1))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Missing ZaloPay configuration. Please set ZaloPay:AppId and ZaloPay:Key1."
+                };
+            }
+
+            var existingUnpaid = await _paymentRepository.GetUnpaidDepositByOrderIdAsync(order.OrderId);
+            var depositAmount = order.TotalPrice * 0.5m;
+            Payment payment;
+
+            if (existingUnpaid != null)
+            {
+                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid deposit already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
+                payment = existingUnpaid;
+                if ((payment.Amount ?? 0m) <= 0m)
+                {
+                    payment.Amount = depositAmount;
+                    await _paymentRepository.UpdateAsync(payment);
+                }
+            }
+            else
+            {
+                payment = new Payment
+                {
+                    OrderId = order.OrderId,
+                    Amount = depositAmount,
+                    PaymentType = PaymentType.DEPOSIT.ToString(),
+                    PaymentMethod = PaymentMethod.ZALOPAY.ToString(),
+                    PaymentStatus = PaymentStatus.UNPAID.ToString()
+                };
+                await _paymentRepository.CreateAsync(payment);
+            }
+
+            var appTransId = GenerateZaloPayAppTransId(order.OrderId, payment.PaymentId);
+            var appUser = $"customer_{order.CustomerId ?? 0}";
+            var amount = (int)Math.Round(payment.Amount ?? 0m);
+            var appTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var embedData = JsonSerializer.Serialize(new
+            {
+                redirecturl = redirectUrl,
+                paymentId = payment.PaymentId
+            });
+            var item = "[]";
+            var description = $"Bookfet deposit for order #{order.OrderId}";
+
+            var data = $"{appId}|{appTransId}|{appUser}|{amount}|{appTime}|{embedData}|{item}";
+            var mac = ComputeHmacSha256(key1, data);
+
+            var formData = new Dictionary<string, string>
+            {
+                ["app_id"] = appId,
+                ["app_user"] = appUser,
+                ["app_time"] = appTime.ToString(),
+                ["amount"] = amount.ToString(),
+                ["app_trans_id"] = appTransId,
+                ["embed_data"] = embedData,
+                ["item"] = item,
+                ["description"] = description,
+                ["bank_code"] = "zalopayapp",
+                ["callback_url"] = callbackUrl,
+                ["mac"] = mac
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            using var response = await client.PostAsync(createOrderUrl, new FormUrlEncodedContent(formData));
+            var rawBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Failed to create ZaloPay order.",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        statusCode = (int)response.StatusCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            using var json = JsonDocument.Parse(rawBody);
+            var root = json.RootElement;
+            var returnCode = GetJsonInt(root, "return_code", "returncode");
+            if (returnCode != 1)
+            {
+                var subReturnCode = GetJsonInt(root, "sub_return_code", "subreturncode");
+                var returnMessage = GetJsonString(root, "return_message", "returnmessage")
+                    ?? "ZaloPay returned unsuccessful response.";
+
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Create ZaloPay order failed: {returnMessage}",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentId = payment.PaymentId,
+                        returnCode,
+                        subReturnCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            var orderUrl = GetJsonString(root, "order_url", "orderurl") ?? string.Empty;
+            var zpTransToken = GetJsonString(root, "zp_trans_token", "zptranstoken") ?? string.Empty;
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "ZaloPay order created",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentId = payment.PaymentId,
+                    paymentMethod = PaymentMethod.ZALOPAY.ToString(),
+                    amount = payment.Amount,
+                    appTransId = appTransId,
+                    orderUrl,
+                    zpTransToken
+                }
+            };
+        }
+
+        public async Task<ApiResponse<object>> CreateFullQR(int orderId, PaymentMethod paymentMethod)
         {
             var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
 
@@ -313,6 +492,25 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (paymentMethod == PaymentMethod.CASH)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Cash method is not supported in full QR. Use BANK_TRANSFER or ZALOPAY, or call create-full-cash endpoint."
+                };
+            }
+
+            if (paymentMethod == PaymentMethod.ZALOPAY)
+            {
+                return await CreateFullZaloPayOrderAsync(order, remainingAmount, extraChargeAmount, fullAmount);
+            }
+
+            return await CreateFullSePayQrAsync(order, remainingAmount, extraChargeAmount, fullAmount);
+        }
+
+        private async Task<ApiResponse<object>> CreateFullSePayQrAsync(Order order, decimal remainingAmount, decimal extraChargeAmount, decimal fullAmount)
+        {
             var paymentCode = $"BOOKFET_FULL_{order.OrderId}";
             var qrBaseUrl = _configuration["SePay:QrBaseUrl"] ?? "https://qr.sepay.vn/img";
             var qrAccount = _configuration["SePay:QrAccountNumber"] ?? string.Empty;
@@ -321,6 +519,15 @@ namespace BookfetSystem.Services.Implement
             var existingUnpaid = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(order.OrderId, PaymentType.FULL.ToString());
             if (existingUnpaid != null)
             {
+                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid full payment already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
                 if ((existingUnpaid.Amount ?? 0m) != fullAmount)
                 {
                     existingUnpaid.Amount = fullAmount;
@@ -372,6 +579,152 @@ namespace BookfetSystem.Services.Implement
                     extraChargeAmount,
                     amount = fullAmount,
                     qrUrl
+                }
+            };
+        }
+
+        private async Task<ApiResponse<object>> CreateFullZaloPayOrderAsync(Order order, decimal remainingAmount, decimal extraChargeAmount, decimal fullAmount)
+        {
+            var appId = _configuration["ZaloPay:AppId"];
+            var key1 = _configuration["ZaloPay:Key1"];
+            var createOrderUrl = _configuration["ZaloPay:CreateOrderUrl"] ?? "https://sb-openapi.zalopay.vn/v2/create";
+            var callbackUrl = _configuration["ZaloPay:CallbackUrl"] ?? string.Empty;
+            var redirectUrl = _configuration["ZaloPay:RedirectUrl"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(key1))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Missing ZaloPay configuration. Please set ZaloPay:AppId and ZaloPay:Key1."
+                };
+            }
+
+            var existingUnpaid = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(order.OrderId, PaymentType.FULL.ToString());
+            Payment payment;
+
+            if (existingUnpaid != null)
+            {
+                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid full payment already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
+                payment = existingUnpaid;
+                if ((payment.Amount ?? 0m) != fullAmount)
+                {
+                    payment.Amount = fullAmount;
+                    await _paymentRepository.UpdateAsync(payment);
+                }
+            }
+            else
+            {
+                payment = new Payment
+                {
+                    OrderId = order.OrderId,
+                    Amount = fullAmount,
+                    PaymentType = PaymentType.FULL.ToString(),
+                    PaymentMethod = PaymentMethod.ZALOPAY.ToString(),
+                    PaymentStatus = PaymentStatus.UNPAID.ToString()
+                };
+                await _paymentRepository.CreateAsync(payment);
+            }
+
+            var appTransId = GenerateZaloPayAppTransId(order.OrderId, payment.PaymentId);
+            var appUser = $"customer_{order.CustomerId ?? 0}";
+            var amount = (int)Math.Round(payment.Amount ?? 0m);
+            var appTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var embedData = JsonSerializer.Serialize(new
+            {
+                redirecturl = redirectUrl,
+                paymentId = payment.PaymentId
+            });
+            var item = "[]";
+            var description = $"Bookfet full payment for order #{order.OrderId}";
+
+            var data = $"{appId}|{appTransId}|{appUser}|{amount}|{appTime}|{embedData}|{item}";
+            var mac = ComputeHmacSha256(key1, data);
+
+            var formData = new Dictionary<string, string>
+            {
+                ["app_id"] = appId,
+                ["app_user"] = appUser,
+                ["app_time"] = appTime.ToString(),
+                ["amount"] = amount.ToString(),
+                ["app_trans_id"] = appTransId,
+                ["embed_data"] = embedData,
+                ["item"] = item,
+                ["description"] = description,
+                ["bank_code"] = "zalopayapp",
+                ["callback_url"] = callbackUrl,
+                ["mac"] = mac
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            using var response = await client.PostAsync(createOrderUrl, new FormUrlEncodedContent(formData));
+            var rawBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Failed to create full ZaloPay order.",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        statusCode = (int)response.StatusCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            using var json = JsonDocument.Parse(rawBody);
+            var root = json.RootElement;
+            var returnCode = GetJsonInt(root, "return_code", "returncode");
+            if (returnCode != 1)
+            {
+                var subReturnCode = GetJsonInt(root, "sub_return_code", "subreturncode");
+                var returnMessage = GetJsonString(root, "return_message", "returnmessage")
+                    ?? "ZaloPay returned unsuccessful response.";
+
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Create full ZaloPay order failed: {returnMessage}",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentId = payment.PaymentId,
+                        returnCode,
+                        subReturnCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            var orderUrl = GetJsonString(root, "order_url", "orderurl") ?? string.Empty;
+            var zpTransToken = GetJsonString(root, "zp_trans_token", "zptranstoken") ?? string.Empty;
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Full ZaloPay order created",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentId = payment.PaymentId,
+                    paymentMethod = PaymentMethod.ZALOPAY.ToString(),
+                    remainingAmount,
+                    extraChargeAmount,
+                    amount = payment.Amount,
+                    appTransId = appTransId,
+                    orderUrl,
+                    zpTransToken
                 }
             };
         }
@@ -466,6 +819,247 @@ namespace BookfetSystem.Services.Implement
                     paidAt = payment.PaidAt
                 }
             };
+        }
+
+        public async Task<ApiResponse<object>> RefundRejectedOrderDepositAsync(int orderId, string? reason)
+        {
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+            if (order == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order not found."
+                };
+            }
+
+            var paidZaloPayDeposit = GetLatestPaidZaloPayDeposit(order);
+            if (paidZaloPayDeposit == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "No paid ZaloPay deposit to refund."
+                };
+            }
+
+            var fullDepositAmount = paidZaloPayDeposit.Amount ?? 0m;
+            if (fullDepositAmount <= 0m)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid deposit amount for refund."
+                };
+            }
+
+            return await RefundOrderDepositInternalAsync(order, paidZaloPayDeposit, fullDepositAmount, reason);
+        }
+
+        public async Task<ApiResponse<object>> RefundOrderDepositByAmountAsync(int orderId, decimal refundAmount, string? reason)
+        {
+            var order = await _orderRepository.GetByIdWithRelationAsync(orderId);
+            if (order == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Order not found."
+                };
+            }
+
+            if (refundAmount <= 0m)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Refund amount must be greater than 0."
+                };
+            }
+
+            var paidZaloPayDeposit = GetLatestPaidZaloPayDeposit(order);
+            if (paidZaloPayDeposit == null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "No paid ZaloPay deposit to refund."
+                };
+            }
+
+            var paidAmount = paidZaloPayDeposit.Amount ?? 0m;
+            if (refundAmount > paidAmount)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Refund amount exceeds paid deposit. Max refundable: {paidAmount:0.##}."
+                };
+            }
+
+            return await RefundOrderDepositInternalAsync(order, paidZaloPayDeposit, refundAmount, reason);
+        }
+
+        private async Task<ApiResponse<object>> RefundOrderDepositInternalAsync(Order order, Payment paidZaloPayDeposit, decimal refundAmount, string? reason)
+        {
+            var metadata = DeserializeZaloPayMetadata(order.MtdZlp);
+            var paymentMetadata = metadata.Payments.FirstOrDefault(x => x.PaymentId == paidZaloPayDeposit.PaymentId);
+            var zpTransId = paymentMetadata?.ZpTransId;
+            if (string.IsNullOrWhiteSpace(zpTransId))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Missing zp_trans_id for paid ZaloPay deposit. Cannot process refund automatically."
+                };
+            }
+
+            if (paymentMetadata?.Refunds?.Any() == true)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "A refund request already exists for this deposit payment."
+                };
+            }
+
+            var appId = _configuration["ZaloPay:AppId"];
+            var key1 = _configuration["ZaloPay:Key1"];
+            var refundUrl = _configuration["ZaloPay:RefundUrl"] ?? "https://sb-openapi.zalopay.vn/v2/refund";
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(key1))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Missing ZaloPay config for refund (AppId/Key1)."
+                };
+            }
+
+            var amount = (long)Math.Round(refundAmount);
+            if (amount <= 0)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid refund amount."
+                };
+            }
+
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var mRefundId = $"{GetVietnamNow():yyMMdd}_{appId}_{order.OrderId}_{paidZaloPayDeposit.PaymentId}_{timestamp}";
+            var description = string.IsNullOrWhiteSpace(reason)
+                ? $"Refund deposit for order #{order.OrderId}"
+                : $"Refund deposit for order #{order.OrderId} - {reason.Trim()}";
+            if (description.Length > 100)
+            {
+                description = description.Substring(0, 100);
+            }
+
+            var macInput = $"{appId}|{zpTransId}|{amount}|{description}|{timestamp}";
+            var mac = ComputeHmacSha256(key1, macInput);
+
+            var formData = new Dictionary<string, string>
+            {
+                ["app_id"] = appId,
+                ["m_refund_id"] = mRefundId,
+                ["zp_trans_id"] = zpTransId,
+                ["amount"] = amount.ToString(),
+                ["timestamp"] = timestamp.ToString(),
+                ["description"] = description,
+                ["mac"] = mac
+            };
+
+            var client = _httpClientFactory.CreateClient();
+            using var response = await client.PostAsync(refundUrl, new FormUrlEncodedContent(formData));
+            var rawBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Failed to call ZaloPay refund API.",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentId = paidZaloPayDeposit.PaymentId,
+                        statusCode = (int)response.StatusCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            using var json = JsonDocument.Parse(rawBody);
+            var root = json.RootElement;
+            var returnCode = GetJsonInt(root, "return_code", "returncode");
+            var subReturnCode = GetJsonInt(root, "sub_return_code", "subreturncode");
+            var returnMessage = GetJsonString(root, "return_message", "returnmessage") ?? string.Empty;
+
+            var isRefundAccepted = returnCode == 1 || returnCode == 3;
+            if (!isRefundAccepted)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"ZaloPay refund failed: {returnMessage}",
+                    Data = new
+                    {
+                        orderId = order.OrderId,
+                        paymentId = paidZaloPayDeposit.PaymentId,
+                        returnCode,
+                        subReturnCode,
+                        response = rawBody
+                    }
+                };
+            }
+
+            paymentMetadata ??= new ZaloPayPaymentMetadata
+            {
+                PaymentId = paidZaloPayDeposit.PaymentId
+            };
+            paymentMetadata.Refunds ??= new List<ZaloPayRefundMetadata>();
+            paymentMetadata.Refunds.Add(new ZaloPayRefundMetadata
+            {
+                MRefundId = mRefundId,
+                ReturnCode = returnCode,
+                SubReturnCode = subReturnCode,
+                Amount = amount,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            if (!metadata.Payments.Any(x => x.PaymentId == paymentMetadata.PaymentId))
+            {
+                metadata.Payments.Add(paymentMetadata);
+            }
+
+            order.MtdZlp = JsonSerializer.Serialize(metadata);
+            await _orderRepository.UpdateAsync(order);
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = returnCode == 1 ? "ZaloPay refund completed." : "ZaloPay refund is processing.",
+                Data = new
+                {
+                    orderId = order.OrderId,
+                    paymentId = paidZaloPayDeposit.PaymentId,
+                    amount,
+                    mRefundId,
+                    returnCode,
+                    subReturnCode
+                }
+            };
+        }
+
+        private static Payment? GetLatestPaidZaloPayDeposit(Order order)
+        {
+            return (order.Payments ?? new List<Payment>())
+                .Where(p =>
+                    string.Equals(p.PaymentType, PaymentType.DEPOSIT.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(p.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(p.PaymentStatus, PaymentStatus.PAID.ToString(), StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(p => p.PaidAt ?? DateTime.MinValue)
+                .FirstOrDefault();
         }
 
         private async Task SendOrderCompletedEmailAsync(Order order, string paymentMethodLabel)
@@ -605,6 +1199,113 @@ namespace BookfetSystem.Services.Implement
             }
 
             return trimmed;
+        }
+
+        private static string ComputeHmacSha256(string key, string input)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(key);
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            using var hmac = new HMACSHA256(keyBytes);
+            var hashBytes = hmac.ComputeHash(inputBytes);
+            return Convert.ToHexString(hashBytes).ToLowerInvariant();
+        }
+
+        private static ZaloPayMetadata DeserializeZaloPayMetadata(string? rawMetadata)
+        {
+            if (string.IsNullOrWhiteSpace(rawMetadata))
+            {
+                return new ZaloPayMetadata();
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<ZaloPayMetadata>(rawMetadata) ?? new ZaloPayMetadata();
+            }
+            catch
+            {
+                return new ZaloPayMetadata();
+            }
+        }
+
+        private static DateTime GetVietnamNow()
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetVietnamTimeZone());
+        }
+
+        private static string GenerateZaloPayAppTransId(int orderId, int paymentId)
+        {
+            var vietnamNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetVietnamTimeZone());
+            var uniqueSuffix = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            // ZaloPay requires yyMMdd prefix in GMT+7 and app_trans_id must be unique.
+            return $"{vietnamNow:yyMMdd}_{orderId}_{paymentId}_{uniqueSuffix}";
+        }
+
+        private static int GetJsonInt(JsonElement root, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (!root.TryGetProperty(name, out var value))
+                {
+                    continue;
+                }
+
+                if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var intValue))
+                {
+                    return intValue;
+                }
+
+                if (value.ValueKind == JsonValueKind.String && int.TryParse(value.GetString(), out intValue))
+                {
+                    return intValue;
+                }
+            }
+
+            return -1;
+        }
+
+        private static string? GetJsonString(JsonElement root, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (!root.TryGetProperty(name, out var value))
+                {
+                    continue;
+                }
+
+                if (value.ValueKind == JsonValueKind.String)
+                {
+                    return value.GetString();
+                }
+
+                if (value.ValueKind == JsonValueKind.Number || value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False)
+                {
+                    return value.ToString();
+                }
+            }
+
+            return null;
+        }
+
+        private sealed class ZaloPayMetadata
+        {
+            public List<ZaloPayPaymentMetadata> Payments { get; set; } = new();
+        }
+
+        private sealed class ZaloPayPaymentMetadata
+        {
+            public int PaymentId { get; set; }
+            public string? AppTransId { get; set; }
+            public string? ZpTransId { get; set; }
+            public List<ZaloPayRefundMetadata>? Refunds { get; set; }
+        }
+
+        private sealed class ZaloPayRefundMetadata
+        {
+            public string? MRefundId { get; set; }
+            public int ReturnCode { get; set; }
+            public int SubReturnCode { get; set; }
+            public long Amount { get; set; }
+            public DateTime CreatedAt { get; set; }
         }
     }
 }

@@ -131,5 +131,40 @@ namespace BookfetSystem.API.Controllers
 
             return BadRequest(result);
         }
+
+        [Authorize]
+        [HttpPut("{orderId}/cancel")]
+        public async Task<ActionResult> CancelOrder(int orderId, [FromBody] CancelOrderRequest request)
+        {
+            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(roleValue, out var roleId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing role id." });
+            }
+
+            var actorIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(actorIdValue, out var actorId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing user id." });
+            }
+
+            var result = await _orderService.CancelOrderAsync(orderId, roleId, actorId, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order not found.")
+            {
+                return NotFound(result);
+            }
+
+            if (result.Message == "You do not have permission to cancel this order.")
+            {
+                return StatusCode(403, result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }
