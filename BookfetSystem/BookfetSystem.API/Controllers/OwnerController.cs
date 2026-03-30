@@ -21,10 +21,15 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet("revenue-chart")]
-        public async Task<ActionResult<OwnerRevenueChartResponse>> GetRevenueChart([FromQuery] string groupBy = "day")
+        public async Task<ActionResult<ApiResponse<OwnerRevenueChartResponse>>> GetRevenueChart([FromQuery] string groupBy = "day")
         {
             var result = await _ownerDashboardService.GetOwnerRevenueChartAsync(groupBy);
-            return Ok(result);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
 
         [HttpGet("top-selling-menus")]

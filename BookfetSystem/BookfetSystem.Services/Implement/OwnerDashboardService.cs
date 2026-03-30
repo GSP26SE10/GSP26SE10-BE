@@ -22,37 +22,56 @@ namespace BookfetSystem.Services.Implement
             _orderDetailRepository = orderDetailRepository;
         }
 
-        public async Task<OwnerRevenueChartResponse> GetOwnerRevenueChartAsync(string groupBy = "day")
+        public async Task<ApiResponse<OwnerRevenueChartResponse>> GetOwnerRevenueChartAsync(string groupBy = "day")
         {
-            var normalizedGroupBy = string.Equals(groupBy, "month", StringComparison.OrdinalIgnoreCase)
-                ? "month"
-                : "day";
-
-            var (start, end) = GetRange(normalizedGroupBy);
-            var now = DateTime.UtcNow;
-
-            var payments = await _paymentRepository.GetPaidPayments()
-                .Where(p => p.PaidAt >= start && p.PaidAt <= end)
-                .ToListAsync();
-
-            var data = normalizedGroupBy == "day"
-                ? BuildDailyData(payments, start)
-                : BuildMonthlyData(payments, now.Year, now.Month);
-
-            return new OwnerRevenueChartResponse
+            try
             {
-                GroupBy = normalizedGroupBy,
-                Data = data,
-                Summary = new OwnerRevenueSummaryResponse
+                var normalizedGroupBy = string.Equals(groupBy, "month", StringComparison.OrdinalIgnoreCase)
+                    ? "month"
+                    : "day";
+
+                var (start, end) = GetRange(normalizedGroupBy);
+                var now = DateTime.UtcNow;
+
+                var payments = await _paymentRepository.GetPaidPayments()
+                    .Where(p => p.PaidAt >= start && p.PaidAt <= end)
+                    .ToListAsync();
+
+                var data = normalizedGroupBy == "day"
+                    ? BuildDailyData(payments, start)
+                    : BuildMonthlyData(payments, now.Year, now.Month);
+
+                var response = new OwnerRevenueChartResponse
                 {
-                    TotalRevenue = payments.Sum(p => p.Amount ?? 0m),
-                    TotalOrders = payments
-                        .Where(p => p.OrderId != null)
-                        .Select(p => p.OrderId ?? 0)
-                        .Distinct()
-                        .Count()
-                }
-            };
+                    GroupBy = normalizedGroupBy,
+                    Data = data,
+                    Summary = new OwnerRevenueSummaryResponse
+                    {
+                        TotalRevenue = payments.Sum(p => p.Amount ?? 0m),
+                        TotalOrders = payments
+                            .Where(p => p.OrderId != null)
+                            .Select(p => p.OrderId ?? 0)
+                            .Distinct()
+                            .Count()
+                    }
+                };
+
+                return new ApiResponse<OwnerRevenueChartResponse>
+                {
+                    Success = true,
+                    Message = "Revenue chart loaded successfully.",
+                    Data = response
+                };
+            }
+            catch (Exception)
+            {
+                return new ApiResponse<OwnerRevenueChartResponse>
+                {
+                    Success = false,
+                    Message = "Failed to load revenue chart.",
+                    Data = null
+                };
+            }
         }
 
         public async Task<ApiResponse<OwnerTopSellingMenuResponse>> GetTopSellingMenusAsync(int top = 5)

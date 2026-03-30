@@ -6,7 +6,7 @@ namespace BookfetSystem.Services.Interface
 {
     public interface IOwnerDashboardService
     {
-        Task<OwnerRevenueChartResponse> GetOwnerRevenueChartAsync(string groupBy = "day");
+        Task<ApiResponse<OwnerRevenueChartResponse>> GetOwnerRevenueChartAsync(string groupBy = "day");
         Task<ApiResponse<OwnerTopSellingMenuResponse>> GetTopSellingMenusAsync(int top = 5);
     }
 }
