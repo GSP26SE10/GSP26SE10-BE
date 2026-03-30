@@ -103,6 +103,7 @@ namespace BookfetSystem.Services.Implement
                 Status = user.Status,
                 UserName = user.UserName,
                 Phone = user.Phone,
+                Avatar = user.Avatar,
                 RoleName = user.Role != null ? user.Role.RoleName : string.Empty,
                 AccessToken = token
             };
@@ -249,6 +250,7 @@ namespace BookfetSystem.Services.Implement
                         FullName = fullName,
                         Email = email,
                         Phone = null,
+                        Avatar = picture,
                         Status = "ACTIVE",
                         UserName = email,
                         Address = null,
@@ -290,6 +292,7 @@ namespace BookfetSystem.Services.Implement
                 // Map vẫn chạy khi DB null (chỉ ra null). Ghi đè bằng giá trị từ Google để response luôn có email + fullName.
                 response.Email = email;
                 response.FullName = fullName;
+                response.Avatar = !string.IsNullOrWhiteSpace(picture) ? picture : response.Avatar;
 
                 return new ApiResponse<LoginResponse>
                 {

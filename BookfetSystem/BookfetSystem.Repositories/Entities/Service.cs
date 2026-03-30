@@ -16,6 +16,8 @@ public partial class Service
 
     public decimal? BasePrice { get; set; }
 
+    public string AisServiceSummary { get; set; }
+
     public string Status { get; set; }
 
     public string Img { get; set; }
