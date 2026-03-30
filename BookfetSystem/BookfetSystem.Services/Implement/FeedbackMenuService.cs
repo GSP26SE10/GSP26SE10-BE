@@ -1,15 +1,17 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using Hangfire;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -24,6 +26,8 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderRepository _orderRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly IImageStorageService _imageStorageService;
+        private readonly GeminiService _geminiService;
+        
 
         public FeedbackMenuService(
             FeedbackMenuRepository feedbackMenuRepository,
@@ -31,7 +35,8 @@ namespace BookfetSystem.Services.Implement
             UserRepository userRepository,
             OrderRepository orderRepository,
             OrderDetailRepository orderDetailRepository,
-            IImageStorageService imageStorageService)
+            IImageStorageService imageStorageService,
+            GeminiService geminiService)
         {
             _feedbackMenuRepository = feedbackMenuRepository;
             _menuRepository = menuRepository;
@@ -39,6 +44,7 @@ namespace BookfetSystem.Services.Implement
             _orderRepository = orderRepository;
             _orderDetailRepository = orderDetailRepository;
             _imageStorageService = imageStorageService;
+            _geminiService = geminiService;
         }
 
         public async Task<PagedResponse<FeedbackMenuResponse>> GetAllFeedbackMenuFilteredAsync(FeedbackMenuFilterRequest request, int page, int pageSize)
@@ -179,19 +185,27 @@ namespace BookfetSystem.Services.Implement
             }
 
             var affected = await _feedbackMenuRepository.CreateAsync(entity);
+
             if (affected > 0)
             {
+                // Lấy tổng số feedback hiện tại của Menu này
+                var totalFeedback = await _feedbackMenuRepository
+                    .GetAllFeedbackMenuFiltered(new FeedbackMenu { MenuId = request.MenuId })
+                    .CountAsync();
+
+                // CHIẾN LƯỢC: Chạy khi có feedback đầu tiên, hoặc cứ mỗi 5 feedback (5, 10, 15...)
+                if (string.IsNullOrEmpty(menu.AisMenuSummary) || totalFeedback % 5 == 0)
+                {
+                    BackgroundJob.Enqueue<IFeedbackMenuService>(s => s.ProcessAiSummaryAsync(request.MenuId));
+                }
+
+                // Trả về response thành công
                 var response = await _feedbackMenuRepository
                     .GetAllFeedbackMenuFiltered(new FeedbackMenu { FeedbackMenuId = entity.FeedbackMenuId })
                     .ProjectToType<FeedbackMenuResponse>()
                     .FirstOrDefaultAsync();
 
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = true,
-                    Message = "Feedback menu created successfully.",
-                    Data = response
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = true, Message = "Thành công", Data = response };
             }
 
             return new ApiResponse<FeedbackMenuResponse>
@@ -326,5 +340,48 @@ namespace BookfetSystem.Services.Implement
 
             return files;
         }
+        public async Task ProcessAiSummaryAsync(int menuId)
+        {
+            var menu = await _menuRepository.GetByIdAsync(menuId);
+            if (menu == null) return;
+
+            // Lấy 15 feedback mới nhất
+            var recentComments = await _feedbackMenuRepository
+                .GetAllFeedbackMenuFiltered(new FeedbackMenu { MenuId = menuId })
+                .OrderByDescending(f => f.CreatedAt)
+                .Where(f => !string.IsNullOrWhiteSpace(f.Comment))
+                .Select(f => f.Comment)
+                .Take(15)
+                .ToListAsync();
+
+            if (recentComments.Count >= 1)
+            {
+                try
+                {
+                   
+                    var summary = await _geminiService.SummarizeFeedbackAsync(
+                        menu.MenuName,
+                        recentComments,
+                        menu.AisMenuSummary
+                    );
+
+                    if (!string.IsNullOrEmpty(summary))
+                    {
+                        // Cập nhật kết quả mới vào cột ais_menu_summary của bảng Menu
+                        menu.AisMenuSummary = summary.Trim();
+                        await _menuRepository.UpdateAsync(menu);
+
+                        Console.WriteLine($"[AI Summary Success] Menu: {menu.MenuName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ném lỗi để Hangfire tự động Retry
+                    throw new Exception($"Lỗi khi tóm tắt AI cho Menu {menuId}: {ex.Message}");
+                }
+            }
+        }
     }
+
+
 }

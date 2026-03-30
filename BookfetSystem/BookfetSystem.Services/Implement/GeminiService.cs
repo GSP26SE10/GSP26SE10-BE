@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BookfetSystem.Services.Interface;
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -6,44 +7,105 @@ using System.Text.Json;
 public class GeminiService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
+    private readonly IApiKeyProvider _apiKeyProvider;
 
-    public GeminiService(HttpClient httpClient, IConfiguration configuration)
+    public GeminiService(HttpClient httpClient, IApiKeyProvider apiKeyProvider)
     {
         _httpClient = httpClient;
-        _apiKey = configuration["Gemini:ApiKey"];
+        _apiKeyProvider = apiKeyProvider;
     }
 
     public async Task<string> AskGemini(string prompt)
     {
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+        var currentKey = _apiKeyProvider.GetRandomKey();
+        var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={currentKey}";
 
         var body = new
         {
             contents = new[]
             {
-                new
-                {
-                    parts = new[]
-                    {
-                        new { text = prompt }
-                    }
-                }
-            }
+            new { parts = new[] { new { text = prompt } } }
+        }
         };
 
         var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(url, content);
-        var result = await response.Content.ReadAsStringAsync();
+        // Thử lại tối đa 3 lần nếu gặp lỗi Rate Limit
+        for (int i = 0; i < 3; i++)
+        {
+            var response = await _httpClient.PostAsync(url, content);
 
-        using var doc = JsonDocument.Parse(result);
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                // Đợi một khoảng thời gian tăng dần trước khi thử lại (Exponential Backoff)
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, i + 1)));
+                continue;
+            }
 
-        return doc.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorDetail = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Gemini Error: {response.StatusCode} - {errorDetail}");
+            }
+
+            var result = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(result);
+            return doc.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+        }
+
+        throw new Exception("Gemini API Rate Limit exceeded after retries.");
+    }
+    public async Task<string> SummarizeFeedbackAsync(string menuName, List<string> feedbacks, string? oldSummary)
+    {
+        var feedbackText = string.Join("\n- ", feedbacks);
+
+        // Logic Prompt thông minh: Kết hợp cũ và mới
+        var prompt = $@"
+        Bạn là một chuyên gia ẩm thực chuyên nghiệp.
+        Tên món ăn: '{menuName}'
+        
+        Bản tóm tắt chất lượng hiện tại (nếu có): 
+        ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có dữ liệu tóm tắt trước đó." : oldSummary)}""
+
+        Danh sách các đánh giá mới nhất từ khách hàng:
+        - {feedbackText}
+
+        Nhiệm vụ: 
+        Dựa trên bản tóm tắt cũ và các đánh giá mới này, hãy viết lại một bản tóm tắt tổng quan mới (khoảng 2-3 câu). 
+        Yêu cầu:
+        1. Nếu đánh giá mới có xu hướng thay đổi so với bản cũ, hãy cập nhật thông tin đó.
+        2. Nếu đánh giá mới vẫn tương đồng, hãy tổng hợp lại cho súc tích hơn.
+        3. Giữ phong cách chuyên nghiệp, khách quan, tập trung vào hương vị và trải nghiệm.
+        4. Trả về kết quả thuần văn bản, không có lời dẫn hay ký tự đặc biệt.";
+
+        return await AskGemini(prompt);
+    }
+    public async Task<string> SummarizeServiceFeedbackAsync(string serviceName, List<string> feedbacks, string? oldSummary)
+    {
+        var feedbackText = string.Join("\n- ", feedbacks);
+
+        var prompt = $@"
+    Bạn là chuyên gia quản lý chất lượng dịch vụ khách hàng chuyên nghiệp.
+    Dịch vụ: '{serviceName}'
+    
+    Tóm tắt cũ: ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có" : oldSummary)}""
+    Đánh giá mới:
+    - {feedbackText}
+
+    Nhiệm vụ: 
+    Hãy tổng hợp thành một đoạn văn ngắn (2-3 câu) về chất lượng dịch vụ hiện tại.
+
+    Yêu cầu bắt buộc:
+    1. Tuyệt đối KHÔNG bao gồm các tiêu đề như ""Bản tóm tắt..."" hay bất kỳ lời dẫn nào.
+    2. Đi thẳng trực tiếp vào nội dung nhận xét (ví dụ: ""Dịch vụ {serviceName} hiện đang..."").
+    3. Tập trung vào: Thái độ, tốc độ, sự chuyên nghiệp và xu hướng thay đổi chất lượng.
+    4. Văn phong khách quan, trả về thuần văn bản, không xuống dòng thừa.";
+
+        return await AskGemini(prompt);
     }
 }

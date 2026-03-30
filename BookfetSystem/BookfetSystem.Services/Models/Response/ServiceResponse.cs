@@ -15,5 +15,7 @@ namespace BookfetSystem.Services.Models.Response
         public string Img { get; set; }
 
         public DateTime? CreatedAt { get; set; }
+        public string? AisServiceSummary { get; set; }
+
     }
 }
