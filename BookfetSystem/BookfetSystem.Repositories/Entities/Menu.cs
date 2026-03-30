@@ -15,6 +15,8 @@ public partial class Menu
 
     public decimal? BasePrice { get; set; }
 
+    public string AisMenuSummary { get; set; }
+
     public string ImgUrl { get; set; }
 
     public string Status { get; set; }

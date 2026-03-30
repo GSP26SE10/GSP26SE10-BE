@@ -358,6 +358,7 @@ public partial class GSP26SE10DBContext : DbContext
             entity.ToTable("menu");
 
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
+            entity.Property(e => e.AisMenuSummary).HasColumnName("ais_menu_summary");
             entity.Property(e => e.BasePrice)
                 .HasPrecision(12, 2)
                 .HasColumnName("base_price");
@@ -875,6 +876,7 @@ public partial class GSP26SE10DBContext : DbContext
             entity.ToTable("service");
 
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
+            entity.Property(e => e.AisServiceSummary).HasColumnName("ais_service_summary");
             entity.Property(e => e.BasePrice)
                 .HasPrecision(12, 2)
                 .HasColumnName("base_price");
@@ -951,6 +953,9 @@ public partial class GSP26SE10DBContext : DbContext
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.Avatar)
+                .HasMaxLength(255)
+                .HasColumnName("avatar");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
