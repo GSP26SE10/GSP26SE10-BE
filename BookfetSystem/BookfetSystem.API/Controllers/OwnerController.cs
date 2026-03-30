@@ -1,5 +1,7 @@
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models;
+using BookfetSystem.Services.Models.Common;
+using BookfetSystem.Services.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -11,18 +13,35 @@ namespace BookfetSystem.API.Controllers
     [Authorize]
     public class OwnerController : ControllerBase
     {
-        private readonly IRevenueService _revenueService;
+        private readonly IOwnerDashboardService _ownerDashboardService;
 
-        public OwnerController(IRevenueService revenueService)
+        public OwnerController(IOwnerDashboardService ownerDashboardService)
         {
-            _revenueService = revenueService;
+            _ownerDashboardService = ownerDashboardService;
         }
 
         [HttpGet("revenue-chart")]
-        public async Task<ActionResult<RevenueChartResponse>> GetRevenueChart([FromQuery] string groupBy = "day")
+        public async Task<ActionResult<ApiResponse<OwnerRevenueChartResponse>>> GetRevenueChart([FromQuery] string groupBy = "day")
         {
-            var result = await _revenueService.GetOwnerRevenueChartAsync(groupBy);
-            return Ok(result);
+            var result = await _ownerDashboardService.GetOwnerRevenueChartAsync(groupBy);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [HttpGet("top-selling-menus")]
+        public async Task<ActionResult<ApiResponse<OwnerTopSellingMenuResponse>>> GetTopSellingMenus([FromQuery] int top = 5)
+        {
+            var result = await _ownerDashboardService.GetTopSellingMenusAsync(top);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }
