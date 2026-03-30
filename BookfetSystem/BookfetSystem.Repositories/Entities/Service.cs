@@ -19,6 +19,8 @@ public partial class Service
     public string Status { get; set; }
 
     public string Img { get; set; }
+    [Column("ais_service_summary")]
+    public string? AisServiceSummary { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

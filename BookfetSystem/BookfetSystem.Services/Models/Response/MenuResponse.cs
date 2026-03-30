@@ -11,6 +11,7 @@ namespace BookfetSystem.Services.Models.Response
         public decimal? BasePrice { get; set; }
         public object? ImgUrl { get; set; }
         public int? Status { get; set; }
+        public string? AisMenuSummary { get; set; }
         public string? MenuCategoryName { get; set; }
         public string? PartyCategoryName { get; set; }
         public List<int> PartyCategoryIds { get; set; } = new();

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BookfetSystem.Services.Interface;
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -6,18 +7,18 @@ using System.Text.Json;
 public class GeminiService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
+    private readonly IApiKeyProvider _apiKeyProvider;
 
-    public GeminiService(HttpClient httpClient, IConfiguration configuration)
+    public GeminiService(HttpClient httpClient, IApiKeyProvider apiKeyProvider)
     {
         _httpClient = httpClient;
-        _apiKey = configuration["Gemini:ApiKey"];
+        _apiKeyProvider = apiKeyProvider;
     }
 
     public async Task<string> AskGemini(string prompt)
     {
-        // Sử dụng v1 và model gemini-1.5-flash để ổn định nhất (hoặc gemini-2.5-flash tùy bạn)
-        var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+        var currentKey = _apiKeyProvider.GetRandomKey();
+        var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={currentKey}";
 
         var body = new
         {
@@ -81,6 +82,29 @@ public class GeminiService
         2. Nếu đánh giá mới vẫn tương đồng, hãy tổng hợp lại cho súc tích hơn.
         3. Giữ phong cách chuyên nghiệp, khách quan, tập trung vào hương vị và trải nghiệm.
         4. Trả về kết quả thuần văn bản, không có lời dẫn hay ký tự đặc biệt.";
+
+        return await AskGemini(prompt);
+    }
+    public async Task<string> SummarizeServiceFeedbackAsync(string serviceName, List<string> feedbacks, string? oldSummary)
+    {
+        var feedbackText = string.Join("\n- ", feedbacks);
+
+        var prompt = $@"
+        Bạn là chuyên gia quản lý chất lượng dịch vụ khách hàng.
+        Tên dịch vụ: '{serviceName}'
+        
+        Bản tóm tắt chất lượng hiện tại: 
+        ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có dữ liệu tóm tắt trước đó." : oldSummary)}""
+
+        Danh sách các đánh giá mới nhất từ khách hàng:
+        - {feedbackText}
+
+        Nhiệm vụ: 
+        Dựa trên bản tóm tắt cũ và các đánh giá mới, hãy viết lại một bản tóm tắt tổng quan mới (2-3 câu). 
+        Yêu cầu:
+        1. Tập trung vào: Thái độ nhân viên, tốc độ phục vụ, độ chuyên nghiệp và sự hài lòng.
+        2. Nếu chất lượng có xu hướng thay đổi (tốt lên hoặc tệ đi), hãy cập nhật rõ.
+        3. Văn phong chuyên nghiệp, khách quan, trả về thuần văn bản.";
 
         return await AskGemini(prompt);
     }

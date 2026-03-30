@@ -25,7 +25,7 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.Status,
                        src => EnumHelper.TryParseToInt<FeedbackMenuStatus>(src.Status))
                   .Map(dest => dest.AisMenuSummary,
-         src => src.Menu != null ? src.Menu.AisMenuSummary : null);
+                        src => src.Menu != null ? src.Menu.AisMenuSummary : null);
         }
     }
 }
