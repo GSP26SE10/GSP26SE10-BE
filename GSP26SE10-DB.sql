@@ -84,6 +84,7 @@ CREATE TABLE users (
     full_name VARCHAR(100),
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
+    avatar VARCHAR(255),
     status VARCHAR(50),
     password_hash VARCHAR(255),
     user_name VARCHAR(100) UNIQUE,
@@ -121,6 +122,7 @@ CREATE TABLE menu (
     menu_name VARCHAR(150),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     base_price NUMERIC(12,2),
+    ais_menu_summary TEXT,
     img_url JSONB, -- array: ["url1", "url2", ...]
     status VARCHAR(50),
     menu_category_id INT REFERENCES menu_category(menu_category_id)
@@ -131,6 +133,7 @@ CREATE TABLE service (
     service_name VARCHAR(100),
     description TEXT,
     base_price NUMERIC(12,2),
+    ais_service_summary TEXT,
     status VARCHAR(50),
     img VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -390,17 +393,18 @@ INSERT INTO role (role_name) VALUES
 ('USER');
 
 -- USERS
-INSERT INTO users (full_name, email, password_hash, user_name, phone, address, status, role_id) VALUES
-('Admin', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', '123 Admin St', 'ACTIVE', 1),
-('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', '456 Leader St', 'ACTIVE', 2),
-('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', '789 Staff St', 'ACTIVE', 3),
-('Nguyen Van A', 'user@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', '321 User St', 'ACTIVE', 4);
+INSERT INTO users (full_name, email, password_hash, user_name, phone, avatar, address, status, role_id) VALUES
+('Admin', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '123 Admin St', 'ACTIVE', 1),
+('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '456 Leader St', 'ACTIVE', 2),
+('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '789 Staff St', 'ACTIVE', 3),
+('Nguyen Van A', 'user@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
 ('Wedding Party', 'Elegant wedding celebrations', 'AVAILABLE', 200, '/images/wedding.jpg'),
 ('Birthday Party', 'Fun birthday celebrations', 'AVAILABLE', 50, '/images/birthday.jpg'),
-('Corporate Event', 'Professional corporate gatherings', 'AVAILABLE', 100, '/images/corporate.jpg');
+('Corporate Event', 'Professional corporate gatherings', 'AVAILABLE', 100, '/images/corporate.jpg'),
+('Test party 1 people', 'Party category for minimum 1 guest testing', 'AVAILABLE', 1, '/images/test-party-1.jpg');
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
