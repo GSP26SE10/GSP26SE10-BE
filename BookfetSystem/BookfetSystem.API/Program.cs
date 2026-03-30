@@ -65,7 +65,7 @@ builder.Services.AddHangfire(config =>
               options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
 builder.Services.AddHangfireServer(options =>
 {
-    options.WorkerCount = 2; // Chỉ cho phép tối đa 2 tác vụ chạy song song để tránh spam API
+    options.WorkerCount = 1; // Chỉ cho phép tối đa 2 tác vụ chạy song song để tránh spam API
 });
 
 // Register Mapster mappings

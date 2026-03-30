@@ -75,47 +75,28 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<ApiResponse<FeedbackServiceResponse>> CreateAsync(FeedbackServiceCreateRequest request)
         {
+            // 1. Kiểm tra các thực thể (Validation)
             var order = await _orderRepository.GetByIdAsync(request.OrderId);
             if (order == null)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Order not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Order not found.", Data = null };
             }
 
             var service = await _serviceRepository.GetByIdAsync(request.ServiceId);
             if (service == null)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Service not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Service not found.", Data = null };
             }
 
             var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
             if (orderDetail == null)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Order detail not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Order detail not found.", Data = null };
             }
 
             if (orderDetail.OrderId != request.OrderId)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Order detail does not belong to the specified order.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Order detail does not belong to the specified order.", Data = null };
             }
 
             var hasServiceInOrderDetail = await _orderServiceRepository
@@ -128,25 +109,16 @@ namespace BookfetSystem.Services.Implement
 
             if (!hasServiceInOrderDetail)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Service does not belong to the specified order detail.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Service does not belong to the specified order detail.", Data = null };
             }
 
             var customer = await _userRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
             {
-                return new ApiResponse<FeedbackServiceResponse>
-                {
-                    Success = false,
-                    Message = "Customer not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackServiceResponse> { Success = false, Message = "Customer not found.", Data = null };
             }
 
+            // 2. Khởi tạo Entity
             var entity = new FeedbackService
             {
                 OrderId = request.OrderId,
@@ -159,6 +131,7 @@ namespace BookfetSystem.Services.Implement
                 CreatedAt = DateTime.UtcNow
             };
 
+            // 3. Xử lý upload hình ảnh
             try
             {
                 var files = NormalizeFeedbackServiceImageFiles(request.ImgFiles);
@@ -180,7 +153,6 @@ namespace BookfetSystem.Services.Implement
                         var uploadedUrl = await _imageStorageService.UploadImageAsync(file, CloudinaryFolder.FeedbackService);
                         uploadedUrls.Add(uploadedUrl);
                     }
-
                     entity.Img = JsonSerializer.Serialize(uploadedUrls);
                 }
             }
@@ -194,26 +166,16 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            // 4. Lưu Feedback vào Database
             var affected = await _feedbackServiceRepository.CreateAsync(entity);
+
             if (affected > 0)
             {
-                // 1. Lấy dữ liệu Service để check (Đặt tên rõ ràng tránh trùng lặp)
-                var serviceEntity = await _serviceRepository.GetByIdAsync(request.ServiceId);
+                // CHIẾN LƯỢC MỚI: Luôn chạy AI Summary ngay lập tức sau mỗi feedback
+                // Bỏ qua việc đếm số lượng feedback để dữ liệu luôn được cập nhật mới nhất
+                BackgroundJob.Enqueue<IFeedbackServiceService>(s => s.ProcessAiServiceSummaryAsync(request.ServiceId));
 
-                // 2. Đếm tổng feedback của Service này
-                var totalFeedback = await _feedbackServiceRepository
-                    .GetAllFeedbackServiceFiltered(new FeedbackService { ServiceId = request.ServiceId })
-                    .CountAsync();
-
-                // 3. Kích hoạt Hangfire (Bỏ % 5 nếu bạn muốn test ngay lập tức)
-                if (serviceEntity != null && (string.IsNullOrEmpty(serviceEntity.AisServiceSummary) || totalFeedback % 5 == 0))
-                {
-                    // Ghi log ra console để bạn theo dõi xem nó có lọt vào đây không
-                    Console.WriteLine($"--- Enqueuing AI Summary for Service: {serviceEntity.ServiceName} ---");
-                    BackgroundJob.Enqueue<IFeedbackServiceService>(s => s.ProcessAiServiceSummaryAsync(request.ServiceId));
-                }
-
-                // 4. Map dữ liệu để trả về API (Quan trọng: Phải query lại để lấy đủ thông tin Join)
+                // 5. Query lại dữ liệu để trả về đầy đủ thông tin cho Client
                 var responseData = await _feedbackServiceRepository
                     .GetAllFeedbackServiceFiltered(new FeedbackService { FeedbackServiceId = entity.FeedbackServiceId })
                     .ProjectToType<FeedbackServiceResponse>()
@@ -223,7 +185,7 @@ namespace BookfetSystem.Services.Implement
                 {
                     Success = true,
                     Message = "Feedback service created successfully.",
-                    Data = responseData // Đảm bảo dùng responseData vừa query xong
+                    Data = responseData
                 };
             }
 
@@ -374,6 +336,7 @@ namespace BookfetSystem.Services.Implement
         }
         public async Task ProcessAiServiceSummaryAsync(int serviceId)
         {
+            await Task.Delay(10000);
             var service = await _serviceRepository.GetByIdAsync(serviceId);
             if (service == null) return;
 

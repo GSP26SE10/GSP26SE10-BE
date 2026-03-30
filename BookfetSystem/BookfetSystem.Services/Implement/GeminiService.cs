@@ -64,24 +64,25 @@ public class GeminiService
     {
         var feedbackText = string.Join("\n- ", feedbacks);
 
-        // Logic Prompt thông minh: Kết hợp cũ và mới
+        // Prompt đã được tinh chỉnh để văn phong tự nhiên, không máy móc
         var prompt = $@"
-        Bạn là một chuyên gia ẩm thực chuyên nghiệp.
-        Tên món ăn: '{menuName}'
-        
-        Bản tóm tắt chất lượng hiện tại (nếu có): 
-        ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có dữ liệu tóm tắt trước đó." : oldSummary)}""
+    Bạn là một chuyên gia ẩm thực chuyên nghiệp.
+    Tên món ăn: '{menuName}'
+    
+    Thông tin cũ để tham khảo: 
+    ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có dữ liệu." : oldSummary)}""
 
-        Danh sách các đánh giá mới nhất từ khách hàng:
-        - {feedbackText}
+    Danh sách các đánh giá mới nhất từ khách hàng:
+    - {feedbackText}
+    
+    Nhiệm vụ: 
+    Hãy viết một đoạn văn ngắn gọn (2-3 câu) tổng hợp chất lượng của món ăn này dựa trên tất cả thông tin trên.
 
-        Nhiệm vụ: 
-        Dựa trên bản tóm tắt cũ và các đánh giá mới này, hãy viết lại một bản tóm tắt tổng quan mới (khoảng 2-3 câu). 
-        Yêu cầu:
-        1. Nếu đánh giá mới có xu hướng thay đổi so với bản cũ, hãy cập nhật thông tin đó.
-        2. Nếu đánh giá mới vẫn tương đồng, hãy tổng hợp lại cho súc tích hơn.
-        3. Giữ phong cách chuyên nghiệp, khách quan, tập trung vào hương vị và trải nghiệm.
-        4. Trả về kết quả thuần văn bản, không có lời dẫn hay ký tự đặc biệt.";
+    Yêu cầu quan trọng:
+    1. Tuyệt đối KHÔNG sử dụng các cụm từ lặp lại máy móc như ""Tiếp tục được đánh giá"", ""Bản tóm tắt chất lượng là"", ""Dựa trên các đánh giá"".
+    2. Hãy viết tự nhiên như một lời nhận xét trực tiếp (Ví dụ: ""{menuName} gây ấn tượng bởi..."" hoặc ""Món {menuName} khẳng định chất lượng nhờ..."").
+    3. Kết hợp nhuần nhuyễn thông tin cũ và mới thành một mạch văn duy nhất, tập trung vào hương vị, trải nghiệm và mức độ hài lòng.
+    4. Trả về kết quả thuần văn bản, không tiêu đề, không lời dẫn, không có ký tự đặc biệt.";
 
         return await AskGemini(prompt);
     }

@@ -21,8 +21,8 @@ namespace BookfetSystem.Services.Models.Request
 
         [Range(1, 5, ErrorMessage = "Rating must be from 1 to 5.")]
         public int Rating { get; set; }
-
-        public string? Comment { get; set; }
+        [Required(ErrorMessage = "Comment is required.")]
+        public string Comment { get; set; }
 
         public List<IFormFile>? ImgFiles { get; set; }
     }
@@ -38,10 +38,11 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "CustomerId is required.")]
         public int CustomerId { get; set; }
 
+        [Required(ErrorMessage = "Rating is required.")]
         [Range(1, 5, ErrorMessage = "Rating must be from 1 to 5.")]
         public int Rating { get; set; }
-
-        public string? Comment { get; set; }
+        [Required(ErrorMessage = "Comment is required.")]
+        public string Comment { get; set; }
 
         [EnumDataType(typeof(FeedbackServiceStatus), ErrorMessage = "Invalid status value.")]
         public FeedbackServiceStatus? Status { get; set; }
