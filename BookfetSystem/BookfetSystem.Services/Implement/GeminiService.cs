@@ -90,21 +90,21 @@ public class GeminiService
         var feedbackText = string.Join("\n- ", feedbacks);
 
         var prompt = $@"
-        Bạn là chuyên gia quản lý chất lượng dịch vụ khách hàng.
-        Tên dịch vụ: '{serviceName}'
-        
-        Bản tóm tắt chất lượng hiện tại: 
-        ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có dữ liệu tóm tắt trước đó." : oldSummary)}""
+    Bạn là chuyên gia quản lý chất lượng dịch vụ khách hàng chuyên nghiệp.
+    Dịch vụ: '{serviceName}'
+    
+    Tóm tắt cũ: ""{(string.IsNullOrEmpty(oldSummary) ? "Chưa có" : oldSummary)}""
+    Đánh giá mới:
+    - {feedbackText}
 
-        Danh sách các đánh giá mới nhất từ khách hàng:
-        - {feedbackText}
+    Nhiệm vụ: 
+    Hãy tổng hợp thành một đoạn văn ngắn (2-3 câu) về chất lượng dịch vụ hiện tại.
 
-        Nhiệm vụ: 
-        Dựa trên bản tóm tắt cũ và các đánh giá mới, hãy viết lại một bản tóm tắt tổng quan mới (2-3 câu). 
-        Yêu cầu:
-        1. Tập trung vào: Thái độ nhân viên, tốc độ phục vụ, độ chuyên nghiệp và sự hài lòng.
-        2. Nếu chất lượng có xu hướng thay đổi (tốt lên hoặc tệ đi), hãy cập nhật rõ.
-        3. Văn phong chuyên nghiệp, khách quan, trả về thuần văn bản.";
+    Yêu cầu bắt buộc:
+    1. Tuyệt đối KHÔNG bao gồm các tiêu đề như ""Bản tóm tắt..."" hay bất kỳ lời dẫn nào.
+    2. Đi thẳng trực tiếp vào nội dung nhận xét (ví dụ: ""Dịch vụ {serviceName} hiện đang..."").
+    3. Tập trung vào: Thái độ, tốc độ, sự chuyên nghiệp và xu hướng thay đổi chất lượng.
+    4. Văn phong khách quan, trả về thuần văn bản, không xuống dòng thừa.";
 
         return await AskGemini(prompt);
     }

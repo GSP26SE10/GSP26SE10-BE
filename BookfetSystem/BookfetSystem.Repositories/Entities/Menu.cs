@@ -15,6 +15,7 @@ public partial class Menu
     public DateTime? CreatedAt { get; set; }
 
     public decimal? BasePrice { get; set; }
+    [Column("ais_menu_summary")]
 
     public string AisMenuSummary { get; set; }
 
@@ -23,9 +24,6 @@ public partial class Menu
     public string Status { get; set; }
 
     public int? MenuCategoryId { get; set; }
-
-    [Column("ais_menu_summary")]
-    public string? AisMenuSummary { get; set; }
 
     public virtual ICollection<FeedbackMenu> FeedbackMenus { get; set; } = new List<FeedbackMenu>();
 

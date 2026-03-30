@@ -197,18 +197,33 @@ namespace BookfetSystem.Services.Implement
             var affected = await _feedbackServiceRepository.CreateAsync(entity);
             if (affected > 0)
             {
-                var response = await _feedbackServiceRepository
+                // 1. Lấy dữ liệu Service để check (Đặt tên rõ ràng tránh trùng lặp)
+                var serviceEntity = await _serviceRepository.GetByIdAsync(request.ServiceId);
+
+                // 2. Đếm tổng feedback của Service này
+                var totalFeedback = await _feedbackServiceRepository
+                    .GetAllFeedbackServiceFiltered(new FeedbackService { ServiceId = request.ServiceId })
+                    .CountAsync();
+
+                // 3. Kích hoạt Hangfire (Bỏ % 5 nếu bạn muốn test ngay lập tức)
+                if (serviceEntity != null && (string.IsNullOrEmpty(serviceEntity.AisServiceSummary) || totalFeedback % 5 == 0))
+                {
+                    // Ghi log ra console để bạn theo dõi xem nó có lọt vào đây không
+                    Console.WriteLine($"--- Enqueuing AI Summary for Service: {serviceEntity.ServiceName} ---");
+                    BackgroundJob.Enqueue<IFeedbackServiceService>(s => s.ProcessAiServiceSummaryAsync(request.ServiceId));
+                }
+
+                // 4. Map dữ liệu để trả về API (Quan trọng: Phải query lại để lấy đủ thông tin Join)
+                var responseData = await _feedbackServiceRepository
                     .GetAllFeedbackServiceFiltered(new FeedbackService { FeedbackServiceId = entity.FeedbackServiceId })
                     .ProjectToType<FeedbackServiceResponse>()
                     .FirstOrDefaultAsync();
-
-
 
                 return new ApiResponse<FeedbackServiceResponse>
                 {
                     Success = true,
                     Message = "Feedback service created successfully.",
-                    Data = response
+                    Data = responseData // Đảm bảo dùng responseData vừa query xong
                 };
             }
 
