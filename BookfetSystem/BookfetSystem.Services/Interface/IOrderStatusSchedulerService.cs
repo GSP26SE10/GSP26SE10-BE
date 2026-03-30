@@ -4,5 +4,6 @@ namespace BookfetSystem.Services.Interface
     {
         Task ScheduleOrderDetailStatusTransitionsAsync(int orderDetailId, DateTime? startTime, DateTime? endTime);
         Task ScheduleOrderDepositTimeoutAsync(int orderId, DateTime? createdAt);
+        Task SchedulePendingApprovalAutoCancelAsync(int orderId, DateTime? firstPartyStartTime);
     }
 }

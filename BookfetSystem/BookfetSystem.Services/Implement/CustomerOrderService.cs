@@ -287,7 +287,7 @@ namespace BookfetSystem.Services.Services
             }
 
             var vietnamNow = GetVietnamNow();
-            var minimumPartyDate = vietnamNow.Date.AddDays(2);
+            var minimumPartyDate = vietnamNow.Date.AddDays(3);
             var firstPartyDate = ToVietnamTime(request.Items[0].StartTime).Date;
 
             if (firstPartyDate < minimumPartyDate)
@@ -295,7 +295,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<int>
                 {
                     Success = false,
-                    Message = "First party date must be at least 2 days from today (Vietnam time).",
+                    Message = "First party date must be at least 3 days from today (Vietnam time).",
                     Data = 0
                 };
             }
@@ -318,7 +318,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"Item {i + 1}: party date must be at least 2 days from today (Vietnam time).",
+                        Message = $"Item {i + 1}: party date must be at least 3 days from today (Vietnam time).",
                         Data = 0
                     };
                 }
@@ -396,21 +396,39 @@ namespace BookfetSystem.Services.Services
                     };
                 }
 
-                int? partyCategoryId = null;
-                if (itemRequest.PartyCategoryId > 0)
+                if (itemRequest.PartyCategoryId <= 0)
                 {
-                    var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
-                    if (partyCategory == null)
+                    return new ApiResponse<int>
                     {
-                        return new ApiResponse<int>
-                        {
-                            Success = false,
-                            Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
-                            Data = 0
-                        };
-                    }
-                    partyCategoryId = itemRequest.PartyCategoryId;
+                        Success = false,
+                        Message = "PartyCategoryId is required and must be greater than 0.",
+                        Data = 0
+                    };
                 }
+
+                var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
+                if (partyCategory == null)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
+                        Data = 0
+                    };
+                }
+
+                var requiredGuests = partyCategory.NumberOfGuests ?? 0;
+                if (itemRequest.NumberOfGuests < requiredGuests)
+                {
+                    return new ApiResponse<int>
+                    {
+                        Success = false,
+                        Message = $"NumberOfGuests must be greater than or equal to {requiredGuests} for PartyCategory '{partyCategory.PartyCategoryName}'.",
+                        Data = 0
+                    };
+                }
+
+                int? partyCategoryId = itemRequest.PartyCategoryId;
 
                 var menuDishes = await _menuDishRepository
                     .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
@@ -610,6 +628,16 @@ namespace BookfetSystem.Services.Services
                         schedule.EndTime);
                 }
 
+                var firstPartyStartTime = orderDetailSchedules
+                    .Where(x => x.StartTime.HasValue)
+                    .Select(x => x.StartTime!.Value)
+                    .OrderBy(x => x)
+                    .FirstOrDefault();
+                if (firstPartyStartTime != default)
+                {
+                    await _orderStatusSchedulerService.SchedulePendingApprovalAutoCancelAsync(order.OrderId, firstPartyStartTime);
+                }
+
                 await _orderStatusSchedulerService.ScheduleOrderDepositTimeoutAsync(order.OrderId, order.CreatedAt);
 
                 return new ApiResponse<int>
@@ -702,6 +730,7 @@ namespace BookfetSystem.Services.Services
                 }
 
                 decimal orderTotal = 0;
+                var orderDetailSchedules = new List<(int OrderDetailId, DateTime? StartTime, DateTime? EndTime)>();
 
                 foreach (var itemRequest in request.Items)
                 {
@@ -750,22 +779,42 @@ namespace BookfetSystem.Services.Services
                         };
                     }
 
-                    int? partyCategoryId = null;
-                    if (itemRequest.PartyCategoryId > 0)
+                    if (itemRequest.PartyCategoryId <= 0)
                     {
-                        var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
-                        if (partyCategory == null)
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
                         {
-                            await transaction.RollbackAsync();
-                            return new ApiResponse<OrderResponse>
-                            {
-                                Success = false,
-                                Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
-                                Data = null
-                            };
-                        }
-                        partyCategoryId = itemRequest.PartyCategoryId;
+                            Success = false,
+                            Message = "PartyCategoryId is required and must be greater than 0.",
+                            Data = null
+                        };
                     }
+
+                    var partyCategory = await _partyCategoryRepository.GetByIdAsync(itemRequest.PartyCategoryId);
+                    if (partyCategory == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
+                            Data = null
+                        };
+                    }
+
+                    var requiredGuests = partyCategory.NumberOfGuests ?? 0;
+                    if (itemRequest.NumberOfGuests < requiredGuests)
+                    {
+                        await transaction.RollbackAsync();
+                        return new ApiResponse<OrderResponse>
+                        {
+                            Success = false,
+                            Message = $"NumberOfGuests must be greater than or equal to {requiredGuests} for PartyCategory '{partyCategory.PartyCategoryName}'.",
+                            Data = null
+                        };
+                    }
+
+                    int? partyCategoryId = itemRequest.PartyCategoryId;
 
                     var menuPrice = menu.BasePrice ?? 0;
                     decimal itemServiceTotal = 0;
@@ -858,7 +907,7 @@ namespace BookfetSystem.Services.Services
                     };
 
                     await _orderDetailRepository.CreateAsync(orderDetail);
-                    await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(orderDetail.OrderDetailId, orderDetail.StartTime, orderDetail.EndTime);
+                    orderDetailSchedules.Add((orderDetail.OrderDetailId, orderDetail.StartTime, orderDetail.EndTime));
 
                     if (itemRequest.Services != null && itemRequest.Services.Any())
                     {
@@ -898,6 +947,24 @@ namespace BookfetSystem.Services.Services
                 await _orderRepository.UpdateAsync(order);
 
                 await transaction.CommitAsync();
+
+                foreach (var schedule in orderDetailSchedules)
+                {
+                    await _orderStatusSchedulerService.ScheduleOrderDetailStatusTransitionsAsync(
+                        schedule.OrderDetailId,
+                        schedule.StartTime,
+                        schedule.EndTime);
+                }
+
+                var firstPartyStartTime = orderDetailSchedules
+                    .Where(x => x.StartTime.HasValue)
+                    .Select(x => x.StartTime!.Value)
+                    .OrderBy(x => x)
+                    .FirstOrDefault();
+                if (firstPartyStartTime != default)
+                {
+                    await _orderStatusSchedulerService.SchedulePendingApprovalAutoCancelAsync(order.OrderId, firstPartyStartTime);
+                }
 
                 var updated = await GetById(orderId);
                 return new ApiResponse<OrderResponse>
