@@ -194,9 +194,8 @@ namespace BookfetSystem.Services.Implement
                     .CountAsync();
 
                 // CHIẾN LƯỢC: Chạy khi có feedback đầu tiên, hoặc cứ mỗi 5 feedback (5, 10, 15...)
-                if (totalFeedback == 1 || totalFeedback % 5 == 0)
+                if (string.IsNullOrEmpty(menu.AisMenuSummary) || totalFeedback % 5 == 0)
                 {
-                    // Gửi job vào Hangfire để chạy ngầm, không bắt khách hàng đợi AI
                     BackgroundJob.Enqueue<IFeedbackMenuService>(s => s.ProcessAiSummaryAsync(request.MenuId));
                 }
 
@@ -343,11 +342,10 @@ namespace BookfetSystem.Services.Implement
         }
         public async Task ProcessAiSummaryAsync(int menuId)
         {
-            // Sử dụng Repository để lấy dữ liệu (Hangfire sẽ tự inject vào đây)
             var menu = await _menuRepository.GetByIdAsync(menuId);
             if (menu == null) return;
 
-            // Lấy comment để tóm tắt
+            // Lấy 15 feedback mới nhất
             var recentComments = await _feedbackMenuRepository
                 .GetAllFeedbackMenuFiltered(new FeedbackMenu { MenuId = menuId })
                 .OrderByDescending(f => f.CreatedAt)
@@ -356,17 +354,30 @@ namespace BookfetSystem.Services.Implement
                 .Take(15)
                 .ToListAsync();
 
-            if (recentComments.Any())
+            if (recentComments.Count >= 1)
             {
-                // Gọi Gemini (Đã được đăng ký AddHttpClient ở trên)
-                var summary = await _geminiService.SummarizeFeedbackAsync(menu.MenuName, recentComments);
-
-                if (!string.IsNullOrEmpty(summary))
+                try
                 {
-                    menu.AisMenuSummary = summary.Trim();
-                    // Lưu xuống DB (PostgreSQL) qua Repository
-                    await _menuRepository.UpdateAsync(menu);
-                    Console.WriteLine($"[Hangfire] Đã cập nhật AI Summary cho món: {menu.MenuName}");
+                   
+                    var summary = await _geminiService.SummarizeFeedbackAsync(
+                        menu.MenuName,
+                        recentComments,
+                        menu.AisMenuSummary
+                    );
+
+                    if (!string.IsNullOrEmpty(summary))
+                    {
+                        // Cập nhật kết quả mới vào cột ais_menu_summary của bảng Menu
+                        menu.AisMenuSummary = summary.Trim();
+                        await _menuRepository.UpdateAsync(menu);
+
+                        Console.WriteLine($"[AI Summary Success] Menu: {menu.MenuName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ném lỗi để Hangfire tự động Retry
+                    throw new Exception($"Lỗi khi tóm tắt AI cho Menu {menuId}: {ex.Message}");
                 }
             }
         }

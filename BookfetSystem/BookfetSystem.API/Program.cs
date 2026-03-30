@@ -1,4 +1,4 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
@@ -63,7 +63,10 @@ builder.Services.AddHangfire(config =>
           .UseRecommendedSerializerSettings()
           .UsePostgreSqlStorage(options =>
               options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 2; // Chỉ cho phép tối đa 2 tác vụ chạy song song để tránh spam API
+});
 
 // Register Mapster mappings
 MapsterConfig.RegisterMappings();
