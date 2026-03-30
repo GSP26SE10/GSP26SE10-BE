@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookfetSystem.Repositories.Entities;
 
@@ -20,6 +21,9 @@ public partial class Menu
     public string Status { get; set; }
 
     public int? MenuCategoryId { get; set; }
+
+    [Column("ais_menu_summary")]
+    public string? AisMenuSummary { get; set; }
 
     public virtual ICollection<FeedbackMenu> FeedbackMenus { get; set; } = new List<FeedbackMenu>();
 
