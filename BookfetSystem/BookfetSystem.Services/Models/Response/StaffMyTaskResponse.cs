@@ -27,5 +27,6 @@ namespace BookfetSystem.Services.Models.Response
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public int? Status { get; set; }
+        public int? OrderStatus { get; set; }
     }
 }

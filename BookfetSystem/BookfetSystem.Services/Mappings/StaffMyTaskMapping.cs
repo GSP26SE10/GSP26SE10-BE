@@ -31,7 +31,9 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.PartyCategory,
                        src => src.PartyCategory != null ? src.PartyCategory.PartyCategoryName : null)
                   .Map(dest => dest.Status,
-                       src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status));
+                       src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status))
+                  .Map(dest => dest.OrderStatus,
+                       src => src.Order != null ? EnumHelper.TryParseToInt<OrderStatus>(src.Order.Status) : null);
         }
 
           private static string? GetMenuImage(OrderDetail src)
