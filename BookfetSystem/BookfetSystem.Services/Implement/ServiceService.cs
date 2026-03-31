@@ -1,4 +1,4 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
@@ -26,12 +26,16 @@ namespace BookfetSystem.Services.Services
         {
             var entityFilter = filter.Adapt<Repositories.Entities.Service>();
             var query = _repository.GetAllServiceFiltered(entityFilter);
+
+            // 1. Đếm tổng số lượng trên query gốc
             var totalCount = await query.CountAsync();
 
+            // 2. Thực hiện phân trang TRƯỚC, sau đó mới Mapping (ProjectToType)
+            // Đưa ProjectToType xuống cuối cùng để EF Core dịch AVG/COUNT vào SQL chính xác
             var data = await query
-                .ProjectToType<ServiceResponse>()
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .ProjectToType<ServiceResponse>()
                 .ToListAsync();
 
             return new PagedResponse<ServiceResponse>
@@ -40,6 +44,7 @@ namespace BookfetSystem.Services.Services
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
+                // TotalPages đã tự tính trong class PagedResponse, không cần gán ở đây
             };
         }
 
@@ -48,7 +53,6 @@ namespace BookfetSystem.Services.Services
             var entity = await _repository.GetByIdWithRelationAsync(id);
 
             if (entity == null) return null;
-
             return entity.Adapt<ServiceResponse>();
         }
 

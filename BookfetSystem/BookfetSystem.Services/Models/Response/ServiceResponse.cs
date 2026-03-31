@@ -16,6 +16,8 @@ namespace BookfetSystem.Services.Models.Response
 
         public DateTime? CreatedAt { get; set; }
         public string? AisServiceSummary { get; set; }
+        public double? AverageRating { get; set; }
+        public int? TotalReviews { get; set; }
 
     }
 }
