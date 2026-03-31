@@ -39,7 +39,15 @@ namespace BookfetSystem.Services.Mappings
                        src => SnapshotParser.TryParseJsonToObject(src.ImgUrl))
                   .Map(dest => dest.Status,
                        src => EnumHelper.TryParseToInt<MenuStatus>(src.Status))
-                  .Map(dest => dest.AisMenuSummary, src => src.AisMenuSummary);
+                  .Map(dest => dest.AisMenuSummary, src => src.AisMenuSummary)
+                  .Map(dest => dest.TotalReviews,
+                       src => src.FeedbackMenus != null && src.FeedbackMenus.Any()
+                                ? src.FeedbackMenus.Count()
+                                : (int?)null)
+                  .Map(dest => dest.AverageRating,
+                       src => src.FeedbackMenus != null && src.FeedbackMenus.Any()
+                                ? Math.Round(src.FeedbackMenus.Average(f => f.Rating), 1)
+                                : (double?)null);
             ;
         }
     }

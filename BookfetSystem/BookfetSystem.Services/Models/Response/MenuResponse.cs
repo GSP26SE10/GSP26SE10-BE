@@ -14,7 +14,10 @@ namespace BookfetSystem.Services.Models.Response
         public string? AisMenuSummary { get; set; }
         public string? MenuCategoryName { get; set; }
         public string? PartyCategoryName { get; set; }
+        public double? AverageRating { get; set; }
+        public int? TotalReviews { get; set; }
         public List<int> PartyCategoryIds { get; set; } = new();
         public List<string> PartyCategoryNames { get; set; } = new();
+
     }
 }

@@ -1,4 +1,4 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
@@ -46,9 +46,9 @@ namespace BookfetSystem.Services.Implement
             var totalCount = await query.CountAsync();
 
             var items = await query
-                .ProjectToType<MenuResponse>()
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .ProjectToType<MenuResponse>()
                 .ToListAsync();
 
             return new PagedResponse<MenuResponse>
@@ -57,6 +57,7 @@ namespace BookfetSystem.Services.Implement
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
+                // Tuyệt đối không viết TotalPages ở đây nữa vì class đã tự tính rồi
             };
         }
 
