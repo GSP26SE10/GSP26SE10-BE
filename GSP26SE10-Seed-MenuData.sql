@@ -113,16 +113,15 @@ FROM (
     ('Combo Bò Úc',350000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
     ('Combo Bò Đặc Biệt',520000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
     ('Combo Hải Sản Tươi Sống',450000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
-    ('Combo Bò Nướng Tiêu Xanh',389000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
-    ('Combo Bò Gia Đình',359000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
+    ('Combo Bò Nướng Tiêu Xanh',389000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139380/menu/botieuxanh1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139389/menu/botieuxanh2.png"]','Buffet bò'),
+    ('Combo Bò Gia Đình',359000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139869/menu/bogiadinh.png"]','Buffet bò'),
     ('Combo Bò Premium',420000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
-    ('Combo Hải Sản Biển Xanh',479000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
     ('Combo Hải Sản Premium',629000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
-    ('Combo Gà Nướng Mật Ong',329000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet gà'),
-    ('Combo Gà Lá Chanh',339000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet gà'),
-    ('Combo Chay Thanh Đạm',299000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet chay'),
-    ('Combo Chay Dinh Dưỡng',319000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet chay'),
-    ('Combo Lẩu Nướng Tổng Hợp',459000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet lẩu nướng')
+    ('Combo Gà Nướng Mật Ong',329000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138483/menu/ganuongmatong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138522/menu/ganuongmatong2.png"]','Buffet gà'),
+    ('Combo Gà Lá Chanh',339000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138634/menu/galachanh1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138645/menu/galachanh2.png"]','Buffet gà'),
+    ('Combo Chay Thanh Đạm',299000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138741/menu/chaythanhdam1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138780/menu/chaythanhdam2.png"]','Buffet chay'),
+    ('Combo Chay Dinh Dưỡng',319000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138904/menu/chaydinhduong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138922/menu/chaydinhduong2.png"]','Buffet chay'),
+    ('Combo Lẩu Nướng Tổng Hợp',459000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139011/menu/tonghop.png"]','Buffet lẩu nướng')
 ) AS v(menu_name, base_price, img_url, menu_category_name)
 JOIN menu_category mc ON mc.menu_category_name = v.menu_category_name
 WHERE NOT EXISTS (SELECT 1 FROM menu m WHERE m.menu_name = v.menu_name);
