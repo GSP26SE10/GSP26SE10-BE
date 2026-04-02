@@ -23,7 +23,9 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.Img,
                        src => SnapshotParser.TryParseJsonToObject(src.Img))
                   .Map(dest => dest.Status,
-                       src => EnumHelper.TryParseToInt<FeedbackServiceStatus>(src.Status));
+                       src => EnumHelper.TryParseToInt<FeedbackServiceStatus>(src.Status))
+                  .Map(dest => dest.AisServiceSummary,
+                       src => src.Service != null ? src.Service.AisServiceSummary : null);
         }
     }
 }

@@ -16,5 +16,6 @@ namespace BookfetSystem.Services.Models.Response
         public DateTime? CreatedAt { get; set; }
         public string? MenuName { get; set; }
         public string? CustomerName { get; set; }
+        public string? AisMenuSummary { get; set; }
     }
 }

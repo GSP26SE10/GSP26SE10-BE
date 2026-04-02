@@ -11,5 +11,6 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<FeedbackServiceResponse>> CreateAsync(FeedbackServiceCreateRequest request);
         Task<ApiResponse<FeedbackServiceResponse>> UpdateAsync(int id, FeedbackServiceUpdateRequest request);
         Task<ApiResponse<bool>> DeleteAsync(int id);
+        Task ProcessAiServiceSummaryAsync(int serviceId);
     }
 }

@@ -19,6 +19,7 @@ namespace BookfetSystem.Repositories
                 .Include(m => m.MenuCategory)
                 .Include(m => m.PartyCategoryMenus)
                 .ThenInclude(pcm => pcm.PartyCategory)
+                .Include(m => m.FeedbackMenus)
                 .AsQueryable();
 
             if (filter.MenuId != 0)
