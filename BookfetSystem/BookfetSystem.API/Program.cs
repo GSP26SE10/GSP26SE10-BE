@@ -1,4 +1,4 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
@@ -63,7 +63,10 @@ builder.Services.AddHangfire(config =>
           .UseRecommendedSerializerSettings()
           .UsePostgreSqlStorage(options =>
               options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 1; // Chỉ cho phép tối đa 2 tác vụ chạy song song để tránh spam API
+});
 
 // Register Mapster mappings
 MapsterConfig.RegisterMappings();
@@ -138,7 +141,7 @@ builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IOrderDetailCustomService, OrderDetailCustomService>();
 builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IRevenueService, RevenueService>();
+builder.Services.AddScoped<IOwnerDashboardService, OwnerDashboardService>();
 builder.Services.AddScoped<ISePayWebhookService, SePayWebhookService>();
 builder.Services.AddScoped<IZaloPayWebhookService, ZaloPayWebhookService>();
 builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
@@ -151,6 +154,7 @@ builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
+builder.Services.AddSingleton<IApiKeyProvider, ApiKeyProvider>();
 builder.Services.AddSignalR();
 
 // JWT Authentication

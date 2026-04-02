@@ -1,15 +1,17 @@
-using BookfetSystem.Repositories;
+﻿using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using Hangfire;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -24,6 +26,8 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderRepository _orderRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly IImageStorageService _imageStorageService;
+        private readonly GeminiService _geminiService;
+        
 
         public FeedbackMenuService(
             FeedbackMenuRepository feedbackMenuRepository,
@@ -31,7 +35,8 @@ namespace BookfetSystem.Services.Implement
             UserRepository userRepository,
             OrderRepository orderRepository,
             OrderDetailRepository orderDetailRepository,
-            IImageStorageService imageStorageService)
+            IImageStorageService imageStorageService,
+            GeminiService geminiService)
         {
             _feedbackMenuRepository = feedbackMenuRepository;
             _menuRepository = menuRepository;
@@ -39,6 +44,7 @@ namespace BookfetSystem.Services.Implement
             _orderRepository = orderRepository;
             _orderDetailRepository = orderDetailRepository;
             _imageStorageService = imageStorageService;
+            _geminiService = geminiService;
         }
 
         public async Task<PagedResponse<FeedbackMenuResponse>> GetAllFeedbackMenuFilteredAsync(FeedbackMenuFilterRequest request, int page, int pageSize)
@@ -67,70 +73,42 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<ApiResponse<FeedbackMenuResponse>> CreateAsync(FeedbackMenuCreateRequest request)
         {
+            // 1. Kiểm tra các thực thể liên quan (Validation)
             var order = await _orderRepository.GetByIdAsync(request.OrderId);
             if (order == null)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Order not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Order not found.", Data = null };
             }
 
             var menu = await _menuRepository.GetByIdAsync(request.MenuId);
             if (menu == null)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Menu not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Menu not found.", Data = null };
             }
 
             var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
             if (orderDetail == null)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Order detail not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Order detail not found.", Data = null };
             }
 
             if (orderDetail.OrderId != request.OrderId)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Order detail does not belong to the specified order.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Order detail does not belong to the specified order.", Data = null };
             }
 
             if (orderDetail.MenuId != request.MenuId)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Menu does not belong to the specified order detail.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Menu does not belong to the specified order detail.", Data = null };
             }
 
             var customer = await _userRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
             {
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = false,
-                    Message = "Customer not found.",
-                    Data = null
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = false, Message = "Customer not found.", Data = null };
             }
 
+            // 2. Khởi tạo Entity Feedback
             var entity = new FeedbackMenu
             {
                 OrderId = request.OrderId,
@@ -143,6 +121,7 @@ namespace BookfetSystem.Services.Implement
                 CreatedAt = DateTime.UtcNow
             };
 
+            // 3. Xử lý upload hình ảnh (nếu có)
             try
             {
                 var files = NormalizeFeedbackMenuImageFiles(request.ImgFiles);
@@ -178,20 +157,23 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            // 4. Lưu vào Database
             var affected = await _feedbackMenuRepository.CreateAsync(entity);
+
             if (affected > 0)
             {
+                // CHIẾN LƯỢC CẬP NHẬT: 
+                // Đã loại bỏ điều kiện totalFeedback % 5 == 0. 
+                // Cứ mỗi khi feedback thành công, Job AI sẽ được đẩy vào hàng đợi để cập nhật lại tóm tắt ngay lập tức.
+                BackgroundJob.Enqueue<IFeedbackMenuService>(s => s.ProcessAiSummaryAsync(request.MenuId));
+
+                // 5. Trả về response thành công
                 var response = await _feedbackMenuRepository
                     .GetAllFeedbackMenuFiltered(new FeedbackMenu { FeedbackMenuId = entity.FeedbackMenuId })
                     .ProjectToType<FeedbackMenuResponse>()
                     .FirstOrDefaultAsync();
 
-                return new ApiResponse<FeedbackMenuResponse>
-                {
-                    Success = true,
-                    Message = "Feedback menu created successfully.",
-                    Data = response
-                };
+                return new ApiResponse<FeedbackMenuResponse> { Success = true, Message = "Thành công", Data = response };
             }
 
             return new ApiResponse<FeedbackMenuResponse>
@@ -326,5 +308,49 @@ namespace BookfetSystem.Services.Implement
 
             return files;
         }
+        public async Task ProcessAiSummaryAsync(int menuId)
+        {
+            await Task.Delay(10000);
+            var menu = await _menuRepository.GetByIdAsync(menuId);
+            if (menu == null) return;
+
+            // Lấy 15 feedback mới nhất
+            var recentComments = await _feedbackMenuRepository
+                .GetAllFeedbackMenuFiltered(new FeedbackMenu { MenuId = menuId })
+                .OrderByDescending(f => f.CreatedAt)
+                .Where(f => !string.IsNullOrWhiteSpace(f.Comment))
+                .Select(f => f.Comment)
+                .Take(15)
+                .ToListAsync();
+
+            if (recentComments.Count >= 1)
+            {
+                try
+                {
+                   
+                    var summary = await _geminiService.SummarizeFeedbackAsync(
+                        menu.MenuName,
+                        recentComments,
+                        menu.AisMenuSummary
+                    );
+
+                    if (!string.IsNullOrEmpty(summary))
+                    {
+                        // Cập nhật kết quả mới vào cột ais_menu_summary của bảng Menu
+                        menu.AisMenuSummary = summary.Trim();
+                        await _menuRepository.UpdateAsync(menu);
+
+                        Console.WriteLine($"[AI Summary Success] Menu: {menu.MenuName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ném lỗi để Hangfire tự động Retry
+                    throw new Exception($"Lỗi khi tóm tắt AI cho Menu {menuId}: {ex.Message}");
+                }
+            }
+        }
     }
+
+
 }

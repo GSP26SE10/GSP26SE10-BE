@@ -17,7 +17,15 @@ namespace BookfetSystem.Services.Mappings
 
             config.NewConfig<Repositories.Entities.Service, ServiceResponse>()
                 .Map(dest => dest.Status,
-                    src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status));
+                    src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status))
+                .Map(dest => dest.TotalReviews,
+                    src => src.FeedbackServices != null && src.FeedbackServices.Any()
+                            ? src.FeedbackServices.Count()
+                            : (int?)null)
+                .Map(dest => dest.AverageRating,
+                    src => src.FeedbackServices != null && src.FeedbackServices.Any()
+                            ? Math.Round(src.FeedbackServices.Average(f => f.Rating), 1)
+                            : (double?)null); ;
         }
     }
 }
