@@ -1229,6 +1229,7 @@ namespace BookfetSystem.Services.Services
             }
 
             await _dbContext.SaveChangesAsync();
+            await SendOrderReviewNotificationAsync(order, targetStatus);
             await SendOrderReviewEmailAsync(order, targetStatus, refundPercentForEmail, refundAmountForEmail);
 
             var updated = await GetById(orderId);
@@ -1475,6 +1476,46 @@ namespace BookfetSystem.Services.Services
             catch
             {
                 // Email send failure should not break order review result.
+            }
+        }
+
+        private async Task SendOrderReviewNotificationAsync(Order order, OrderStatus targetStatus)
+        {
+            if (!order.CustomerId.HasValue || order.CustomerId.Value <= 0)
+            {
+                return;
+            }
+
+            var isApproved = targetStatus == OrderStatus.APPROVED;
+            var title = isApproved
+                ? "Đơn tiệc đã được duyệt"
+                : "Đơn tiệc đã bị từ chối";
+
+            var (_, detailPlainText) = BuildOrderDetailCards(order);
+            var partyText = string.IsNullOrWhiteSpace(detailPlainText)
+                ? "Chưa có thông tin tiệc"
+                : detailPlainText;
+
+            var body = isApproved
+                ? $"Đơn tiệc của bạn đã được duyệt. Các tiệc: {partyText}."
+                : $"Đơn tiệc của bạn đã bị từ chối. Các tiệc: {partyText}.";
+
+            try
+            {
+                await _notificationService.SendToUserAsync(
+                    order.CustomerId.Value,
+                    title,
+                    body,
+                    NotificationType.Order,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = order.OrderId.ToString(),
+                        ["status"] = targetStatus.ToString()
+                    });
+            }
+            catch
+            {
+                // Notification failure should not break order review result.
             }
         }
 
