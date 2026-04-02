@@ -2,6 +2,7 @@ using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 
 namespace BookfetSystem.Repositories
@@ -58,6 +59,19 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.Order)
                 .Where(t => t.StaffId == staffId)
                 .OrderByDescending(t => t.StartTime);
+        }
+
+        public IQueryable<OrderDetailStaffTask> GetOverdueTaskCandidates(DateTime utcNow)
+        {
+            return _context.OrderDetailStaffTasks
+                .Include(t => t.OrderDetail)
+                .Include(t => t.Staff)
+                .Where(t =>
+                    t.EndTime.HasValue &&
+                    t.EndTime.Value < utcNow &&
+                    t.TaskStatus != "COMPLETED" &&
+                    t.TaskStatus != "CANCELLED" &&
+                    t.TaskStatus != "OVERDUE");
         }
     }
 }

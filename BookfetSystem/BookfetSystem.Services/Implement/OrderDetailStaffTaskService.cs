@@ -8,6 +8,7 @@ using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -20,6 +21,7 @@ namespace BookfetSystem.Services.Implement
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
         private readonly INotificationService _notificationService;
+        private readonly IStaffTaskOverdueSchedulerService _staffTaskOverdueSchedulerService;
 
         public OrderDetailStaffTaskService(
             OrderDetailStaffTaskRepository taskRepository,
@@ -27,7 +29,8 @@ namespace BookfetSystem.Services.Implement
             UserRepository userRepository,
             StaffGroupRepository staffGroupRepository,
             StaffGroupMemberRepository staffGroupMemberRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IStaffTaskOverdueSchedulerService staffTaskOverdueSchedulerService)
         {
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
@@ -35,10 +38,13 @@ namespace BookfetSystem.Services.Implement
             _staffGroupRepository = staffGroupRepository;
             _staffGroupMemberRepository = staffGroupMemberRepository;
             _notificationService = notificationService;
+            _staffTaskOverdueSchedulerService = staffTaskOverdueSchedulerService;
         }
 
         public async Task<PagedResponse<StaffMyTaskResponse>> GetMyTasksAsync(int staffId, int page, int pageSize)
         {
+            await MarkOverdueTasksAndNotifyLeadersAsync();
+
             var query = _taskRepository.GetMyTasksByStaffId(staffId);
             var totalCount = await query.CountAsync();
 
@@ -59,6 +65,8 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<PagedResponse<OrderDetailStaffTaskResponse>> GetAllOrderDetailStaffTaskFilteredAsync(OrderDetailStaffTaskFilterRequest request, int page, int pageSize)
         {
+            await MarkOverdueTasksAndNotifyLeadersAsync();
+
             var entityFilter = request.Adapt<OrderDetailStaffTask>();
             var query = _taskRepository.GetAllOrderDetailStaffTaskFiltered(entityFilter);
 
@@ -160,12 +168,12 @@ namespace BookfetSystem.Services.Implement
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
                     StaffId = entity.StaffId,
-                    TaskName = entity.TaskName,
+                    TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
-                    Note = entity.Note,
-                    StaffName = staff.FullName
+                    Note = entity.Note ?? string.Empty,
+                    StaffName = staff.FullName ?? string.Empty
                 };
 
                 await _notificationService.SendToUserAsync(
@@ -178,6 +186,8 @@ namespace BookfetSystem.Services.Implement
                         ["taskId"] = entity.TaskId.ToString(),
                         ["orderDetailId"] = entity.OrderDetailId?.ToString() ?? string.Empty
                     });
+
+                await _staffTaskOverdueSchedulerService.ScheduleTaskOverdueCheckAsync(entity.TaskId, entity.EndTime);
 
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
@@ -244,17 +254,19 @@ namespace BookfetSystem.Services.Implement
             var affected = await _taskRepository.UpdateAsync(entity);
             if (affected > 0)
             {
+                await _staffTaskOverdueSchedulerService.ScheduleTaskOverdueCheckAsync(entity.TaskId, entity.EndTime);
+
                 var response = new OrderDetailStaffTaskResponse
                 {
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
                     StaffId = entity.StaffId,
-                    TaskName = entity.TaskName,
+                    TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
-                    Note = entity.Note,
-                    StaffName = staff.FullName
+                    Note = entity.Note ?? string.Empty,
+                    StaffName = staff.FullName ?? string.Empty
                 };
 
                 return new ApiResponse<OrderDetailStaffTaskResponse>
@@ -275,6 +287,8 @@ namespace BookfetSystem.Services.Implement
 
         public async Task<ApiResponse<OrderDetailStaffTaskResponse>> UpdateMyTaskStatusAsync(int taskId, int staffId, StaffUpdateTaskStatusRequest request)
         {
+            await MarkOverdueTasksAndNotifyLeadersAsync();
+
             var entity = await _taskRepository.GetByIdAsync(taskId);
             if (entity == null)
             {
@@ -296,30 +310,46 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            entity.TaskStatus = request.TaskStatus.ToString();
-            var affected = await _taskRepository.UpdateAsync(entity);
-            if (affected <= 0)
+            var previousStatus = entity.TaskStatus;
+            var finalStatus = request.TaskStatus;
+
+            if (IsTaskOverdue(entity) && request.TaskStatus != StaffTaskStatus.COMPLETED && request.TaskStatus != StaffTaskStatus.CANCELLED)
             {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
+                finalStatus = StaffTaskStatus.OVERDUE;
+            }
+
+            entity.TaskStatus = finalStatus.ToString();
+            var hasStatusChanged = !string.Equals(previousStatus, entity.TaskStatus, StringComparison.OrdinalIgnoreCase);
+
+            if (hasStatusChanged)
+            {
+                var affected = await _taskRepository.UpdateAsync(entity);
+                if (affected <= 0)
                 {
-                    Success = false,
-                    Message = "Failed to update task status.",
-                    Data = null
-                };
+                    return new ApiResponse<OrderDetailStaffTaskResponse>
+                    {
+                        Success = false,
+                        Message = "Failed to update task status.",
+                        Data = null
+                    };
+                }
             }
 
             var staff = await _userRepository.GetByIdAsync(staffId);
+            var staffDisplayName = staff?.FullName ?? "Một staff";
+            var taskName = entity.TaskName ?? "Task";
+
             var response = new OrderDetailStaffTaskResponse
             {
                 TaskId = entity.TaskId,
                 OrderDetailId = entity.OrderDetailId,
                 StaffId = entity.StaffId,
-                TaskName = entity.TaskName,
+                TaskName = entity.TaskName ?? string.Empty,
                 TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
-                Note = entity.Note,
-                StaffName = staff?.FullName
+                Note = entity.Note ?? string.Empty,
+                StaffName = staff?.FullName ?? string.Empty
             };
 
             if (entity.OrderDetailId.HasValue)
@@ -330,31 +360,42 @@ namespace BookfetSystem.Services.Implement
                     var staffGroup = await _staffGroupRepository.GetByIdAsync(orderDetail.StaffGroupId.Value);
                     if (staffGroup?.LeaderId.HasValue == true)
                     {
-                        var staffDisplayName = staff?.FullName ?? "null";
-                        var notificationTitle = request.TaskStatus switch
+                        var notificationTitle = finalStatus switch
                         {
                             StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành công việc",
                             StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc",
+                            StaffTaskStatus.OVERDUE => $"{staffDisplayName} bị trễ deadline",
                             _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ"
                         };
-                        var notificationBody = request.TaskStatus switch
+
+                        var notificationBody = finalStatus switch
                         {
-                            StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành nhiệm vụ '{entity.TaskName ?? "null"}'.",
-                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc nhiệm vụ '{entity.TaskName ?? "null"}'.",
-                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ '{entity.TaskName ?? "null"}'."
+                            StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành nhiệm vụ '{taskName}'.",
+                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc nhiệm vụ '{taskName}'.",
+                            StaffTaskStatus.OVERDUE => $"Nhiệm vụ '{taskName}' đã trễ deadline. Leader vui lòng xem xét giao task cho người khác.",
+                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ '{taskName}'."
                         };
 
-                        await _notificationService.SendToUserAsync(
-                            staffGroup.LeaderId.Value,
-                            notificationTitle,
-                            notificationBody,
-                            NotificationType.Task,
-                            new Dictionary<string, string>
-                            {
-                                ["taskId"] = entity.TaskId.ToString(),
-                                ["orderDetailId"] = entity.OrderDetailId.Value.ToString(),
-                                ["staffId"] = staffId.ToString()
-                            });
+                        var shouldNotifyLeader =
+                            hasStatusChanged ||
+                            finalStatus == StaffTaskStatus.COMPLETED ||
+                            finalStatus == StaffTaskStatus.IN_PROGRESS;
+
+                        if (shouldNotifyLeader)
+                        {
+                            await _notificationService.SendToUserAsync(
+                                staffGroup.LeaderId.Value,
+                                notificationTitle,
+                                notificationBody,
+                                NotificationType.Task,
+                                new Dictionary<string, string>
+                                {
+                                    ["taskId"] = entity.TaskId.ToString(),
+                                    ["orderDetailId"] = entity.OrderDetailId.Value.ToString(),
+                                    ["staffId"] = staffId.ToString(),
+                                    ["taskStatus"] = finalStatus.ToString()
+                                });
+                        }
                     }
                 }
             }
@@ -365,6 +406,64 @@ namespace BookfetSystem.Services.Implement
                 Message = "Task status updated successfully.",
                 Data = response
             };
+        }
+
+        private bool IsTaskOverdue(OrderDetailStaffTask task)
+        {
+            if (!task.EndTime.HasValue)
+            {
+                return false;
+            }
+
+            return task.EndTime.Value < DateTime.UtcNow;
+        }
+
+        private async Task MarkOverdueTasksAndNotifyLeadersAsync()
+        {
+            var overdueTasks = await _taskRepository
+                .GetOverdueTaskCandidates(DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var task in overdueTasks)
+            {
+                task.TaskStatus = StaffTaskStatus.OVERDUE.ToString();
+                var affected = await _taskRepository.UpdateAsync(task);
+                if (affected <= 0 || !task.OrderDetailId.HasValue)
+                {
+                    continue;
+                }
+
+                var orderDetail = task.OrderDetail ?? await _orderDetailRepository.GetByIdAsync(task.OrderDetailId.Value);
+                if (orderDetail?.StaffGroupId.HasValue != true)
+                {
+                    continue;
+                }
+
+                var staffGroupId = orderDetail.StaffGroupId.GetValueOrDefault();
+                var staffGroup = await _staffGroupRepository.GetByIdAsync(staffGroupId);
+                if (staffGroup == null || !staffGroup.LeaderId.HasValue)
+                {
+                    continue;
+                }
+
+                var leaderId = staffGroup.LeaderId.Value;
+
+                var staffDisplayName = task.Staff?.FullName ?? "Một staff";
+                var taskName = task.TaskName ?? "Task";
+
+                await _notificationService.SendToUserAsync(
+                    leaderId,
+                    $"{staffDisplayName} bị trễ deadline",
+                    $"Nhiệm vụ '{taskName}' đã trễ deadline. Leader vui lòng xem xét giao task cho người khác.",
+                    NotificationType.Task,
+                    new Dictionary<string, string>
+                    {
+                        ["taskId"] = task.TaskId.ToString(),
+                        ["orderDetailId"] = task.OrderDetailId.Value.ToString(),
+                        ["staffId"] = task.StaffId?.ToString() ?? string.Empty,
+                        ["taskStatus"] = StaffTaskStatus.OVERDUE.ToString()
+                    });
+            }
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(int id)

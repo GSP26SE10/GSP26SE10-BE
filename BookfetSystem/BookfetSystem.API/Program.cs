@@ -148,6 +148,8 @@ builder.Services.AddScoped<IOrderServiceManager, OrderServiceManager>();
 builder.Services.AddScoped<IOrderStatusTransitionJob, OrderStatusTransitionJob>();
 builder.Services.AddScoped<IOrderDepositTimeoutJob, OrderDepositTimeoutJob>();
 builder.Services.AddScoped<IOrderPendingApprovalAutoCancelJob, OrderPendingApprovalAutoCancelJob>();
+builder.Services.AddScoped<IStaffTaskOverdueJob, StaffTaskOverdueJob>();
+builder.Services.AddScoped<IStaffTaskOverdueSchedulerService, StaffTaskOverdueSchedulerService>();
 builder.Services.AddScoped<IOrderStatusSchedulerService, OrderStatusSchedulerService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
@@ -283,6 +285,11 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapHub<ChatHub>("/chatHub");
+
+RecurringJob.AddOrUpdate<IStaffTaskOverdueJob>(
+    "staff-task-overdue-check",
+    x => x.MarkOverdueTasksAndNotifyLeaderAsync(),
+    Cron.Minutely());
 
 app.Run();
 
