@@ -17,7 +17,7 @@ namespace BookfetSystem.Services.Mappings
 
             config.NewConfig<PartyCategory, PartyCategoryResponse>()
                   .Map(dest => dest.Status,
-                      src => EnumHelper.TryParseToInt<MenuStatus>(src.Status));
+                      src => EnumHelper.TryParseToInt<PartyCategoryStatus>(src.Status));
         }
     }
 }

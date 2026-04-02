@@ -91,6 +91,8 @@ public class CloudinaryImageStorageService : IImageStorageService
             CloudinaryFolder.Menu => "menu",
             CloudinaryFolder.Dish => "dish",
             CloudinaryFolder.Service => "service",
+            CloudinaryFolder.Ingredient => "ingredient",
+            CloudinaryFolder.PartyCategory => "partyCategory",
             CloudinaryFolder.FeedbackMenu => "feedbackMenu",
             CloudinaryFolder.FeedbackService => "feedbackService",
             CloudinaryFolder.ExtraCharge => "extraCharge",

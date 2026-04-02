@@ -723,7 +723,6 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.PartyCategoryId).HasColumnName("party_category_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ImageUrl)

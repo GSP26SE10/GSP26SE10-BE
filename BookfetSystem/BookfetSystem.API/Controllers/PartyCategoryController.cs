@@ -1,4 +1,4 @@
-﻿using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -29,7 +29,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreatePartyCategory([FromBody] PartyCategoryCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreatePartyCategory([FromForm] PartyCategoryCreateRequest request)
         {
             var result = await _partyCategoryService.CreateAsync(request);
 
@@ -42,7 +43,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdatePartyCategory(int id, [FromBody] PartyCategoryUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdatePartyCategory(int id, [FromForm] PartyCategoryUpdateRequest request)
         {
             var result = await _partyCategoryService.UpdateAsync(id, request);
 

@@ -1,5 +1,6 @@
 using BookfetSystem.Services.Enum;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -10,11 +11,11 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? Description { get; set; }
 
-        public string? Status { get; set; }
+        [Required(ErrorMessage = "NumberOfGuests is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "NumberOfGuests must be greater than 0.")]
+        public int NumberOfGuests { get; set; }
 
-        public int? NumberOfGuests { get; set; }
-
-        public string? ImageUrl { get; set; }
+        public IFormFile? ImageUrl { get; set; }
     }
 
     public class PartyCategoryUpdateRequest
@@ -24,11 +25,14 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? Description { get; set; }
 
-        public string? Status { get; set; }
+        [EnumDataType(typeof(PartyCategoryStatus), ErrorMessage = "Invalid status value.")]
+        public PartyCategoryStatus? Status { get; set; }
 
-        public int? NumberOfGuests { get; set; }
+        [Required(ErrorMessage = "NumberOfGuests is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "NumberOfGuests must be greater than 0.")]
+        public int NumberOfGuests { get; set; }
 
-        public string? ImageUrl { get; set; }
+        public IFormFile? ImageUrl { get; set; }
     }
 
     public class PartyCategoryFilterRequest
@@ -37,7 +41,7 @@ namespace BookfetSystem.Services.Models.Request
 
         public string? PartyCategoryName { get; set; }
 
-        public MenuStatus? Status { get; set; }
+        public PartyCategoryStatus? Status { get; set; }
 
         public int? NumberOfGuests { get; set; }
     }

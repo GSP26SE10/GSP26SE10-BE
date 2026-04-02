@@ -1,5 +1,6 @@
-﻿using BookfetSystem.Repositories;
+using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -14,10 +15,14 @@ namespace BookfetSystem.Services.Implement
     public class PartyCategoryService : IPartyCategoryService
     {
         private readonly PartyCategoryRepository _repository;
+        private readonly IImageStorageService _imageStorageService;
 
-        public PartyCategoryService(PartyCategoryRepository repository)
+        public PartyCategoryService(
+            PartyCategoryRepository repository,
+            IImageStorageService imageStorageService)
         {
             _repository = repository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<PartyCategoryResponse>> GetAllPartyCategoryFilteredAsync(
@@ -70,9 +75,42 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var entity = request.Adapt<PartyCategory>();
-            entity.PartyCategoryName = normalizedName;
-            entity.CreatedAt = DateTime.UtcNow;
+            if (request.NumberOfGuests <= 0)
+            {
+                return new ApiResponse<PartyCategoryResponse>
+                {
+                    Success = false,
+                    Message = "NumberOfGuests must be greater than 0."
+                };
+            }
+
+            var entity = new PartyCategory
+            {
+                PartyCategoryName = normalizedName,
+                Description = request.Description?.Trim(),
+                NumberOfGuests = request.NumberOfGuests,
+                Status = PartyCategoryStatus.AVAILABLE.ToString(),
+                ImageUrl = string.Empty,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            if (request.ImageUrl != null)
+            {
+                try
+                {
+                    entity.ImageUrl = await _imageStorageService.UploadImageAsync(
+                        request.ImageUrl,
+                        CloudinaryFolder.PartyCategory);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<PartyCategoryResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload party category image: {ex.Message}"
+                    };
+                }
+            }
 
             var affected = await _repository.CreateAsync(entity);
 
@@ -131,8 +169,42 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            request.Adapt(entity);
+            if (request.NumberOfGuests <= 0)
+            {
+                return new ApiResponse<PartyCategoryResponse>
+                {
+                    Success = false,
+                    Message = "NumberOfGuests must be greater than 0."
+                };
+            }
+
             entity.PartyCategoryName = normalizedName;
+            entity.Description = request.Description?.Trim();
+            entity.NumberOfGuests = request.NumberOfGuests;
+
+            if (request.Status.HasValue)
+            {
+                entity.Status = request.Status.Value.ToString();
+            }
+
+            if (request.ImageUrl != null)
+            {
+                try
+                {
+                    entity.ImageUrl = await _imageStorageService.UploadImageAsync(
+                        request.ImageUrl,
+                        CloudinaryFolder.PartyCategory,
+                        id);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<PartyCategoryResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload party category image: {ex.Message}"
+                    };
+                }
+            }
 
             var affected = await _repository.UpdateAsync(entity);
 

@@ -24,7 +24,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateIngredient([FromBody] IngredientCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateIngredient([FromForm] IngredientCreateRequest request)
         {
             var result = await _ingredientService.CreateAsync(request);
             if (result.Success)
@@ -36,7 +37,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateIngredient(int id, [FromBody] IngredientUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdateIngredient(int id, [FromForm] IngredientUpdateRequest request)
         {
             var result = await _ingredientService.UpdateAsync(id, request);
             if (result.Success)
