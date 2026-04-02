@@ -1,11 +1,13 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -13,10 +15,14 @@ namespace BookfetSystem.Services.Implement
     public class IngredientService : IIngredientService
     {
         private readonly IngredientRepository _ingredientRepository;
+        private readonly IImageStorageService _imageStorageService;
 
-        public IngredientService(IngredientRepository ingredientRepository)
+        public IngredientService(
+            IngredientRepository ingredientRepository,
+            IImageStorageService imageStorageService)
         {
             _ingredientRepository = ingredientRepository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<IngredientResponse>> GetAllIngredientFilteredAsync(IngredientFilterRequest request, int page, int pageSize)
@@ -72,8 +78,25 @@ namespace BookfetSystem.Services.Implement
             {
                 IngredientName = normalizedName,
                 Description = request.Description?.Trim(),
-                Img = request.Img?.Trim()
+                Img = string.Empty
             };
+
+            if (request.ImgFile != null)
+            {
+                try
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Ingredient);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<IngredientResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload ingredient image: {ex.Message}",
+                        Data = null
+                    };
+                }
+            }
 
             var affected = await _ingredientRepository.CreateAsync(entity);
             if (affected > 0)
@@ -135,7 +158,23 @@ namespace BookfetSystem.Services.Implement
 
             entity.IngredientName = normalizedName;
             entity.Description = request.Description?.Trim();
-            entity.Img = request.Img?.Trim();
+
+            if (request.ImgFile != null)
+            {
+                try
+                {
+                    entity.Img = await _imageStorageService.UploadImageAsync(request.ImgFile, CloudinaryFolder.Ingredient, id);
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<IngredientResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload ingredient image: {ex.Message}",
+                        Data = null
+                    };
+                }
+            }
 
             var affected = await _ingredientRepository.UpdateAsync(entity);
             if (affected > 0)
