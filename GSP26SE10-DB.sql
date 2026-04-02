@@ -52,7 +52,7 @@ CREATE TABLE party_category (
     party_category_name VARCHAR(100) NOT NULL,
     description TEXT,
     status VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     number_of_guests INT,
     image_url VARCHAR(255)
 );
@@ -401,28 +401,28 @@ INSERT INTO users (full_name, email, password_hash, user_name, phone, avatar, ad
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
-('Wedding Party', 'Elegant wedding celebrations', 'AVAILABLE', 200, '/images/wedding.jpg'),
-('Birthday Party', 'Fun birthday celebrations', 'AVAILABLE', 50, '/images/birthday.jpg'),
-('Corporate Event', 'Professional corporate gatherings', 'AVAILABLE', 100, '/images/corporate.jpg'),
+('Tiệc cưới', 'Tiệc cưới sang trọng và ấm cúng', 'AVAILABLE', 200, '/images/wedding.jpg'),
+('Tiệc sinh nhật', 'Tiệc sinh nhật vui vẻ cho gia đình và bạn bè', 'AVAILABLE', 50, '/images/birthday.jpg'),
+('Tiệc doanh nghiệp', 'Tiệc doanh nghiệp chuyên nghiệp', 'AVAILABLE', 100, '/images/corporate.jpg'),
 ('Test party 1 people', 'Party category for minimum 1 guest testing', 'AVAILABLE', 1, '/images/test-party-1.jpg');
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
-('Main Course', 'Main dishes and entrees'),
-('Dessert', 'Sweet treats and desserts'),
-('Beverage', 'Drinks and beverages');
+('Main Course', 'Món chính'),
+('Dessert', 'Món tráng miệng'),
+('Beverage', 'Nước uống');
 
 -- DISH
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
-('Honey Grilled Chicken', 150000, 'Tender chicken grilled with honey', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Spicy option available'),
-('Beef Steak', 200000, 'Premium beef steak', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Cooked to order'),
-('Coconut Ice Cream', 50000, 'Fresh coconut ice cream', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 2, 'Contains dairy'),
-('Fresh Orange Juice', 30000, 'Freshly squeezed orange juice', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 3, 'No added sugar');
+('Gà nướng mật ong', 150000, 'Gà nướng mật ong mềm thơm', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Có thể chọn mức cay nhẹ'),
+('Bít tết bò', 200000, 'Bò bít tết cao cấp', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Chế biến theo yêu cầu độ chín'),
+('Kem dừa', 50000, 'Kem dừa tươi mát', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 2, 'Có chứa sữa'),
+('Nước cam tươi', 30000, 'Nước cam vắt tươi', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 3, 'Không thêm đường');
 
 -- DISH TEST (2.5k + 2.5k)
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
-('dish1 test 2.5k', 2500, 'Sample dish for test menu', 'AVAILABLE', NULL, 1, 'test data'),
-('dish2 test 2.5k', 2500, 'Sample dish for test menu', 'AVAILABLE', NULL, 1, 'test data');
+('Món test 1 - 2.5k', 2500, 'Món mẫu dùng để test menu', 'AVAILABLE', NULL, 1, 'Dữ liệu test'),
+('Món test 2 - 2.5k', 2500, 'Món mẫu dùng để test menu', 'AVAILABLE', NULL, 1, 'Dữ liệu test');
 
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
@@ -516,9 +516,9 @@ INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 
 -- SERVICE
 INSERT INTO service (service_name, description, base_price, status, img) VALUES
-('Stage Decoration', 'Professional stage setup and decoration', 1000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png'),
-('Sound & Lighting System', 'High-quality sound and lighting equipment', 1500000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png'),
-('MC Service', 'Professional MC for your event', 1000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421422/service/service3.png');
+('Trang trí sân khấu', 'Thiết kế và trang trí sân khấu chuyên nghiệp', 1000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421275/service/service1.png'),
+('Hệ thống âm thanh ánh sáng', 'Cung cấp hệ thống âm thanh ánh sáng chất lượng cao', 1500000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421379/service/service2.png'),
+('Dịch vụ MC', 'MC chuyên nghiệp dẫn chương trình sự kiện', 1000000, 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773421422/service/service3.png');
 
 -- EXTRA CHARGE CATALOG
 INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_price, status) VALUES
