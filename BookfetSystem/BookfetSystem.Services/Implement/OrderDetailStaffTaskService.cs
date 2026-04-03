@@ -18,6 +18,7 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderDetailStaffTaskRepository _taskRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly UserRepository _userRepository;
+        private readonly TaskTemplateRepository _taskTemplateRepository;
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
         private readonly INotificationService _notificationService;
@@ -27,6 +28,7 @@ namespace BookfetSystem.Services.Implement
             OrderDetailStaffTaskRepository taskRepository,
             OrderDetailRepository orderDetailRepository,
             UserRepository userRepository,
+            TaskTemplateRepository taskTemplateRepository,
             StaffGroupRepository staffGroupRepository,
             StaffGroupMemberRepository staffGroupMemberRepository,
             INotificationService notificationService,
@@ -35,6 +37,7 @@ namespace BookfetSystem.Services.Implement
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
             _userRepository = userRepository;
+            _taskTemplateRepository = taskTemplateRepository;
             _staffGroupRepository = staffGroupRepository;
             _staffGroupMemberRepository = staffGroupMemberRepository;
             _notificationService = notificationService;
@@ -68,7 +71,7 @@ namespace BookfetSystem.Services.Implement
             await MarkOverdueTasksAndNotifyLeadersAsync();
 
             var entityFilter = request.Adapt<OrderDetailStaffTask>();
-            var query = _taskRepository.GetAllOrderDetailStaffTaskFiltered(entityFilter);
+            var query = _taskRepository.GetAllOrderDetailStaffTaskFiltered(entityFilter, request.TaskName);
 
             var totalCount = await query.CountAsync();
 
@@ -149,11 +152,23 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+
+            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
+            if (taskTemplate == null || taskTemplate.OwnerId != leaderId || taskTemplate.IsActive != true)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Mẫu công việc không hợp lệ hoặc không thuộc quyền của bạn.",
+                    Data = null
+                };
+            }
+
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
+                TaskTemplateId = request.TaskTemplateId,
                 StaffId = request.StaffId,
-                TaskName = request.TaskName?.Trim(),
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
@@ -167,8 +182,9 @@ namespace BookfetSystem.Services.Implement
                 {
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
+                    TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
-                    TaskName = entity.TaskName ?? string.Empty,
+                    TaskName = taskTemplate.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
@@ -179,7 +195,7 @@ namespace BookfetSystem.Services.Implement
                 await _notificationService.SendToUserAsync(
                     request.StaffId,
                     "Bạn có công việc mới",
-                    $"Công việc '{entity.TaskName ?? "Công việc"}' đã được giao cho bạn.",
+                    $"Công việc '{taskTemplate.TaskName ?? "Công việc"}' đã được giao cho bạn.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -240,9 +256,20 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
+            if (taskTemplate == null || taskTemplate.IsActive != true)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy mẫu công việc hợp lệ.",
+                    Data = null
+                };
+            }
+
             entity.OrderDetailId = request.OrderDetailId;
+            entity.TaskTemplateId = request.TaskTemplateId;
             entity.StaffId = request.StaffId;
-            entity.TaskName = request.TaskName?.Trim();
             if (request.TaskStatus.HasValue)
             {
                 entity.TaskStatus = request.TaskStatus.Value.ToString();
@@ -260,8 +287,9 @@ namespace BookfetSystem.Services.Implement
                 {
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
+                    TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
-                    TaskName = entity.TaskName ?? string.Empty,
+                    TaskName = taskTemplate.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
@@ -337,14 +365,16 @@ namespace BookfetSystem.Services.Implement
 
             var staff = await _userRepository.GetByIdAsync(staffId);
             var staffDisplayName = staff?.FullName ?? "Một nhân viên";
-            var taskName = entity.TaskName ?? "Công việc";
+            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(entity.TaskTemplateId);
+            var taskName = taskTemplate?.TaskName ?? "Công việc";
 
             var response = new OrderDetailStaffTaskResponse
             {
                 TaskId = entity.TaskId,
                 OrderDetailId = entity.OrderDetailId,
+                TaskTemplateId = entity.TaskTemplateId,
                 StaffId = entity.StaffId,
-                TaskName = entity.TaskName ?? string.Empty,
+                TaskName = taskName,
                 TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
@@ -449,7 +479,7 @@ namespace BookfetSystem.Services.Implement
                 var leaderId = staffGroup.LeaderId.Value;
 
                 var staffDisplayName = task.Staff?.FullName ?? "Một nhân viên";
-                var taskName = task.TaskName ?? "Công việc";
+                var taskName = task.TaskTemplate?.TaskName ?? "Công việc";
 
                 await _notificationService.SendToUserAsync(
                     leaderId,

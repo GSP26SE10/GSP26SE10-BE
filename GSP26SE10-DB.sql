@@ -275,7 +275,6 @@ CREATE TABLE order_detail_staff_task (
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
     task_template_id INT NOT NULL REFERENCES task_template(task_template_id),
     staff_id INT REFERENCES users(user_id),
-    task_name VARCHAR(255),
     task_status VARCHAR(50),
     start_time TIMESTAMPTZ,
     end_time TIMESTAMPTZ,
@@ -594,9 +593,9 @@ INSERT INTO task_template (owner_id, task_name, is_active, created_at, updated_a
 
 -- STAFF TASK
 INSERT INTO order_detail_staff_task 
-(order_detail_id, task_template_id, staff_id, task_name, task_status, start_time, end_time, note)
+(order_detail_id, task_template_id, staff_id, task_status, start_time, end_time, note)
 VALUES 
-(1, (SELECT task_template_id FROM task_template WHERE task_name = 'Setup tables and serve guests' LIMIT 1), 3, 'Setup tables and serve guests', 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
+(1, (SELECT task_template_id FROM task_template WHERE task_name = 'Setup tables and serve guests' LIMIT 1), 3, 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
 
 -- ORDER DETAIL CUSTOM
 INSERT INTO order_detail_custom (order_detail_id, dish_id, total_amount) VALUES
