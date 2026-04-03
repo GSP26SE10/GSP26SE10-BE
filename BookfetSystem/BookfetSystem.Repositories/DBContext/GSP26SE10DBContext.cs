@@ -675,6 +675,9 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
             entity.Property(e => e.StaffId).HasColumnName("staff_id");
             entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.TaskName)
+                .HasMaxLength(255)
+                .HasColumnName("task_name");
             entity.Property(e => e.TaskStatus)
                 .HasMaxLength(50)
                 .HasColumnName("task_status");

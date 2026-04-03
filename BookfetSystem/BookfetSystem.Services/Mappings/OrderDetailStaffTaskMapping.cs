@@ -23,7 +23,7 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.StaffName,
                        src => src.Staff != null ? src.Staff.FullName : null)
                    .Map(dest => dest.TaskName,
-                       src => src.TaskTemplate != null ? src.TaskTemplate.TaskName : null)
+                       src => src.TaskName)
                   .Map(dest => dest.TaskStatus,
                        src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus));
 

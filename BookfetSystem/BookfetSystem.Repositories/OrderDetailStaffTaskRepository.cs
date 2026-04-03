@@ -48,7 +48,9 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrEmpty(taskName))
             {
-                query = query.Where(t => t.TaskTemplate != null && t.TaskTemplate.TaskName != null && t.TaskTemplate.TaskName.Contains(taskName));
+                query = query.Where(t =>
+                    (t.TaskName != null && t.TaskName.Contains(taskName)) ||
+                    (t.TaskTemplate != null && t.TaskTemplate.TaskName != null && t.TaskTemplate.TaskName.Contains(taskName)));
             }
 
             return query.OrderByDescending(t => t.StartTime);
