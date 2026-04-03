@@ -154,12 +154,12 @@ namespace BookfetSystem.Services.Implement
             }
 
             var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
-            if (taskTemplate == null || taskTemplate.OwnerId != leaderId || taskTemplate.IsActive != true)
+            if (taskTemplate == null || taskTemplate.IsActive != true)
             {
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Mẫu công việc không hợp lệ hoặc không thuộc quyền của bạn.",
+                    Message = "Mẫu công việc không hợp lệ.",
                     Data = null
                 };
             }

@@ -7,7 +7,7 @@ namespace BookfetSystem.Services.Interface
 {
     public interface ITaskTemplateService
     {
-        Task<PagedResponse<TaskTemplateResponse>> GetMyTaskTemplatesAsync(int ownerId, TaskTemplateFilterRequest request, int page, int pageSize);
+        Task<PagedResponse<TaskTemplateResponse>> GetTaskTemplatesAsync(int actorId, int roleId, TaskTemplateFilterRequest request, int page, int pageSize);
         Task<ApiResponse<TaskTemplateResponse>> CreateAsync(int ownerId, TaskTemplateCreateRequest request);
         Task<ApiResponse<TaskTemplateResponse>> UpdateAsync(int id, int ownerId, TaskTemplateUpdateRequest request);
         Task<ApiResponse<bool>> DeleteAsync(int id, int ownerId);
