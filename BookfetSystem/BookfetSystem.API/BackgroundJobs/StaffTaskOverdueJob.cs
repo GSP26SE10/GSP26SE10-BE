@@ -127,15 +127,15 @@ namespace BookfetSystem.API.BackgroundJobs
 
         private async Task NotifyLeaderTaskOverdueAsync(BookfetSystem.Repositories.Entities.OrderDetailStaffTask task, int leaderId)
         {
-            var staffDisplayName = string.IsNullOrWhiteSpace(task.Staff?.FullName) ? "Một staff" : task.Staff!.FullName;
-            var taskName = string.IsNullOrWhiteSpace(task.TaskName) ? "Task" : task.TaskName;
+            var staffDisplayName = string.IsNullOrWhiteSpace(task.Staff?.FullName) ? "Một nhân viên" : task.Staff!.FullName;
+            var taskName = string.IsNullOrWhiteSpace(task.TaskName) ? "Công việc" : task.TaskName;
 
             try
             {
                 await _notificationService.SendToUserAsync(
                     leaderId,
                     $"{staffDisplayName} bị trễ deadline",
-                    $"Nhiệm vụ '{taskName}' đã trễ deadline. Leader vui lòng xem xét giao task cho người khác.",
+                    $"Công việc '{taskName}' đã trễ deadline. Trưởng nhóm vui lòng xem xét giao việc cho người khác.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
