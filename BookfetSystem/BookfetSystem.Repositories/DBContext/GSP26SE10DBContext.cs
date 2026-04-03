@@ -74,6 +74,8 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<StaffGroupMember> StaffGroupMembers { get; set; }
 
+    public virtual DbSet<TaskTemplate> TaskTemplates { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserDevice> UserDevices { get; set; }
@@ -679,6 +681,7 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.TaskStatus)
                 .HasMaxLength(50)
                 .HasColumnName("task_status");
+            entity.Property(e => e.TaskTemplateId).HasColumnName("task_template_id");
 
             entity.HasOne(d => d.OrderDetail).WithMany(p => p.OrderDetailStaffTasks)
                 .HasForeignKey(d => d.OrderDetailId)
@@ -688,6 +691,11 @@ public partial class GSP26SE10DBContext : DbContext
             entity.HasOne(d => d.Staff).WithMany(p => p.OrderDetailStaffTasks)
                 .HasForeignKey(d => d.StaffId)
                 .HasConstraintName("order_detail_staff_task_staff_id_fkey");
+
+            entity.HasOne(d => d.TaskTemplate).WithMany(p => p.OrderDetailStaffTasks)
+                .HasForeignKey(d => d.TaskTemplateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("order_detail_staff_task_task_template_id_fkey");
         });
 
         modelBuilder.Entity<OrderService>(entity =>
@@ -938,6 +946,33 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasForeignKey(d => d.StaffId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("staff_group_member_staff_id_fkey");
+        });
+
+        modelBuilder.Entity<TaskTemplate>(entity =>
+        {
+            entity.HasKey(e => e.TaskTemplateId).HasName("task_template_pkey");
+
+            entity.ToTable("task_template");
+
+            entity.Property(e => e.TaskTemplateId).HasColumnName("task_template_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.OwnerId).HasColumnName("owner_id");
+            entity.Property(e => e.TaskName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("task_name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.TaskTemplates)
+                .HasForeignKey(d => d.OwnerId)
+                .HasConstraintName("task_template_owner_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>

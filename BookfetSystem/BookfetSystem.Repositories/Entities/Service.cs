@@ -2,7 +2,6 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookfetSystem.Repositories.Entities;
 
@@ -15,13 +14,12 @@ public partial class Service
     public string Description { get; set; }
 
     public decimal? BasePrice { get; set; }
-    [Column("ais_service_summary")]
+
     public string AisServiceSummary { get; set; }
 
     public string Status { get; set; }
 
     public string Img { get; set; }
-    
 
     public DateTime? CreatedAt { get; set; }
 
