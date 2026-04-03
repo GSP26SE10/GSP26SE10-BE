@@ -13,11 +13,12 @@ namespace BookfetSystem.Repositories
         {
         }
 
-        public IQueryable<OrderDetailStaffTask> GetAllOrderDetailStaffTaskFiltered(OrderDetailStaffTask filter)
+        public IQueryable<OrderDetailStaffTask> GetAllOrderDetailStaffTaskFiltered(OrderDetailStaffTask filter, string? taskName)
         {
             var query = _context.OrderDetailStaffTasks
                 .Include(t => t.OrderDetail)
                 .Include(t => t.Staff)
+            .Include(t => t.TaskTemplate)
                 .AsQueryable();
 
             if (filter.TaskId != 0)
@@ -30,6 +31,11 @@ namespace BookfetSystem.Repositories
                 query = query.Where(t => t.OrderDetailId == filter.OrderDetailId);
             }
 
+            if (filter.TaskTemplateId != 0)
+            {
+                query = query.Where(t => t.TaskTemplateId == filter.TaskTemplateId);
+            }
+
             if (filter.StaffId != null)
             {
                 query = query.Where(t => t.StaffId == filter.StaffId);
@@ -40,9 +46,9 @@ namespace BookfetSystem.Repositories
                 query = query.Where(t => t.TaskStatus == filter.TaskStatus);
             }
 
-            if (!string.IsNullOrEmpty(filter.TaskName))
+            if (!string.IsNullOrEmpty(taskName))
             {
-                query = query.Where(t => t.TaskName != null && t.TaskName.Contains(filter.TaskName));
+                query = query.Where(t => t.TaskTemplate != null && t.TaskTemplate.TaskName != null && t.TaskTemplate.TaskName.Contains(taskName));
             }
 
             return query.OrderByDescending(t => t.StartTime);
@@ -51,6 +57,7 @@ namespace BookfetSystem.Repositories
         public IQueryable<OrderDetailStaffTask> GetMyTasksByStaffId(int staffId)
         {
             return _context.OrderDetailStaffTasks
+                .Include(t => t.TaskTemplate)
                 .Include(t => t.OrderDetail)
                     .ThenInclude(od => od.Menu)
                 .Include(t => t.OrderDetail)
@@ -66,6 +73,7 @@ namespace BookfetSystem.Repositories
             return _context.OrderDetailStaffTasks
                 .Include(t => t.OrderDetail)
                 .Include(t => t.Staff)
+                .Include(t => t.TaskTemplate)
                 .Where(t =>
                     t.EndTime.HasValue &&
                     t.EndTime.Value < utcNow &&

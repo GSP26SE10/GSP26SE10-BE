@@ -15,8 +15,6 @@ public partial class OrderDetailStaffTask
 
     public int? StaffId { get; set; }
 
-    public string TaskName { get; set; }
-
     public string TaskStatus { get; set; }
 
     public DateTime? StartTime { get; set; }

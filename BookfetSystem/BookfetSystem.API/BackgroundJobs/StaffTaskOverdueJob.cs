@@ -31,6 +31,7 @@ namespace BookfetSystem.API.BackgroundJobs
             var overdueTasks = await _dbContext.OrderDetailStaffTasks
                 .Include(t => t.Staff)
                 .Include(t => t.OrderDetail)
+                .Include(t => t.TaskTemplate)
                 .Where(t =>
                     t.EndTime.HasValue &&
                     t.EndTime.Value < utcNow &&
@@ -78,6 +79,7 @@ namespace BookfetSystem.API.BackgroundJobs
             var task = await _dbContext.OrderDetailStaffTasks
                 .Include(t => t.Staff)
                 .Include(t => t.OrderDetail)
+                .Include(t => t.TaskTemplate)
                 .FirstOrDefaultAsync(t => t.TaskId == taskId);
 
             if (task == null || !task.EndTime.HasValue)
@@ -128,7 +130,7 @@ namespace BookfetSystem.API.BackgroundJobs
         private async Task NotifyLeaderTaskOverdueAsync(BookfetSystem.Repositories.Entities.OrderDetailStaffTask task, int leaderId)
         {
             var staffDisplayName = string.IsNullOrWhiteSpace(task.Staff?.FullName) ? "Một nhân viên" : task.Staff!.FullName;
-            var taskName = string.IsNullOrWhiteSpace(task.TaskName) ? "Công việc" : task.TaskName;
+            var taskName = string.IsNullOrWhiteSpace(task.TaskTemplate?.TaskName) ? "Công việc" : task.TaskTemplate!.TaskName;
 
             try
             {
