@@ -99,7 +99,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Leader does not have an active staff group.",
+                    Message = "Trưởng nhóm chưa có nhóm nhân sự đang hoạt động.",
                     Data = null
                 };
             }
@@ -111,7 +111,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Order detail not found.",
+                    Message = "Không tìm thấy chi tiết đơn tiệc.",
                     Data = null
                 };
             }
@@ -121,7 +121,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Order detail does not belong to your staff group.",
+                    Message = "Chi tiết đơn tiệc không thuộc nhóm của bạn.",
                     Data = null
                 };
             }
@@ -133,7 +133,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Staff not found.",
+                    Message = "Không tìm thấy nhân viên.",
                     Data = null
                 };
             }
@@ -145,7 +145,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Staff does not belong to your staff group.",
+                    Message = "Nhân viên không thuộc nhóm của bạn.",
                     Data = null
                 };
             }
@@ -178,8 +178,8 @@ namespace BookfetSystem.Services.Implement
 
                 await _notificationService.SendToUserAsync(
                     request.StaffId,
-                    "Bạn có nhiệm vụ mới",
-                    $"Nhiệm vụ '{entity.TaskName ?? "Task"}' đã được giao cho bạn.",
+                    "Bạn có công việc mới",
+                    $"Công việc '{entity.TaskName ?? "Công việc"}' đã được giao cho bạn.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -192,7 +192,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = true,
-                    Message = "Task created successfully.",
+                    Message = "Tạo công việc thành công.",
                     Data = response
                 };
             }
@@ -200,7 +200,7 @@ namespace BookfetSystem.Services.Implement
             return new ApiResponse<OrderDetailStaffTaskResponse>
             {
                 Success = false,
-                Message = "Failed to create task.",
+                Message = "Không thể tạo công việc.",
                 Data = null
             };
         }
@@ -213,7 +213,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Task not found.",
+                    Message = "Không tìm thấy công việc.",
                     Data = null
                 };
             }
@@ -224,7 +224,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Order detail not found.",
+                    Message = "Không tìm thấy chi tiết đơn tiệc.",
                     Data = null
                 };
             }
@@ -235,7 +235,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Staff not found.",
+                    Message = "Không tìm thấy nhân viên.",
                     Data = null
                 };
             }
@@ -272,7 +272,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = true,
-                    Message = "Task updated successfully.",
+                    Message = "Cập nhật công việc thành công.",
                     Data = response
                 };
             }
@@ -280,7 +280,7 @@ namespace BookfetSystem.Services.Implement
             return new ApiResponse<OrderDetailStaffTaskResponse>
             {
                 Success = false,
-                Message = "Failed to update task.",
+                Message = "Không thể cập nhật công việc.",
                 Data = null
             };
         }
@@ -295,7 +295,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Task not found.",
+                    Message = "Không tìm thấy công việc.",
                     Data = null
                 };
             }
@@ -305,7 +305,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "You are not allowed to update this task.",
+                    Message = "Bạn không có quyền cập nhật công việc này.",
                     Data = null
                 };
             }
@@ -329,15 +329,15 @@ namespace BookfetSystem.Services.Implement
                     return new ApiResponse<OrderDetailStaffTaskResponse>
                     {
                         Success = false,
-                        Message = "Failed to update task status.",
+                        Message = "Không thể cập nhật trạng thái công việc.",
                         Data = null
                     };
                 }
             }
 
             var staff = await _userRepository.GetByIdAsync(staffId);
-            var staffDisplayName = staff?.FullName ?? "Một staff";
-            var taskName = entity.TaskName ?? "Task";
+            var staffDisplayName = staff?.FullName ?? "Một nhân viên";
+            var taskName = entity.TaskName ?? "Công việc";
 
             var response = new OrderDetailStaffTaskResponse
             {
@@ -365,15 +365,15 @@ namespace BookfetSystem.Services.Implement
                             StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành công việc",
                             StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc",
                             StaffTaskStatus.OVERDUE => $"{staffDisplayName} bị trễ deadline",
-                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ"
+                            _ => $"{staffDisplayName} đã cập nhật trạng thái công việc"
                         };
 
                         var notificationBody = finalStatus switch
                         {
                             StaffTaskStatus.COMPLETED => $"{staffDisplayName} đã hoàn thành nhiệm vụ '{taskName}'.",
-                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang làm việc nhiệm vụ '{taskName}'.",
-                            StaffTaskStatus.OVERDUE => $"Nhiệm vụ '{taskName}' đã trễ deadline. Leader vui lòng xem xét giao task cho người khác.",
-                            _ => $"{staffDisplayName} đã cập nhật trạng thái nhiệm vụ '{taskName}'."
+                            StaffTaskStatus.IN_PROGRESS => $"{staffDisplayName} đang thực hiện công việc '{taskName}'.",
+                            StaffTaskStatus.OVERDUE => $"Công việc '{taskName}' đã trễ deadline. Trưởng nhóm vui lòng xem xét giao cho người khác.",
+                            _ => $"{staffDisplayName} đã cập nhật trạng thái công việc '{taskName}'."
                         };
 
                         var shouldNotifyLeader =
@@ -403,7 +403,7 @@ namespace BookfetSystem.Services.Implement
             return new ApiResponse<OrderDetailStaffTaskResponse>
             {
                 Success = true,
-                Message = "Task status updated successfully.",
+                Message = "Cập nhật trạng thái công việc thành công.",
                 Data = response
             };
         }
@@ -448,13 +448,13 @@ namespace BookfetSystem.Services.Implement
 
                 var leaderId = staffGroup.LeaderId.Value;
 
-                var staffDisplayName = task.Staff?.FullName ?? "Một staff";
-                var taskName = task.TaskName ?? "Task";
+                var staffDisplayName = task.Staff?.FullName ?? "Một nhân viên";
+                var taskName = task.TaskName ?? "Công việc";
 
                 await _notificationService.SendToUserAsync(
                     leaderId,
                     $"{staffDisplayName} bị trễ deadline",
-                    $"Nhiệm vụ '{taskName}' đã trễ deadline. Leader vui lòng xem xét giao task cho người khác.",
+                    $"Công việc '{taskName}' đã trễ deadline. Trưởng nhóm vui lòng xem xét giao cho người khác.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -474,7 +474,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Task not found.",
+                    Message = "Không tìm thấy công việc.",
                     Data = false
                 };
             }
@@ -485,7 +485,7 @@ namespace BookfetSystem.Services.Implement
                 return new ApiResponse<bool>
                 {
                     Success = true,
-                    Message = "Task deleted successfully.",
+                    Message = "Xóa công việc thành công.",
                     Data = true
                 };
             }
@@ -493,7 +493,7 @@ namespace BookfetSystem.Services.Implement
             return new ApiResponse<bool>
             {
                 Success = false,
-                Message = "Failed to delete task.",
+                Message = "Không thể xóa công việc.",
                 Data = false
             };
         }

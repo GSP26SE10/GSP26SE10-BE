@@ -114,7 +114,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<OrderResponse>
                     {
                         Success = false,
-                        Message = "Customer not found.",
+                        Message = "Không tìm thấy khách hàng.",
                         Data = null
                     };
                 }
@@ -135,7 +135,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = true,
-                    Message = "Order created successfully.",
+                    Message = "Tạo đơn hàng thành công.",
                     Data = created
                 };
             }
@@ -144,7 +144,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Create order failed.",
+                    Message = "Không thể tạo đơn hàng.",
                     Data = null
                 };
             }
@@ -159,7 +159,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Order not found.",
+                    Message = "Không tìm thấy đơn hàng.",
                     Data = null
                 };
             }
@@ -172,7 +172,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<OrderResponse>
                     {
                         Success = false,
-                        Message = "Customer not found.",
+                        Message = "Không tìm thấy khách hàng.",
                         Data = null
                     };
                 }
@@ -202,7 +202,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = true,
-                    Message = "Order updated successfully.",
+                    Message = "Cập nhật đơn hàng thành công.",
                     Data = updated
                 };
             }
@@ -211,7 +211,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Update order failed.",
+                    Message = "Không thể cập nhật đơn hàng.",
                     Data = null
                 };
             }
@@ -226,7 +226,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Order not found.",
+                    Message = "Không tìm thấy đơn hàng.",
                     Data = false
                 };
             }
@@ -237,7 +237,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Cannot delete order because it is referenced by payment/order detail records.",
+                    Message = "Không thể xóa đơn hàng vì đang được tham chiếu bởi các bản ghi thanh toán hoặc chi tiết đơn hàng.",
                     Data = false
                 };
             }
@@ -248,7 +248,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<bool>
                 {
                     Success = true,
-                    Message = "Order deleted successfully.",
+                    Message = "Xóa đơn hàng thành công.",
                     Data = true
                 };
             }
@@ -257,7 +257,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Delete order failed due to related data constraints.",
+                    Message = "Không thể xóa đơn hàng do ràng buộc dữ liệu liên quan.",
                     Data = false
                 };
             }
@@ -271,7 +271,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<int>
                 {
                     Success = false,
-                    Message = "Customer not found.",
+                    Message = "Không tìm thấy khách hàng.",
                     Data = 0
                 };
             }
@@ -281,7 +281,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<int>
                 {
                     Success = false,
-                    Message = "Items are required.",
+                    Message = "Cần có ít nhất một mục trong đơn.",
                     Data = 0
                 };
             }
@@ -295,7 +295,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<int>
                 {
                     Success = false,
-                    Message = "First party date must be at least 3 days from today (Vietnam time).",
+                    Message = "Ngày tiệc đầu tiên phải cách hôm nay ít nhất 3 ngày (giờ Việt Nam).",
                     Data = 0
                 };
             }
@@ -307,7 +307,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"Item {i + 1}: EndTime must be greater than StartTime.",
+                        Message = $"Mục {i + 1}: Thời gian kết thúc phải lớn hơn thời gian bắt đầu.",
                         Data = 0
                     };
                 }
@@ -318,7 +318,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"Item {i + 1}: party date must be at least 3 days from today (Vietnam time).",
+                        Message = $"Mục {i + 1}: Ngày tiệc phải cách hôm nay ít nhất 3 ngày (giờ Việt Nam).",
                         Data = 0
                     };
                 }
@@ -329,7 +329,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = "All party dates must be within 1 day from the first party date.",
+                        Message = "Tất cả ngày tiệc phải nằm trong vòng 1 ngày tính từ ngày tiệc đầu tiên.",
                         Data = 0
                     };
                 }
@@ -360,7 +360,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = "MenuId must be greater than 0.",
+                        Message = "MenuId phải lớn hơn 0.",
                         Data = 0
                     };
                 }
@@ -370,7 +370,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = "NumberOfGuests must be greater than 0.",
+                        Message = "Số lượng khách phải lớn hơn 0.",
                         Data = 0
                     };
                 }
@@ -380,7 +380,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = "EndTime must be greater than StartTime.",
+                        Message = "Thời gian kết thúc phải lớn hơn thời gian bắt đầu.",
                         Data = 0
                     };
                 }
@@ -391,7 +391,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"Menu with Id {itemRequest.MenuId} not found.",
+                        Message = $"Không tìm thấy menu có mã {itemRequest.MenuId}.",
                         Data = 0
                     };
                 }
@@ -401,7 +401,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = "PartyCategoryId is required and must be greater than 0.",
+                        Message = "PartyCategoryId là bắt buộc và phải lớn hơn 0.",
                         Data = 0
                     };
                 }
@@ -412,7 +412,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"PartyCategory with Id {itemRequest.PartyCategoryId} not found.",
+                        Message = $"Không tìm thấy loại tiệc có mã {itemRequest.PartyCategoryId}.",
                         Data = 0
                     };
                 }
@@ -423,7 +423,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<int>
                     {
                         Success = false,
-                        Message = $"NumberOfGuests must be greater than or equal to {requiredGuests} for PartyCategory '{partyCategory.PartyCategoryName}'.",
+                        Message = $"Số lượng khách phải lớn hơn hoặc bằng {requiredGuests} cho loại tiệc '{partyCategory.PartyCategoryName}'.",
                         Data = 0
                     };
                 }
@@ -1145,7 +1145,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Invalid reviewer id.",
+                    Message = "Mã người duyệt không hợp lệ.",
                     Data = null
                 };
             }
@@ -1155,7 +1155,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Invalid status value.",
+                    Message = "Giá trị trạng thái không hợp lệ.",
                     Data = null
                 };
             }
@@ -1166,7 +1166,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Only APPROVED(2) or REJECTED(3) are allowed.",
+                    Message = "Chỉ cho phép trạng thái APPROVED (2) hoặc REJECTED (3).",
                     Data = null
                 };
             }
@@ -1177,7 +1177,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Order not found.",
+                    Message = "Không tìm thấy đơn hàng.",
                     Data = null
                 };
             }
@@ -1187,7 +1187,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Only PENDING orders can be reviewed.",
+                    Message = "Chỉ đơn hàng ở trạng thái chờ duyệt mới có thể được duyệt.",
                     Data = null
                 };
             }
@@ -1202,7 +1202,7 @@ namespace BookfetSystem.Services.Services
                     return new ApiResponse<OrderResponse>
                     {
                         Success = false,
-                        Message = $"Reject order failed because refund was not completed: {refundResult.Message}",
+                        Message = $"Không thể từ chối đơn hàng vì hoàn tiền chưa hoàn tất: {refundResult.Message}",
                         Data = null
                     };
                 }
@@ -1236,7 +1236,7 @@ namespace BookfetSystem.Services.Services
             return new ApiResponse<OrderResponse>
             {
                 Success = true,
-                Message = $"Order has been {targetStatus} successfully.",
+                Message = targetStatus == OrderStatus.APPROVED ? "Đơn hàng đã được duyệt thành công." : "Đơn hàng đã bị từ chối thành công.",
                 Data = updated
             };
         }
@@ -1249,7 +1249,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Order not found.",
+                    Message = "Không tìm thấy đơn hàng.",
                     Data = null
                 };
             }
@@ -1261,7 +1261,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "You do not have permission to cancel this order.",
+                    Message = "Bạn không có quyền hủy đơn hàng này.",
                     Data = null
                 };
             }
@@ -1272,7 +1272,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = true,
-                    Message = "Order is already cancelled.",
+                    Message = "Đơn hàng đã được hủy trước đó.",
                     Data = cancelledOrder
                 };
             }
@@ -1282,7 +1282,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Completed orders cannot be cancelled.",
+                    Message = "Không thể hủy đơn hàng đã hoàn thành.",
                     Data = null
                 };
             }
@@ -1294,7 +1294,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Cannot cancel order because at least one party is IN_PROGRESS.",
+                    Message = "Không thể hủy đơn hàng vì có ít nhất một tiệc đang ở trạng thái đang thực hiện.",
                     Data = null
                 };
             }
@@ -1310,7 +1310,7 @@ namespace BookfetSystem.Services.Services
                 return new ApiResponse<OrderResponse>
                 {
                     Success = false,
-                    Message = "Order has no valid party schedule for cancellation policy.",
+                    Message = "Đơn hàng không có lịch tiệc hợp lệ để áp dụng chính sách hủy.",
                     Data = null
                 };
             }
@@ -1344,7 +1344,7 @@ namespace BookfetSystem.Services.Services
                         return new ApiResponse<OrderResponse>
                         {
                             Success = false,
-                            Message = $"Cancel order failed because refund was not completed: {refundResult.Message}",
+                            Message = $"Không thể hủy đơn hàng vì hoàn tiền chưa hoàn tất: {refundResult.Message}",
                             Data = null
                         };
                     }
@@ -1366,7 +1366,7 @@ namespace BookfetSystem.Services.Services
             }
             else if (depositPaid && refundPercent <= 0m)
             {
-                refundCaseNote = "Theo mốc thời gian hủy hiện tại, chính sách quy định không hoàn tiền cọc.";
+                refundCaseNote = "Theo thời điểm hủy hiện tại, chính sách quy định không hoàn tiền cọc.";
             }
             else if (!depositPaid && refundPercent > 0m)
             {
@@ -1395,7 +1395,7 @@ namespace BookfetSystem.Services.Services
             return new ApiResponse<OrderResponse>
             {
                 Success = true,
-                Message = $"Order cancelled successfully. Refund percent: {refundPercent:P0}.",
+                Message = $"Đơn hàng đã được hủy thành công. Tỷ lệ hoàn cọc: {refundPercent:P0}.",
                 Data = updated
             };
         }
@@ -1413,8 +1413,8 @@ namespace BookfetSystem.Services.Services
             var statusColor = isApproved ? "#16a34a" : "#dc2626";
             var statusBgColor = isApproved ? "#dcfce7" : "#fee2e2";
             var subject = targetStatus == OrderStatus.APPROVED
-                ? $"[Bookfet] Đơn hàng #{order.OrderId} đã được duyệt"
-                : $"[Bookfet] Đơn hàng #{order.OrderId} đã bị từ chối";
+                ? "[Bookfet] Đơn hàng đã được duyệt"
+                : "[Bookfet] Đơn hàng đã bị từ chối";
 
             var customerName = string.IsNullOrWhiteSpace(order.Customer?.FullName)
                 ? "Quý khách"
@@ -1451,7 +1451,7 @@ namespace BookfetSystem.Services.Services
   <div style=""background:#ffffff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;"">
     <h2 style=""margin:0 0 12px 0;"">Thông báo trạng thái đơn hàng</h2>
     <p style=""margin:0 0 10px 0;"">Xin chào <strong>{customerName}</strong>,</p>
-    <p style=""margin:0 0 12px 0;"">Đơn hàng <strong>#{order.OrderId}</strong> của bạn đã được hệ thống xử lý.</p>
+    <p style=""margin:0 0 12px 0;"">Đơn hàng của bạn đã được hệ thống xử lý.</p>
     <p style=""margin:0 0 14px 0;"">
       Trạng thái:
       <span style=""display:inline-block;padding:4px 10px;border-radius:999px;background:{statusBgColor};color:{statusColor};font-weight:700;"">
@@ -1466,8 +1466,8 @@ namespace BookfetSystem.Services.Services
   </div>
 </div>";
             var plainText = isApproved
-                ? $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Cac tiec duoc ghi nhan: {detailPlainText}."
-                : $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc cap nhat trang thai: {statusLabel}. Ti le hoan coc: {refundPercent:P0}, so tien hoan: {FormatVnd(refundAmount)}. Cac tiec trong don: {detailPlainText}.";
+                ? $"Xin chào {customerName}. Đơn hàng của bạn đã được cập nhật trạng thái: {statusLabel}. Các tiệc được ghi nhận: {detailPlainText}."
+                : $"Xin chào {customerName}. Đơn hàng của bạn đã được cập nhật trạng thái: {statusLabel}. Tỷ lệ hoàn cọc: {refundPercent:P0}, số tiền hoàn: {FormatVnd(refundAmount)}. Các tiệc trong đơn: {detailPlainText}.";
 
             try
             {
@@ -1540,13 +1540,13 @@ namespace BookfetSystem.Services.Services
   {detailCardsHtml}
 </div>";
 
-            var subject = $"[Bookfet] Đơn hàng #{order.OrderId} đã được hủy";
+            var subject = "[Bookfet] Đơn hàng đã được hủy";
             var htmlBody = $@"
 <div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:16px;background:#f8fafc;color:#0f172a;"">
   <div style=""background:#ffffff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;"">
     <h2 style=""margin:0 0 12px 0;"">Thông báo hủy đơn hàng</h2>
     <p style=""margin:0 0 10px 0;"">Xin chào <strong>{customerName}</strong>,</p>
-    <p style=""margin:0 0 12px 0;"">Đơn hàng <strong>#{order.OrderId}</strong> đã được ghi nhận hủy bởi <strong>{cancelledByText}</strong>.</p>
+    <p style=""margin:0 0 12px 0;"">Đơn hàng đã được ghi nhận hủy bởi <strong>{cancelledByText}</strong>.</p>
     <p style=""margin:0 0 14px 0;"">
       Trạng thái:
       <span style=""display:inline-block;padding:4px 10px;border-radius:999px;background:#f1f5f9;color:#334155;font-weight:700;"">
@@ -1564,7 +1564,7 @@ namespace BookfetSystem.Services.Services
   </div>
 </div>";
 
-            var plainText = $"Xin chao {customerName}. Don hang #{order.OrderId} da duoc huy boi {cancelledByText}. Ty le hoan coc: {refundPercent:P0}, so tien hoan: {FormatVnd(refundAmount)}. Ket qua xu ly: {refundCaseNote}. Cac tiec trong don: {detailPlainText}.";
+            var plainText = $"Xin chào {customerName}. Đơn hàng đã được hủy bởi {cancelledByText}. Tỷ lệ hoàn cọc: {refundPercent:P0}, số tiền hoàn: {FormatVnd(refundAmount)}. Kết quả xử lý: {refundCaseNote}. Các tiệc trong đơn: {detailPlainText}.";
 
             try
             {
