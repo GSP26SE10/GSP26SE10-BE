@@ -2,7 +2,6 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookfetSystem.Repositories.Entities;
 
@@ -15,7 +14,6 @@ public partial class Menu
     public DateTime? CreatedAt { get; set; }
 
     public decimal? BasePrice { get; set; }
-    [Column("ais_menu_summary")]
 
     public string AisMenuSummary { get; set; }
 

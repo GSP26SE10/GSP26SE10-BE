@@ -57,5 +57,7 @@ public partial class User
 
     public virtual ICollection<StaffGroup> StaffGroups { get; set; } = new List<StaffGroup>();
 
+    public virtual ICollection<TaskTemplate> TaskTemplates { get; set; } = new List<TaskTemplate>();
+
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 }

@@ -11,6 +11,8 @@ public partial class OrderDetailStaffTask
 
     public int? OrderDetailId { get; set; }
 
+    public int TaskTemplateId { get; set; }
+
     public int? StaffId { get; set; }
 
     public string TaskName { get; set; }
@@ -26,4 +28,6 @@ public partial class OrderDetailStaffTask
     public virtual OrderDetail OrderDetail { get; set; }
 
     public virtual User Staff { get; set; }
+
+    public virtual TaskTemplate TaskTemplate { get; set; }
 }

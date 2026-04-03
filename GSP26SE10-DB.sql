@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS payment CASCADE;
 DROP TABLE IF EXISTS contact_request CASCADE;
 DROP TABLE IF EXISTS order_detail_extra_charge CASCADE;
 DROP TABLE IF EXISTS order_detail_staff_task CASCADE;
+DROP TABLE IF EXISTS task_template CASCADE;
 DROP TABLE IF EXISTS staff_group_member CASCADE;
 DROP TABLE IF EXISTS staff_group CASCADE;
 DROP TABLE IF EXISTS order_detail_custom CASCADE;
@@ -260,9 +261,19 @@ CREATE TABLE order_detail_extra_charge (
     note TEXT
 );
 
+CREATE TABLE task_template (
+    task_template_id SERIAL PRIMARY KEY,
+    owner_id INT REFERENCES users(user_id),
+    task_name VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE order_detail_staff_task (
     task_id SERIAL PRIMARY KEY,
     order_detail_id INT REFERENCES order_detail(order_detail_id) ON DELETE CASCADE,
+    task_template_id INT NOT NULL REFERENCES task_template(task_template_id),
     staff_id INT REFERENCES users(user_id),
     task_name VARCHAR(255),
     task_status VARCHAR(50),
@@ -445,16 +456,16 @@ INSERT INTO menu_category (menu_category_name, description, status) VALUES
 
 -- MENU (Buffet bò: 1, Buffet hải sản: 2) - 5 món mỗi category, img_url là array nhiều ảnh
 INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
-('Combo Bò Úc', 350000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
-('Combo Bò Wagyu', 650000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
-('Combo Bò Việt', 280000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
-('Combo Bò Premium', 420000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
-('Combo Bò Đặc Biệt', 520000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1),
-('Combo Hải Sản Tươi Sống', 450000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
-('Combo Hải Sản Cao Cấp', 550000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
-('Combo Hải Sản Đặc Sản', 750000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
-('Combo Hải Sản Premium', 620000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2),
-('Combo Hải Sản Đại Dương', 850000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 2);
+('Combo Bò Úc', 350000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/bouc1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136272/menu/bouc2.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136496/bouc3.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Wagyu', 650000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136672/menu/bowangyu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136729/menu/bowangyu2.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Việt', 280000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136927/menu/boviet1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775136955/menu/boviet2.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Premium', 420000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137069/menu/bopremium1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137109/menu/bopremium2.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Bò Đặc Biệt', 520000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137222/menu/bodacbiet1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137241/menu/bodacbiet2.png"]'::jsonb, 'AVAILABLE', 1),
+('Combo Hải Sản Tươi Sống', 450000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137602/menu/haisantuoisong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137629/menu/haisantuoisong2.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Cao Cấp', 550000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137757/menu/haisancaocap1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137763/menu/haisancaocap2.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Đặc Sản', 750000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137909/menu/haisandacsan1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775137937/menu/haisandacsan2.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Premium', 620000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138024/menu/haisanpremium1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138044/menu/haisanpremium2.png"]'::jsonb, 'AVAILABLE', 2),
+('Combo Hải Sản Đại Dương', 850000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138213/menu/haisandaiduong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138315/menu/haisandaiduong2.png"]'::jsonb, 'AVAILABLE', 2);
 
 -- MENU TEST 5K
 INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
@@ -468,8 +479,8 @@ INSERT INTO menu_dish (menu_id, dish_id) VALUES
 (1, 4),
 (2, 1),
 (2, 2),
+(3, 2),
 (3, 1),
-(3, 3),
 (3, 4),
 (4, 3),
 (4, 4),
@@ -575,11 +586,17 @@ INSERT INTO staff_group_member (staff_group_id, staff_id, status) VALUES
 (1, 2, 'ACTIVE'), -- Group Leader
 (1, 3, 'ACTIVE'); -- Staff
 
+-- TASK TEMPLATE (User 1-N TaskTemplate)
+INSERT INTO task_template (owner_id, task_name, is_active, created_at, updated_at) VALUES
+(2, 'Setup tables and serve guests', TRUE, NOW(), NOW()),
+(2, 'Coordinate with kitchen and timeline', TRUE, NOW(), NOW()),
+(2, 'Support guest check-in and directions', TRUE, NOW(), NOW());
+
 -- STAFF TASK
 INSERT INTO order_detail_staff_task 
-(order_detail_id, staff_id, task_name, task_status, start_time, end_time, note)
+(order_detail_id, task_template_id, staff_id, task_name, task_status, start_time, end_time, note)
 VALUES 
-(1, 3, 'Setup tables and serve guests', 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
+(1, (SELECT task_template_id FROM task_template WHERE task_name = 'Setup tables and serve guests' LIMIT 1), 3, 'Setup tables and serve guests', 'PENDING', NOW(), NOW() + INTERVAL '5 hours', 'Ensure all tables are properly set');
 
 -- ORDER DETAIL CUSTOM
 INSERT INTO order_detail_custom (order_detail_id, dish_id, total_amount) VALUES

@@ -113,16 +113,15 @@ FROM (
     ('Combo Bò Úc',350000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
     ('Combo Bò Đặc Biệt',520000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
     ('Combo Hải Sản Tươi Sống',450000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
-    ('Combo Bò Nướng Tiêu Xanh',389000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
-    ('Combo Bò Gia Đình',359000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
+    ('Combo Bò Nướng Tiêu Xanh',389000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139380/menu/botieuxanh1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139389/menu/botieuxanh2.png"]','Buffet bò'),
+    ('Combo Bò Gia Đình',359000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139869/menu/bogiadinh.png"]','Buffet bò'),
     ('Combo Bò Premium',420000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet bò'),
-    ('Combo Hải Sản Biển Xanh',479000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
     ('Combo Hải Sản Premium',629000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet hải sản'),
-    ('Combo Gà Nướng Mật Ong',329000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet gà'),
-    ('Combo Gà Lá Chanh',339000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet gà'),
-    ('Combo Chay Thanh Đạm',299000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet chay'),
-    ('Combo Chay Dinh Dưỡng',319000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet chay'),
-    ('Combo Lẩu Nướng Tổng Hợp',459000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]','Buffet lẩu nướng')
+    ('Combo Gà Nướng Mật Ong',329000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138483/menu/ganuongmatong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138522/menu/ganuongmatong2.png"]','Buffet gà'),
+    ('Combo Gà Lá Chanh',339000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138634/menu/galachanh1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138645/menu/galachanh2.png"]','Buffet gà'),
+    ('Combo Chay Thanh Đạm',299000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138741/menu/chaythanhdam1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138780/menu/chaythanhdam2.png"]','Buffet chay'),
+    ('Combo Chay Dinh Dưỡng',319000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138904/menu/chaydinhduong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138922/menu/chaydinhduong2.png"]','Buffet chay'),
+    ('Combo Lẩu Nướng Tổng Hợp',459000,'["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775139011/menu/tonghop.png"]','Buffet lẩu nướng')
 ) AS v(menu_name, base_price, img_url, menu_category_name)
 JOIN menu_category mc ON mc.menu_category_name = v.menu_category_name
 WHERE NOT EXISTS (SELECT 1 FROM menu m WHERE m.menu_name = v.menu_name);
@@ -135,6 +134,7 @@ FROM (
     ('Combo Bò Úc','Bò cuộn nấm kim châm'),('Combo Bò Úc','Bò nướng sa tế'),('Combo Bò Úc','Bò áp chảo sốt tiêu đen'),('Combo Bò Úc','Bò lúc lắc khoai tây'),('Combo Bò Úc','Mì xào bò rau củ'),('Combo Bò Úc','Chè khúc bạch'),('Combo Bò Úc','Trà đào cam sả'),('Combo Bò Úc','Nước suối tinh khiết'),
     ('Combo Bò Đặc Biệt','Bò Wagyu nướng đá'),('Combo Bò Đặc Biệt','Sườn cừu nướng thảo mộc'),('Combo Bò Đặc Biệt','Sườn bò nướng mật ong'),('Combo Bò Đặc Biệt','Bò áp chảo sốt tiêu đen'),('Combo Bò Đặc Biệt','Lẩu bò nấm'),('Combo Bò Đặc Biệt','Chè hạt sen long nhãn'),('Combo Bò Đặc Biệt','Trà vải'),('Combo Bò Đặc Biệt','Nước chanh dây'),
     ('Combo Hải Sản Tươi Sống','Tôm sú nướng muối ớt'),('Combo Hải Sản Tươi Sống','Mực hấp gừng hành'),('Combo Hải Sản Tươi Sống','Hàu nướng phô mai'),('Combo Hải Sản Tươi Sống','Cơm chiên hải sản'),('Combo Hải Sản Tươi Sống','Sò điệp nướng mỡ hành'),('Combo Hải Sản Tươi Sống','Bánh flan caramel'),('Combo Hải Sản Tươi Sống','Nước chanh dây'),('Combo Hải Sản Tươi Sống','Nước suối tinh khiết'),
+    ('Combo Bò Việt','Bò cuộn nấm kim châm'),('Combo Bò Việt','Bò nướng sa tế'),('Combo Bò Việt','Bò lúc lắc khoai tây'),('Combo Bò Việt','Mì xào bò rau củ'),('Combo Bò Việt','Rau củ xào ngũ sắc'),('Combo Bò Việt','Chè khúc bạch'),('Combo Bò Việt','Trà đào cam sả'),('Combo Bò Việt','Nước suối tinh khiết'),
     ('Combo Bò Nướng Tiêu Xanh','Bò cuộn nấm kim châm'),('Combo Bò Nướng Tiêu Xanh','Bò nướng sa tế'),('Combo Bò Nướng Tiêu Xanh','Bò áp chảo sốt tiêu đen'),('Combo Bò Nướng Tiêu Xanh','Sườn bò nướng mật ong'),('Combo Bò Nướng Tiêu Xanh','Bò nhúng dấm'),('Combo Bò Nướng Tiêu Xanh','Chè khúc bạch'),('Combo Bò Nướng Tiêu Xanh','Trà đào cam sả'),('Combo Bò Nướng Tiêu Xanh','Nước suối tinh khiết'),
     ('Combo Bò Gia Đình','Bò cuộn nấm kim châm'),('Combo Bò Gia Đình','Bò lúc lắc khoai tây'),('Combo Bò Gia Đình','Gà nướng mật ong'),('Combo Bò Gia Đình','Mì xào bò rau củ'),('Combo Bò Gia Đình','Lẩu bò nấm'),('Combo Bò Gia Đình','Trái cây theo mùa'),('Combo Bò Gia Đình','Nước chanh dây'),('Combo Bò Gia Đình','Nước suối tinh khiết'),
     ('Combo Bò Premium','Bò Wagyu nướng đá'),('Combo Bò Premium','Sườn cừu nướng thảo mộc'),('Combo Bò Premium','Sườn bò nướng mật ong'),('Combo Bò Premium','Bò áp chảo sốt tiêu đen'),('Combo Bò Premium','Lẩu bò nấm'),('Combo Bò Premium','Chè hạt sen long nhãn'),('Combo Bò Premium','Trà vải'),('Combo Bò Premium','Nước chanh dây'),
