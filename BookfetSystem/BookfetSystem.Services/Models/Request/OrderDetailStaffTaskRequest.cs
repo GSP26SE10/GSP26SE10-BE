@@ -12,6 +12,8 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "TaskTemplateId is required.")]
         public int TaskTemplateId { get; set; }
 
+        public string? TaskName { get; set; }
+
         [Required(ErrorMessage = "StaffId is required.")]
         public int StaffId { get; set; }
 
@@ -27,6 +29,8 @@ namespace BookfetSystem.Services.Models.Request
 
         [Required(ErrorMessage = "TaskTemplateId is required.")]
         public int TaskTemplateId { get; set; }
+
+        public string? TaskName { get; set; }
 
         [Required(ErrorMessage = "StaffId is required.")]
         public int StaffId { get; set; }

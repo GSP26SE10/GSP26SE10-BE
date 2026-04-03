@@ -154,20 +154,23 @@ namespace BookfetSystem.Services.Implement
             }
 
             var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
-            if (taskTemplate == null || taskTemplate.OwnerId != leaderId || taskTemplate.IsActive != true)
+            if (taskTemplate == null || taskTemplate.IsActive != true)
             {
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Mẫu công việc không hợp lệ hoặc không thuộc quyền của bạn.",
+                    Message = "Mẫu công việc không hợp lệ.",
                     Data = null
                 };
             }
+
+            var taskName = NormalizeTaskName(request.TaskName) ?? taskTemplate.TaskName ?? string.Empty;
 
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
                 TaskTemplateId = request.TaskTemplateId,
+                TaskName = taskName,
                 StaffId = request.StaffId,
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),
                 StartTime = request.StartTime,
@@ -184,7 +187,7 @@ namespace BookfetSystem.Services.Implement
                     OrderDetailId = entity.OrderDetailId,
                     TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
-                    TaskName = taskTemplate.TaskName ?? string.Empty,
+                    TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
@@ -195,7 +198,7 @@ namespace BookfetSystem.Services.Implement
                 await _notificationService.SendToUserAsync(
                     request.StaffId,
                     "Bạn có công việc mới",
-                    $"Công việc '{taskTemplate.TaskName ?? "Công việc"}' đã được giao cho bạn.",
+                    $"Công việc '{entity.TaskName ?? "Công việc"}' đã được giao cho bạn.",
                     NotificationType.Task,
                     new Dictionary<string, string>
                     {
@@ -267,8 +270,11 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var taskName = NormalizeTaskName(request.TaskName) ?? entity.TaskName ?? taskTemplate.TaskName ?? string.Empty;
+
             entity.OrderDetailId = request.OrderDetailId;
             entity.TaskTemplateId = request.TaskTemplateId;
+            entity.TaskName = taskName;
             entity.StaffId = request.StaffId;
             if (request.TaskStatus.HasValue)
             {
@@ -289,7 +295,7 @@ namespace BookfetSystem.Services.Implement
                     OrderDetailId = entity.OrderDetailId,
                     TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
-                    TaskName = taskTemplate.TaskName ?? string.Empty,
+                    TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
@@ -365,8 +371,7 @@ namespace BookfetSystem.Services.Implement
 
             var staff = await _userRepository.GetByIdAsync(staffId);
             var staffDisplayName = staff?.FullName ?? "Một nhân viên";
-            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(entity.TaskTemplateId);
-            var taskName = taskTemplate?.TaskName ?? "Công việc";
+            var taskName = GetTaskDisplayName(entity);
 
             var response = new OrderDetailStaffTaskResponse
             {
@@ -479,7 +484,7 @@ namespace BookfetSystem.Services.Implement
                 var leaderId = staffGroup.LeaderId.Value;
 
                 var staffDisplayName = task.Staff?.FullName ?? "Một nhân viên";
-                var taskName = task.TaskTemplate?.TaskName ?? "Công việc";
+                var taskName = GetTaskDisplayName(task);
 
                 await _notificationService.SendToUserAsync(
                     leaderId,
@@ -494,6 +499,19 @@ namespace BookfetSystem.Services.Implement
                         ["taskStatus"] = StaffTaskStatus.OVERDUE.ToString()
                     });
             }
+        }
+
+        private static string GetTaskDisplayName(OrderDetailStaffTask task)
+        {
+            return NormalizeTaskName(task.TaskName)
+                ?? NormalizeTaskName(task.TaskTemplate?.TaskName)
+                ?? "Công việc";
+        }
+
+        private static string? NormalizeTaskName(string? value)
+        {
+            var trimmed = value?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(int id)
