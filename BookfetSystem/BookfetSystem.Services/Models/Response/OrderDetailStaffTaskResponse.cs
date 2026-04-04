@@ -6,7 +6,6 @@ namespace BookfetSystem.Services.Models.Response
     {
         public int TaskId { get; set; }
         public int? OrderDetailId { get; set; }
-        public int TaskTemplateId { get; set; }
         public int? StaffId { get; set; }
         public string? TaskName { get; set; }
         public int? TaskStatus { get; set; }

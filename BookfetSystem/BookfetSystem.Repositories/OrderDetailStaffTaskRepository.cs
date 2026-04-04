@@ -31,11 +31,6 @@ namespace BookfetSystem.Repositories
                 query = query.Where(t => t.OrderDetailId == filter.OrderDetailId);
             }
 
-            if (filter.TaskTemplateId != 0)
-            {
-                query = query.Where(t => t.TaskTemplateId == filter.TaskTemplateId);
-            }
-
             if (filter.StaffId != null)
             {
                 query = query.Where(t => t.StaffId == filter.StaffId);

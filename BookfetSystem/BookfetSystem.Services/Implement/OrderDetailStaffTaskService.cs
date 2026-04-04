@@ -153,23 +153,32 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
-            if (taskTemplate == null || taskTemplate.IsActive != true)
+            var taskName = NormalizeTaskName(request.TaskName);
+            if (taskName == null)
             {
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Mẫu công việc không hợp lệ.",
+                    Message = "TaskName is required.",
                     Data = null
                 };
             }
 
-            var taskName = NormalizeTaskName(request.TaskName) ?? taskTemplate.TaskName ?? string.Empty;
+            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
+            if (taskTemplate == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
+                    Data = null
+                };
+            }
 
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
-                TaskTemplateId = request.TaskTemplateId,
+                TaskTemplateId = taskTemplate.TaskTemplateId,
                 TaskName = taskName,
                 StaffId = request.StaffId,
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),
@@ -185,7 +194,6 @@ namespace BookfetSystem.Services.Implement
                 {
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
-                    TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
                     TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
@@ -259,21 +267,30 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var taskTemplate = await _taskTemplateRepository.GetByIdAsync(request.TaskTemplateId);
-            if (taskTemplate == null || taskTemplate.IsActive != true)
+            var taskName = NormalizeTaskName(request.TaskName);
+            if (taskName == null)
             {
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Không tìm thấy mẫu công việc hợp lệ.",
+                    Message = "TaskName is required.",
                     Data = null
                 };
             }
 
-            var taskName = NormalizeTaskName(request.TaskName) ?? entity.TaskName ?? taskTemplate.TaskName ?? string.Empty;
+            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
+            if (taskTemplate == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
+                    Data = null
+                };
+            }
 
             entity.OrderDetailId = request.OrderDetailId;
-            entity.TaskTemplateId = request.TaskTemplateId;
+            entity.TaskTemplateId = taskTemplate.TaskTemplateId;
             entity.TaskName = taskName;
             entity.StaffId = request.StaffId;
             if (request.TaskStatus.HasValue)
@@ -293,7 +310,6 @@ namespace BookfetSystem.Services.Implement
                 {
                     TaskId = entity.TaskId,
                     OrderDetailId = entity.OrderDetailId,
-                    TaskTemplateId = entity.TaskTemplateId,
                     StaffId = entity.StaffId,
                     TaskName = entity.TaskName ?? string.Empty,
                     TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
@@ -377,7 +393,6 @@ namespace BookfetSystem.Services.Implement
             {
                 TaskId = entity.TaskId,
                 OrderDetailId = entity.OrderDetailId,
-                TaskTemplateId = entity.TaskTemplateId,
                 StaffId = entity.StaffId,
                 TaskName = taskName,
                 TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
@@ -512,6 +527,15 @@ namespace BookfetSystem.Services.Implement
         {
             var trimmed = value?.Trim();
             return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        }
+
+        private Task<TaskTemplate?> ResolveTemplateByTaskNameAsync(string taskName)
+        {
+            return _taskTemplateRepository
+                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = taskName })
+                .Where(t => t.IsActive == true && t.TaskName != null && t.TaskName.ToLower() == taskName.ToLower())
+                .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(int id)
