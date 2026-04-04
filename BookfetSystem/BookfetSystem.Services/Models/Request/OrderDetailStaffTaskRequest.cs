@@ -9,9 +9,6 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "OrderDetailId is required.")]
         public int OrderDetailId { get; set; }
 
-        [Required(ErrorMessage = "TaskTemplateId is required.")]
-        public int TaskTemplateId { get; set; }
-
         public string? TaskName { get; set; }
 
         [Required(ErrorMessage = "StaffId is required.")]
@@ -26,9 +23,6 @@ namespace BookfetSystem.Services.Models.Request
     {
         [Required(ErrorMessage = "OrderDetailId is required.")]
         public int OrderDetailId { get; set; }
-
-        [Required(ErrorMessage = "TaskTemplateId is required.")]
-        public int TaskTemplateId { get; set; }
 
         public string? TaskName { get; set; }
 
@@ -46,7 +40,6 @@ namespace BookfetSystem.Services.Models.Request
     public class OrderDetailStaffTaskFilterRequest
     {
         public int TaskId { get; set; }
-        public int? TaskTemplateId { get; set; }
         public int? OrderDetailId { get; set; }
         public int? StaffId { get; set; }
         public string? TaskName { get; set; }
