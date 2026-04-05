@@ -9,5 +9,6 @@ public enum CloudinaryFolder
     PartyCategory,
     FeedbackMenu,
     FeedbackService,
-    ExtraCharge
+    ExtraCharge,
+    User
 }
