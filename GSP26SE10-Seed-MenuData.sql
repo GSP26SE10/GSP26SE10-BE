@@ -171,43 +171,4 @@ JOIN party_category pc ON pc.party_category_name = x.party_category_name
 JOIN menu m ON m.menu_name = x.menu_name
 ON CONFLICT (party_category_id, menu_id) DO NOTHING;
 
--- Feedback menu (insert tường minh theo từng menu)
-INSERT INTO feedback_menu (order_id, order_detail_id, menu_id, customer_id, rating, comment, img, status) VALUES
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Úc' LIMIT 1), 4, 5, 'Thịt bò mềm, nêm nếm vừa, món nóng lên nhanh.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Úc' LIMIT 1), 4, 5, 'Khẩu phần ổn, hợp tiệc gia đình, tráng miệng khá ngon.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Đặc Biệt' LIMIT 1), 4, 5, 'Món premium rõ rệt, đặc biệt phần bò Wagyu rất chất lượng.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Đặc Biệt' LIMIT 1), 4, 5, 'Đồ ăn ngon nhưng giá cao, phù hợp tiệc cần sự sang trọng.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Tươi Sống' LIMIT 1), 4, 5, 'Hải sản tươi, mực và tôm ổn định, lên món đúng giờ.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Tươi Sống' LIMIT 1), 4, 5, 'Chất lượng ổn nhưng phần nước chấm hôm đó hơi nhạt.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Nướng Tiêu Xanh' LIMIT 1), 4, 5, 'Vị tiêu xanh đậm, các món nướng thơm và giữ nhiệt tốt.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Nướng Tiêu Xanh' LIMIT 1), 4, 5, 'Menu cân bằng, có đủ món chính và món mát cuối bữa.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Gia Đình' LIMIT 1), 4, 5, 'Người lớn tuổi ăn hợp, món không quá đậm vị.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Gia Đình' LIMIT 1), 4, 5, 'Tầm giá tốt, khẩu phần đủ nhiều cho nhóm 6-8 người.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Premium' LIMIT 1), 4, 5, 'Trình bày đẹp, nguyên liệu tốt, rất phù hợp tiệc cưới.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Bò Premium' LIMIT 1), 4, 5, 'Món ngon, chỉ tiếc thời gian ra món cuối hơi chậm.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Biển Xanh' LIMIT 1), 4, 5, 'Các món hải sản tươi, vị tổng thể hài hòa.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Biển Xanh' LIMIT 1), 4, 5, 'Sò điệp và hàu rất nổi bật, khách khen nhiều.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Premium' LIMIT 1), 4, 5, 'Menu premium đáng tiền, món chủ lực chất lượng cao.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Hải Sản Premium' LIMIT 1), 4, 5, 'Món ngon đồng đều, phù hợp tiếp khách doanh nghiệp.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Gà Nướng Mật Ong' LIMIT 1), 4, 5, 'Món gà thơm, trẻ em ăn được, tổng thể dễ dùng.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Gà Nướng Mật Ong' LIMIT 1), 4, 5, 'Hương vị ổn nhưng phần tráng miệng hơi đơn giản.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Gà Lá Chanh' LIMIT 1), 4, 5, 'Mùi lá chanh đặc trưng, các món gà làm rất tròn vị.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Gà Lá Chanh' LIMIT 1), 4, 5, 'Menu thanh vị, phù hợp tiệc thân mật và sinh nhật.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Chay Thanh Đạm' LIMIT 1), 4, 5, 'Món chay nhẹ bụng, nêm nếm vừa, dễ ăn cho nhiều người.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Chay Thanh Đạm' LIMIT 1), 4, 5, 'Rau củ tươi, món lên đẹp và không bị ngấy.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Chay Dinh Dưỡng' LIMIT 1), 4, 5, 'Thực đơn chay đa dạng, khẩu phần hợp lý theo giá.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Chay Dinh Dưỡng' LIMIT 1), 4, 5, 'Món chay trình bày tốt, khách lớn tuổi rất hài lòng.', NULL, 'ACTIVE'),
-
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Lẩu Nướng Tổng Hợp' LIMIT 1), 4, 5, 'Kết hợp lẩu nướng hợp lý, đi nhóm đông rất phù hợp.', NULL, 'ACTIVE'),
-(1, 1, (SELECT menu_id FROM menu WHERE menu_name = 'Combo Lẩu Nướng Tổng Hợp' LIMIT 1), 4, 5, 'Đồ ăn lên đều, không bị ngắt quãng trong suốt bữa tiệc.', NULL, 'ACTIVE');
+-- feedback_menu: không seed (cần order_id / order_detail_id thật; để trống cho dữ liệu runtime)
