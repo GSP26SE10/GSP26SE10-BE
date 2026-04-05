@@ -35,11 +35,6 @@ namespace BookfetSystem.Repositories
                 query = query.Where(dd => dd.IngredientId == filter.IngredientId);
             }
 
-            if (!string.IsNullOrWhiteSpace(filter.Unit))
-            {
-                query = query.Where(dd => dd.Unit != null && dd.Unit.ToLower().Contains(filter.Unit.ToLower()));
-            }
-
             return query.OrderBy(dd => dd.DishDetailId);
         }
 

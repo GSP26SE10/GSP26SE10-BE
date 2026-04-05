@@ -85,9 +85,7 @@ namespace BookfetSystem.Services.Implement
             var entity = new DishDetail
             {
                 DishId = request.DishId,
-                IngredientId = request.IngredientId,
-                Quantity = request.Quantity,
-                Unit = request.Unit?.Trim()
+                IngredientId = request.IngredientId
             };
 
             var affected = await _dishDetailRepository.CreateAsync(entity);
@@ -161,8 +159,6 @@ namespace BookfetSystem.Services.Implement
 
             entity.DishId = request.DishId;
             entity.IngredientId = request.IngredientId;
-            entity.Quantity = request.Quantity;
-            entity.Unit = request.Unit?.Trim();
 
             var affected = await _dishDetailRepository.UpdateAsync(entity);
             if (affected > 0)
