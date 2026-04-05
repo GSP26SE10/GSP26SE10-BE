@@ -13,10 +13,6 @@ public partial class DishDetail
 
     public int? IngredientId { get; set; }
 
-    public decimal? Quantity { get; set; }
-
-    public string Unit { get; set; }
-
     public virtual Dish Dish { get; set; }
 
     public virtual Ingredient Ingredient { get; set; }

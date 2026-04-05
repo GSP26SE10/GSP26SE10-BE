@@ -9,11 +9,6 @@ namespace BookfetSystem.Services.Models.Request
 
         [Required(ErrorMessage = "IngredientId is required.")]
         public int IngredientId { get; set; }
-
-        [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "Quantity must be greater than or equal to 0.")]
-        public decimal? Quantity { get; set; }
-
-        public string? Unit { get; set; }
     }
 
     public class DishDetailUpdateRequest
@@ -23,11 +18,6 @@ namespace BookfetSystem.Services.Models.Request
 
         [Required(ErrorMessage = "IngredientId is required.")]
         public int IngredientId { get; set; }
-
-        [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "Quantity must be greater than or equal to 0.")]
-        public decimal? Quantity { get; set; }
-
-        public string? Unit { get; set; }
     }
 
     public class DishDetailFilterRequest
@@ -35,6 +25,5 @@ namespace BookfetSystem.Services.Models.Request
         public int DishDetailId { get; set; }
         public int? DishId { get; set; }
         public int? IngredientId { get; set; }
-        public string? Unit { get; set; }
     }
 }

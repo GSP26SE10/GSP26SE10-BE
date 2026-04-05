@@ -29,7 +29,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] UserCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreateUser([FromForm] UserCreateRequest request)
         {
             var result = await _userService.CreateAsync(request);
             if (result.Success)
@@ -42,7 +43,8 @@ namespace BookfetSystem.API.Controllers
 
         [HttpPut("{id}")]
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateUser(int id, [FromBody] UserUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdateUser(int id, [FromForm] UserUpdateRequest request)
         {
             var result = await _userService.UpdateAsync(id, request);
             if (result.Success)

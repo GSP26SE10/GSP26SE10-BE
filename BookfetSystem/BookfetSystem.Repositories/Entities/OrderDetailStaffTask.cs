@@ -13,9 +13,9 @@ public partial class OrderDetailStaffTask
 
     public int TaskTemplateId { get; set; }
 
-    public string TaskName { get; set; }
-
     public int? StaffId { get; set; }
+
+    public string TaskName { get; set; }
 
     public string TaskStatus { get; set; }
 

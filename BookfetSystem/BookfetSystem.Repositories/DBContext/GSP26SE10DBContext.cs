@@ -211,12 +211,6 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.DishDetailId).HasColumnName("dish_detail_id");
             entity.Property(e => e.DishId).HasColumnName("dish_id");
             entity.Property(e => e.IngredientId).HasColumnName("ingredient_id");
-            entity.Property(e => e.Quantity)
-                .HasPrecision(10, 2)
-                .HasColumnName("quantity");
-            entity.Property(e => e.Unit)
-                .HasMaxLength(50)
-                .HasColumnName("unit");
 
             entity.HasOne(d => d.Dish).WithMany(p => p.DishDetails)
                 .HasForeignKey(d => d.DishId)

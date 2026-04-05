@@ -30,10 +30,16 @@ namespace BookfetSystem.Services.Implement
         public async Task<PagedResponse<PostBlockResponse>> GetAllPostBlockFilteredAsync(PostBlockFilterRequest request, int page, int pageSize)
         {
             var entityFilter = request.Adapt<PostBlock>();
+            // Mapster maps default Type=0 to string "0", which would make the repository filter
+            // Type.Contains("0") and return no rows — real values are enum descriptions ("Content", …).
             if (request.Type != 0)
             {
                 entityFilter.Type = EnumDescriptionHelper
                     .GetDescription((PostBlockType)request.Type);
+            }
+            else
+            {
+                entityFilter.Type = null;
             }
             var query = _postBlockRepository.GetAllPostBlockFiltered(entityFilter);
 

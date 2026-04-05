@@ -19,10 +19,12 @@ namespace BookfetSystem.Services.Implement
     public class UserService : IUserService
     {
         private readonly UserRepository _userRepository;
+        private readonly IImageStorageService _imageStorageService;
 
-        public UserService(UserRepository userRepository)
+        public UserService(UserRepository userRepository, IImageStorageService imageStorageService)
         {
             _userRepository = userRepository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<ApiResponse<UserResponse>> CreateAsync(UserCreateRequest request)
@@ -60,6 +62,26 @@ namespace BookfetSystem.Services.Implement
             entity.PasswordHash = HashPassword(request.Password);
             entity.CreatedAt = DateTime.UtcNow;
             entity.Status = UserStatus.ACTIVE.ToString();
+
+            try
+            {
+                if (request.AvatarFile != null)
+                {
+                    entity.Avatar = await _imageStorageService.UploadImageAsync(
+                        request.AvatarFile,
+                        CloudinaryFolder.User);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<UserResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to upload avatar: {ex.Message}",
+                    Data = null
+                };
+            }
+
             var affected = await _userRepository.CreateAsync(entity);
             if (affected > 0)
             {
@@ -180,6 +202,26 @@ namespace BookfetSystem.Services.Implement
 
             if (request.Status != null)
                 entity.Status = request.Status.ToString();
+
+            try
+            {
+                if (request.AvatarFile != null)
+                {
+                    entity.Avatar = await _imageStorageService.UploadImageAsync(
+                        request.AvatarFile,
+                        CloudinaryFolder.User,
+                        id);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<UserResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to upload avatar: {ex.Message}",
+                    Data = null
+                };
+            }
 
             var affected = await _userRepository.UpdateAsync(entity);
             if (affected > 0)

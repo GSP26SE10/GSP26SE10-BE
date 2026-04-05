@@ -1,4 +1,5 @@
 using BookfetSystem.Services.Enum;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,9 @@ namespace BookfetSystem.Services.Models.Request
         public string? Phone { get; set; }
         [Required(ErrorMessage = "RoleId is required.")]
         public int RoleId { get; set; }
+
+        /// <summary>Optional avatar image (JPG/PNG/WEBP). Uploaded to Cloudinary folder "user".</summary>
+        public IFormFile? AvatarFile { get; set; }
     }
 
     public class UserUpdateRequest
@@ -39,6 +43,9 @@ namespace BookfetSystem.Services.Models.Request
         public string? Phone { get; set; }
         [EnumDataType(typeof(UserStatus), ErrorMessage = "Invalid status value.")]
         public UserStatus? Status { get; set; }
+
+        /// <summary>Optional new avatar image (JPG/PNG/WEBP). Uploaded to Cloudinary folder "user".</summary>
+        public IFormFile? AvatarFile { get; set; }
     }
 
     public class UserFilterRequest
