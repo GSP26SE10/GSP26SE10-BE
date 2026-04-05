@@ -9,11 +9,10 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "OrderDetailId is required.")]
         public int OrderDetailId { get; set; }
 
+        public string? TaskName { get; set; }
+
         [Required(ErrorMessage = "StaffId is required.")]
         public int StaffId { get; set; }
-
-        [MaxLength(255)]
-        public string? TaskName { get; set; }
 
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
@@ -25,11 +24,10 @@ namespace BookfetSystem.Services.Models.Request
         [Required(ErrorMessage = "OrderDetailId is required.")]
         public int OrderDetailId { get; set; }
 
+        public string? TaskName { get; set; }
+
         [Required(ErrorMessage = "StaffId is required.")]
         public int StaffId { get; set; }
-
-        [MaxLength(255)]
-        public string? TaskName { get; set; }
 
         [EnumDataType(typeof(StaffTaskStatus), ErrorMessage = "Invalid task status. Use 1=PENDING, 2=IN_PROGRESS, 3=COMPLETED, 4=CANCELLED, 5=OVERDUE.")]
         public StaffTaskStatus? TaskStatus { get; set; }

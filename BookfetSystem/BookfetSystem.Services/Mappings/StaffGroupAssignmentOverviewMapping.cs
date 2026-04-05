@@ -89,6 +89,8 @@ namespace BookfetSystem.Services.Mappings
                        src => src.OrderDetailStaffTasks.OrderBy(t => t.TaskId));
 
             config.NewConfig<OrderDetailStaffTask, StaffGroupAssignmentTaskResponse>()
+               .Map(dest => dest.TaskName,
+                    src => src.TaskName)
                .Map(dest => dest.Assignees,
                     src => GetAssignees(src))
                .Map(dest => dest.StartTime,

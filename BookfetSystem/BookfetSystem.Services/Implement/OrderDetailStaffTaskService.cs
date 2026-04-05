@@ -18,6 +18,7 @@ namespace BookfetSystem.Services.Implement
         private readonly OrderDetailStaffTaskRepository _taskRepository;
         private readonly OrderDetailRepository _orderDetailRepository;
         private readonly UserRepository _userRepository;
+        private readonly TaskTemplateRepository _taskTemplateRepository;
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
         private readonly INotificationService _notificationService;
@@ -27,6 +28,7 @@ namespace BookfetSystem.Services.Implement
             OrderDetailStaffTaskRepository taskRepository,
             OrderDetailRepository orderDetailRepository,
             UserRepository userRepository,
+            TaskTemplateRepository taskTemplateRepository,
             StaffGroupRepository staffGroupRepository,
             StaffGroupMemberRepository staffGroupMemberRepository,
             INotificationService notificationService,
@@ -35,6 +37,7 @@ namespace BookfetSystem.Services.Implement
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
             _userRepository = userRepository;
+            _taskTemplateRepository = taskTemplateRepository;
             _staffGroupRepository = staffGroupRepository;
             _staffGroupMemberRepository = staffGroupMemberRepository;
             _notificationService = notificationService;
@@ -68,7 +71,7 @@ namespace BookfetSystem.Services.Implement
             await MarkOverdueTasksAndNotifyLeadersAsync();
 
             var entityFilter = request.Adapt<OrderDetailStaffTask>();
-            var query = _taskRepository.GetAllOrderDetailStaffTaskFiltered(entityFilter);
+            var query = _taskRepository.GetAllOrderDetailStaffTaskFiltered(entityFilter, request.TaskName);
 
             var totalCount = await query.CountAsync();
 
@@ -149,11 +152,35 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+
+            var taskName = NormalizeTaskName(request.TaskName);
+            if (taskName == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "TaskName is required.",
+                    Data = null
+                };
+            }
+
+            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
+            if (taskTemplate == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
+                    Data = null
+                };
+            }
+
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
+                TaskTemplateId = taskTemplate.TaskTemplateId,
+                TaskName = taskName,
                 StaffId = request.StaffId,
-                TaskName = request.TaskName?.Trim(),
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
@@ -240,9 +267,32 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            var taskName = NormalizeTaskName(request.TaskName);
+            if (taskName == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "TaskName is required.",
+                    Data = null
+                };
+            }
+
+            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
+            if (taskTemplate == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
+                    Data = null
+                };
+            }
+
             entity.OrderDetailId = request.OrderDetailId;
+            entity.TaskTemplateId = taskTemplate.TaskTemplateId;
+            entity.TaskName = taskName;
             entity.StaffId = request.StaffId;
-            entity.TaskName = request.TaskName?.Trim();
             if (request.TaskStatus.HasValue)
             {
                 entity.TaskStatus = request.TaskStatus.Value.ToString();
@@ -337,14 +387,14 @@ namespace BookfetSystem.Services.Implement
 
             var staff = await _userRepository.GetByIdAsync(staffId);
             var staffDisplayName = staff?.FullName ?? "Một nhân viên";
-            var taskName = entity.TaskName ?? "Công việc";
+            var taskName = GetTaskDisplayName(entity);
 
             var response = new OrderDetailStaffTaskResponse
             {
                 TaskId = entity.TaskId,
                 OrderDetailId = entity.OrderDetailId,
                 StaffId = entity.StaffId,
-                TaskName = entity.TaskName ?? string.Empty,
+                TaskName = taskName,
                 TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
@@ -449,7 +499,7 @@ namespace BookfetSystem.Services.Implement
                 var leaderId = staffGroup.LeaderId.Value;
 
                 var staffDisplayName = task.Staff?.FullName ?? "Một nhân viên";
-                var taskName = task.TaskName ?? "Công việc";
+                var taskName = GetTaskDisplayName(task);
 
                 await _notificationService.SendToUserAsync(
                     leaderId,
@@ -464,6 +514,28 @@ namespace BookfetSystem.Services.Implement
                         ["taskStatus"] = StaffTaskStatus.OVERDUE.ToString()
                     });
             }
+        }
+
+        private static string GetTaskDisplayName(OrderDetailStaffTask task)
+        {
+            return NormalizeTaskName(task.TaskName)
+                ?? NormalizeTaskName(task.TaskTemplate?.TaskName)
+                ?? "Công việc";
+        }
+
+        private static string? NormalizeTaskName(string? value)
+        {
+            var trimmed = value?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        }
+
+        private Task<TaskTemplate?> ResolveTemplateByTaskNameAsync(string taskName)
+        {
+            return _taskTemplateRepository
+                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = taskName })
+                .Where(t => t.IsActive == true && t.TaskName != null && t.TaskName.ToLower() == taskName.ToLower())
+                .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(int id)

@@ -106,6 +106,7 @@ builder.Services.AddScoped<OrderServiceRepository>();
 builder.Services.AddScoped<ContactRequestRepository>();
 builder.Services.AddScoped<UserDeviceRepository>();
 builder.Services.AddScoped<NotificationRepository>();
+builder.Services.AddScoped<TaskTemplateRepository>();
 builder.Services.AddHttpClient<GeminiService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
@@ -156,6 +157,7 @@ builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IMenuSuggestionService, MenuSuggestionService>();
+builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
 builder.Services.AddSingleton<IApiKeyProvider, ApiKeyProvider>();
 builder.Services.AddSignalR();
 

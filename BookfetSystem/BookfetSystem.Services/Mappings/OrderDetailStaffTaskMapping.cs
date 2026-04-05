@@ -22,6 +22,8 @@ namespace BookfetSystem.Services.Mappings
             config.NewConfig<OrderDetailStaffTask, OrderDetailStaffTaskResponse>()
                   .Map(dest => dest.StaffName,
                        src => src.Staff != null ? src.Staff.FullName : null)
+                   .Map(dest => dest.TaskName,
+                       src => src.TaskName)
                   .Map(dest => dest.TaskStatus,
                        src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus));
 
