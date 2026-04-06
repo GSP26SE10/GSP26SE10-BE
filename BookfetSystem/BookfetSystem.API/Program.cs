@@ -130,6 +130,7 @@ builder.Services.AddScoped<IMenuCategoryService, MenuCategoryService>();
 builder.Services.AddScoped<IBlogCategoryService, BlogCategoryService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IPostBlockService, PostBlockService>();
+builder.Services.AddScoped<IExtraChargeCatalogService, ExtraChargeCatalogService>();
 builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddScoped<IDishCategoryService, DishCategoryService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
