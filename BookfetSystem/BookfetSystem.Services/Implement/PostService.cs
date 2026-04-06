@@ -258,10 +258,45 @@ namespace BookfetSystem.Services.Implement
             entity.Slug = normalizedSlug;
             entity.Title = normalizedTitle;
             entity.Excerpt = request.Excerpt?.Trim();
-            entity.Coverimage = GetCoverImageJsonString(request.CoverImage);
             entity.Status = request.Status.ToString();
             entity.BlogCategoryId = request.BlogCategoryId;
             entity.UpdatedAt = DateTime.UtcNow;
+
+            if (request.CoverImageFiles != null && request.CoverImageFiles.Count > 5)
+            {
+                return new ApiResponse<PostResponse>
+                {
+                    Success = false,
+                    Message = "Maximum 5 cover images are allowed per request.",
+                    Data = null
+                };
+            }
+
+            if (request.CoverImageFiles != null && request.CoverImageFiles.Count > 0)
+            {
+                try
+                {
+                    var uploadedUrls = new List<string>();
+                    foreach (var file in request.CoverImageFiles.Where(f => f != null))
+                    {
+                        var url = await _imageStorageService.UploadImageAsync(file, CloudinaryFolder.Post, id);
+                        uploadedUrls.Add(url);
+                    }
+
+                    entity.Coverimage = uploadedUrls.Count > 0
+                        ? JsonSerializer.Serialize(uploadedUrls)
+                        : null;
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<PostResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload post cover images: {ex.Message}",
+                        Data = null
+                    };
+                }
+            }
 
             if (request.Status == PostStatus.Published && entity.PublishedAt == null)
             {
@@ -318,13 +353,6 @@ namespace BookfetSystem.Services.Implement
                 Message = "Failed to delete post.",
                 Data = false
             };
-        }
-
-        private static string? GetCoverImageJsonString(JsonElement? value)
-        {
-            if (!value.HasValue || value.Value.ValueKind == JsonValueKind.Null || value.Value.ValueKind == JsonValueKind.Undefined)
-                return null;
-            return value.Value.GetRawText();
         }
 
         private static PostResponse ToResponse(Post entity)

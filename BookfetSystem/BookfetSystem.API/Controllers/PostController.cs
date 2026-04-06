@@ -43,7 +43,8 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdatePost(int id, [FromBody] PostUpdateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UpdatePost(int id, [FromForm] PostUpdateRequest request)
         {
             var result = await _postService.UpdateAsync(id, request);
             if (result.Success)
