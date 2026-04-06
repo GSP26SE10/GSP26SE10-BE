@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using BookfetSystem.Services.Enum;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace BookfetSystem.Services.Models.Request
 {
@@ -39,9 +38,10 @@ namespace BookfetSystem.Services.Models.Request
         public string? Excerpt { get; set; }
 
         /// <summary>
-        /// JSON array of image URLs for cover image gallery.
+        /// Optional image files for cover image gallery (max 5 files).
+        /// If provided, cover images will be replaced by uploaded files.
         /// </summary>
-        public JsonElement? CoverImage { get; set; }
+        public List<IFormFile>? CoverImageFiles { get; set; }
 
         [EnumDataType(typeof(PostStatus), ErrorMessage = "Invalid status value.")]
         public PostStatus Status { get; set; }
