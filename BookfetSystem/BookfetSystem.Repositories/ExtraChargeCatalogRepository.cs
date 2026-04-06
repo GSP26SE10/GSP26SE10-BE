@@ -1,7 +1,9 @@
 using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookfetSystem.Repositories
 {
@@ -41,6 +43,11 @@ namespace BookfetSystem.Repositories
             }
 
             return query.OrderBy(x => x.ExtraChargeCatalogId);
+        }
+
+        public Task<bool> HasRelatedDataAsync(int extraChargeCatalogId)
+        {
+            return _context.OrderDetailExtraCharges.AnyAsync(x => x.ExtraChargeCatalogId == extraChargeCatalogId);
         }
     }
 }

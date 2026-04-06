@@ -33,6 +33,9 @@ namespace BookfetSystem.Services.Models.Request
     {
         public int PostBlockId { get; set; }
         public int PostId { get; set; }
-        public int Type { get; set; }
+        /// <summary>
+        /// Filter by block type enum value.
+        /// </summary>
+        public PostBlockType? Type { get; set; }
     }
 }

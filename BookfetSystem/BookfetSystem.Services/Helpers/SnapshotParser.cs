@@ -89,5 +89,25 @@ namespace BookfetSystem.Services.Helpers
                 return null;
             }
         }
+
+        /// <summary>
+        /// Parses a raw JSON string to list of string.
+        /// Returns null if input is null/empty or parse fails.
+        /// Use for JSONB fields storing array of image URLs.
+        /// </summary>
+        public static List<string>? TryParseJsonToStringList(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(json, JsonOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

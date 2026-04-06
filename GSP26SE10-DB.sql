@@ -373,7 +373,7 @@ CREATE TABLE post (
     slug VARCHAR(255) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
     excerpt TEXT,
-    cover_image_id INT NULL,
+    coverImage JSONB,
     status VARCHAR(50) NOT NULL,
     published_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -403,10 +403,10 @@ INSERT INTO role (role_name) VALUES
 
 -- USERS
 INSERT INTO users (full_name, email, password_hash, user_name, phone, avatar, address, status, role_id) VALUES
-('Admin', 'admin@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '123 Admin St', 'ACTIVE', 1),
+('Admin', 'hanmi200485@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '123 Admin St', 'ACTIVE', 1),
 ('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '456 Leader St', 'ACTIVE', 2),
 ('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '789 Staff St', 'ACTIVE', 3),
-('Nguyen Van A', 'user@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '321 User St', 'ACTIVE', 4);
+('Phan Võ Thành Tài', 'phanvothanhtai1007@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
@@ -417,9 +417,9 @@ INSERT INTO party_category (party_category_name, description, status, number_of_
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
-('Main Course', 'Món chính'),
-('Dessert', 'Món tráng miệng'),
-('Beverage', 'Nước uống');
+('Món chính', 'Món chính'),
+('Món tráng miệng', 'Món tráng miệng'),
+('Nước uống', 'Nước uống');
 
 -- DISH
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
@@ -435,17 +435,19 @@ INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, 
 
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
-('Chicken', 'Fresh chicken meat', '/images/ing_chicken.jpg'),
-('Beef', 'Premium beef', '/images/ing_beef.jpg'),
-('Milk', 'Fresh milk', '/images/ing_milk.jpg'),
-('Orange', 'Fresh oranges', '/images/ing_orange.jpg');
+('Thịt gà', 'Thịt gà tươi', '/images/ing_chicken.jpg'),
+('Thịt bò', 'Thịt bò cao cấp', '/images/ing_beef.jpg'),
+('Sữa tươi', 'Sữa tươi', '/images/ing_milk.jpg'),
+('Cam tươi', 'Cam tươi', '/images/ing_orange.jpg');
 
 -- DISH DETAIL
 INSERT INTO dish_detail (dish_id, ingredient_id) VALUES
 (1, 1),
 (2, 2),
 (3, 3),
-(4, 4);
+(4, 4),
+(5, 1),
+(6, 2);
 
 -- MENU CATEGORY
 INSERT INTO menu_category (menu_category_name, description, status) VALUES
