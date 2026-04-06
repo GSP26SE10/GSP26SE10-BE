@@ -17,9 +17,9 @@ WHERE NOT EXISTS (
 INSERT INTO dish_category (dish_category_name, description)
 SELECT * FROM (
     VALUES
-    ('Main Course', 'Món chính'),
-    ('Dessert', 'Món tráng miệng'),
-    ('Beverage', 'Nước uống')
+    ('Món chính', 'Món chính'),
+    ('Món tráng miệng', 'Món tráng miệng'),
+    ('Nước uống', 'Nước uống')
 ) AS v(dish_category_name, description)
 WHERE NOT EXISTS (
     SELECT 1 FROM dish_category dc WHERE dc.dish_category_name = v.dish_category_name
@@ -48,7 +48,21 @@ SELECT * FROM (
     ('Thịt gà', 'Thịt gà tươi', '/images/ing_chicken.jpg'),
     ('Nấm kim châm', 'Nấm kim châm tươi', '/images/ing_enoki.jpg'),
     ('Rau củ tổng hợp', 'Rau củ theo mùa', '/images/ing_veggie.jpg'),
-    ('Đậu hũ non', 'Đậu hũ non cho món chay', '/images/ing_tofu.jpg')
+    ('Đậu hũ non', 'Đậu hũ non cho món chay', '/images/ing_tofu.jpg'),
+    ('Cua hoàng đế', 'Cua hoàng đế tươi', '/images/ing_crab.jpg'),
+    ('Cá tầm', 'Cá tầm tươi', '/images/ing_sturgeon.jpg'),
+    ('Hạt sen', 'Hạt sen dùng cho món chè', '/images/ing_lotus_seed.jpg'),
+    ('Vải tươi', 'Trái vải tươi cho thức uống/tráng miệng', '/images/ing_lychee.jpg'),
+    ('Thịt cừu', 'Thịt cừu cho món nướng', '/images/ing_lamb.jpg'),
+    ('Hàu tươi', 'Hàu tươi dùng cho món nướng', '/images/ing_oyster.jpg'),
+    ('Sò điệp', 'Sò điệp tươi', '/images/ing_scallop.jpg'),
+    ('Tôm hùm', 'Tôm hùm tươi', '/images/ing_lobster.jpg'),
+    ('Ghẹ tươi', 'Ghẹ tươi cho món rang me', '/images/ing_crab_blue.jpg'),
+    ('Sữa tươi', 'Sữa tươi dùng cho món flan và tráng miệng', '/images/ing_milk.jpg'),
+    ('Chanh dây', 'Chanh dây tươi cho thức uống', '/images/ing_passionfruit.jpg'),
+    ('Đào', 'Đào ngâm/đào tươi cho thức uống', '/images/ing_peach.jpg'),
+    ('Cam', 'Cam tươi cho thức uống', '/images/ing_orange.jpg'),
+    ('Nước suối', 'Nước uống đóng chai', '/images/ing_water.jpg')
 ) AS v(ingredient_name, description, img)
 WHERE NOT EXISTS (
     SELECT 1 FROM ingredient i WHERE i.ingredient_name = v.ingredient_name
@@ -61,47 +75,132 @@ INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, 
 SELECT v.dish_name, v.price, v.description, 'AVAILABLE', v.img, dc.dish_category_id, v.note
 FROM (
     VALUES
-    ('Bò cuộn nấm kim châm',165000,'Thịt bò cuộn nấm kim châm nướng thơm, vị đậm đà.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Dùng ngon với sốt tiêu đen'),
-    ('Bò nướng sa tế',175000,'Bò ướp sa tế cay nhẹ, nướng vừa chín tới.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Cấp độ cay vừa'),
-    ('Bò lúc lắc khoai tây',185000,'Bò lúc lắc mềm mọng ăn kèm khoai tây chiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món bán chạy'),
-    ('Bò áp chảo sốt tiêu đen',198000,'Thịt bò áp chảo sốt tiêu đen thơm nồng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Khuyên dùng chín vừa'),
-    ('Sườn bò nướng mật ong',210000,'Sườn bò nướng mật ong vị ngọt mặn hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món chủ lực nhóm bò'),
-    ('Lẩu bò nấm',249000,'Lẩu bò nấm nóng hổi với nước dùng thanh ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Khẩu phần 3-4 người'),
-    ('Bò nhúng dấm',195000,'Bò thái lát nhúng dấm ăn kèm rau tươi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Phong cách truyền thống'),
-    ('Tôm sú nướng muối ớt',189000,'Tôm sú tươi nướng muối ớt đậm vị biển.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Cay nhẹ'),
-    ('Mực hấp gừng hành',168000,'Mực hấp gừng hành giữ độ ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Mềm và thơm'),
-    ('Cá hồi sốt bơ tỏi',238000,'Phi lê cá hồi áp chảo với sốt bơ tỏi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Béo nhẹ, thơm tỏi'),
-    ('Hàu nướng phô mai',179000,'Hàu nướng phủ phô mai béo thơm.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Phù hợp tiệc tối'),
-    ('Ghẹ rang me',259000,'Ghẹ rang me vị chua ngọt hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Đặc trưng hải sản'),
-    ('Sò điệp nướng mỡ hành',229000,'Sò điệp nướng mỡ hành rắc đậu phộng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Thơm béo'),
-    ('Lẩu hải sản Tomyum',279000,'Lẩu hải sản vị Tomyum chua cay kiểu Thái.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Khẩu phần 4-5 người'),
-    ('Gà nướng mật ong',159000,'Gà nướng mật ong da giòn, thịt mềm.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Hợp khẩu vị số đông'),
-    ('Gà hấp lá chanh',149000,'Gà hấp lá chanh thơm nhẹ, dễ ăn.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món truyền thống'),
-    ('Gà chiên nước mắm',155000,'Gà chiên nước mắm đậm vị, vàng giòn.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Đưa cơm'),
-    ('Lẩu gà lá é',189000,'Lẩu gà lá é thanh cay, mùi thơm đặc trưng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Khẩu phần 3-4 người'),
-    ('Nấm đùi gà nướng giấy bạc',119000,'Nấm đùi gà nướng giấy bạc thơm bơ tỏi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món chay phổ biến'),
-    ('Đậu hũ non sốt nấm đông cô',109000,'Đậu hũ non sốt nấm đông cô thanh nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Ít béo'),
-    ('Rau củ xào ngũ sắc',99000,'Rau củ xào ngũ sắc giòn ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Bổ sung chất xơ'),
-    ('Lẩu nấm chay',169000,'Lẩu nấm chay nước dùng thanh ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Phù hợp tiệc chay'),
-    ('Chè khúc bạch',49000,'Chè khúc bạch thanh mát ăn kèm trái cây.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Dessert','Dùng lạnh'),
-    ('Bánh flan caramel',39000,'Bánh flan mềm mịn, vị caramel nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Dessert','Món tráng miệng quen thuộc'),
-    ('Trái cây theo mùa',45000,'Đĩa trái cây tươi thay đổi theo mùa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Dessert','Thanh mát sau bữa ăn'),
-    ('Trà đào cam sả',42000,'Trà đào cam sả thơm mát, dễ uống.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Beverage','Món nước bán chạy'),
-    ('Nước chanh dây',35000,'Nước chanh dây chua ngọt hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Beverage','Giải khát tốt'),
-    ('Nước suối tinh khiết',18000,'Nước suối đóng chai tiện lợi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Beverage','Tính theo chai'),
-    ('Bò Wagyu nướng đá',320000,'Thịt bò Wagyu nướng trên đá nóng, giữ trọn vị ngọt thịt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món cao cấp cho menu premium'),
-    ('Sườn cừu nướng thảo mộc',285000,'Sườn cừu nướng cùng thảo mộc, thơm mềm đặc trưng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Phù hợp tiệc cao cấp'),
-    ('Tôm hùm bỏ lò phô mai',359000,'Tôm hùm bỏ lò phủ phô mai béo ngậy.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món nổi bật nhóm hải sản premium'),
-    ('Cua hoàng đế hấp',399000,'Cua hoàng đế hấp giữ vị ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Khẩu phần cao cấp'),
-    ('Cá tầm nướng muối ớt',269000,'Cá tầm nướng muối ớt đậm đà, thịt chắc.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Hợp tiệc doanh nghiệp'),
-    ('Cơm chiên hải sản',119000,'Cơm chiên hải sản tơi ngon, đậm vị.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món tinh bột cân bằng thực đơn'),
-    ('Mì xào bò rau củ',109000,'Mì xào bò cùng rau củ giòn ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Phù hợp menu gia đình'),
-    ('Đậu hũ chiên sả ớt',89000,'Đậu hũ chiên giòn cùng sả ớt thơm cay nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Main Course','Món chay phổ thông'),
-    ('Chè hạt sen long nhãn',55000,'Chè hạt sen long nhãn thanh ngọt, dễ dùng sau bữa tiệc.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Dessert','Món tráng miệng truyền thống'),
-    ('Trà vải',39000,'Trà vải mát lạnh, thơm nhẹ vị trái cây.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Beverage','Hợp khẩu vị số đông')
+    ('Bò cuộn nấm kim châm',165000,'Thịt bò cuộn nấm kim châm nướng thơm, vị đậm đà.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Dùng ngon với sốt tiêu đen'),
+    ('Bò nướng sa tế',175000,'Bò ướp sa tế cay nhẹ, nướng vừa chín tới.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Cấp độ cay vừa'),
+    ('Bò lúc lắc khoai tây',185000,'Bò lúc lắc mềm mọng ăn kèm khoai tây chiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món bán chạy'),
+    ('Bò áp chảo sốt tiêu đen',198000,'Thịt bò áp chảo sốt tiêu đen thơm nồng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Khuyên dùng chín vừa'),
+    ('Sườn bò nướng mật ong',210000,'Sườn bò nướng mật ong vị ngọt mặn hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món chủ lực nhóm bò'),
+    ('Lẩu bò nấm',249000,'Lẩu bò nấm nóng hổi với nước dùng thanh ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Khẩu phần 3-4 người'),
+    ('Bò nhúng dấm',195000,'Bò thái lát nhúng dấm ăn kèm rau tươi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Phong cách truyền thống'),
+    ('Tôm sú nướng muối ớt',189000,'Tôm sú tươi nướng muối ớt đậm vị biển.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Cay nhẹ'),
+    ('Mực hấp gừng hành',168000,'Mực hấp gừng hành giữ độ ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Mềm và thơm'),
+    ('Cá hồi sốt bơ tỏi',238000,'Phi lê cá hồi áp chảo với sốt bơ tỏi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Béo nhẹ, thơm tỏi'),
+    ('Hàu nướng phô mai',179000,'Hàu nướng phủ phô mai béo thơm.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Phù hợp tiệc tối'),
+    ('Ghẹ rang me',259000,'Ghẹ rang me vị chua ngọt hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Đặc trưng hải sản'),
+    ('Sò điệp nướng mỡ hành',229000,'Sò điệp nướng mỡ hành rắc đậu phộng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Thơm béo'),
+    ('Lẩu hải sản Tomyum',279000,'Lẩu hải sản vị Tomyum chua cay kiểu Thái.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Khẩu phần 4-5 người'),
+    ('Gà nướng mật ong',159000,'Gà nướng mật ong da giòn, thịt mềm.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Hợp khẩu vị số đông'),
+    ('Gà hấp lá chanh',149000,'Gà hấp lá chanh thơm nhẹ, dễ ăn.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món truyền thống'),
+    ('Gà chiên nước mắm',155000,'Gà chiên nước mắm đậm vị, vàng giòn.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Đưa cơm'),
+    ('Lẩu gà lá é',189000,'Lẩu gà lá é thanh cay, mùi thơm đặc trưng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Khẩu phần 3-4 người'),
+    ('Nấm đùi gà nướng giấy bạc',119000,'Nấm đùi gà nướng giấy bạc thơm bơ tỏi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món chay phổ biến'),
+    ('Đậu hũ non sốt nấm đông cô',109000,'Đậu hũ non sốt nấm đông cô thanh nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Ít béo'),
+    ('Rau củ xào ngũ sắc',99000,'Rau củ xào ngũ sắc giòn ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Bổ sung chất xơ'),
+    ('Lẩu nấm chay',169000,'Lẩu nấm chay nước dùng thanh ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Phù hợp tiệc chay'),
+    ('Chè khúc bạch',49000,'Chè khúc bạch thanh mát ăn kèm trái cây.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món tráng miệng','Dùng lạnh'),
+    ('Bánh flan caramel',39000,'Bánh flan mềm mịn, vị caramel nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món tráng miệng','Món tráng miệng quen thuộc'),
+    ('Trái cây theo mùa',45000,'Đĩa trái cây tươi thay đổi theo mùa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món tráng miệng','Thanh mát sau bữa ăn'),
+    ('Trà đào cam sả',42000,'Trà đào cam sả thơm mát, dễ uống.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Nước uống','Món nước bán chạy'),
+    ('Nước chanh dây',35000,'Nước chanh dây chua ngọt hài hòa.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Nước uống','Giải khát tốt'),
+    ('Nước suối tinh khiết',18000,'Nước suối đóng chai tiện lợi.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Nước uống','Tính theo chai'),
+    ('Bò Wagyu nướng đá',320000,'Thịt bò Wagyu nướng trên đá nóng, giữ trọn vị ngọt thịt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món cao cấp cho menu premium'),
+    ('Sườn cừu nướng thảo mộc',285000,'Sườn cừu nướng cùng thảo mộc, thơm mềm đặc trưng.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Phù hợp tiệc cao cấp'),
+    ('Tôm hùm bỏ lò phô mai',359000,'Tôm hùm bỏ lò phủ phô mai béo ngậy.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món nổi bật nhóm hải sản premium'),
+    ('Cua hoàng đế hấp',399000,'Cua hoàng đế hấp giữ vị ngọt tự nhiên.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Khẩu phần cao cấp'),
+    ('Cá tầm nướng muối ớt',269000,'Cá tầm nướng muối ớt đậm đà, thịt chắc.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Hợp tiệc doanh nghiệp'),
+    ('Cơm chiên hải sản',119000,'Cơm chiên hải sản tơi ngon, đậm vị.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món tinh bột cân bằng thực đơn'),
+    ('Mì xào bò rau củ',109000,'Mì xào bò cùng rau củ giòn ngọt.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Phù hợp menu gia đình'),
+    ('Đậu hũ chiên sả ớt',89000,'Đậu hũ chiên giòn cùng sả ớt thơm cay nhẹ.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món chính','Món chay phổ thông'),
+    ('Chè hạt sen long nhãn',55000,'Chè hạt sen long nhãn thanh ngọt, dễ dùng sau bữa tiệc.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Món tráng miệng','Món tráng miệng truyền thống'),
+    ('Trà vải',39000,'Trà vải mát lạnh, thơm nhẹ vị trái cây.','https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png','Nước uống','Hợp khẩu vị số đông')
 ) AS v(dish_name, price, description, img, category_name, note)
 JOIN dish_category dc ON dc.dish_category_name = v.category_name
 WHERE NOT EXISTS (SELECT 1 FROM dish d WHERE d.dish_name = v.dish_name);
+
+-- Dish detail (mapping món -> nhiều nguyên liệu, idempotent)
+INSERT INTO dish_detail (dish_id, ingredient_id)
+SELECT d.dish_id, i.ingredient_id
+FROM (
+    VALUES
+    ('Bò cuộn nấm kim châm', 'Thịt bò'),
+    ('Bò cuộn nấm kim châm', 'Nấm kim châm'),
+    ('Bò nướng sa tế', 'Thịt bò'),
+    ('Bò nướng sa tế', 'Rau củ tổng hợp'),
+    ('Bò lúc lắc khoai tây', 'Thịt bò'),
+    ('Bò lúc lắc khoai tây', 'Rau củ tổng hợp'),
+    ('Bò áp chảo sốt tiêu đen', 'Thịt bò'),
+    ('Sườn bò nướng mật ong', 'Thịt bò'),
+    ('Sườn bò nướng mật ong', 'Rau củ tổng hợp'),
+    ('Lẩu bò nấm', 'Thịt bò'),
+    ('Lẩu bò nấm', 'Nấm kim châm'),
+    ('Lẩu bò nấm', 'Rau củ tổng hợp'),
+    ('Bò nhúng dấm', 'Thịt bò'),
+    ('Bò nhúng dấm', 'Rau củ tổng hợp'),
+    ('Tôm sú nướng muối ớt', 'Tôm sú'),
+    ('Tôm sú nướng muối ớt', 'Rau củ tổng hợp'),
+    ('Mực hấp gừng hành', 'Mực tươi'),
+    ('Mực hấp gừng hành', 'Rau củ tổng hợp'),
+    ('Cá hồi sốt bơ tỏi', 'Cá hồi'),
+    ('Cá hồi sốt bơ tỏi', 'Rau củ tổng hợp'),
+    ('Hàu nướng phô mai', 'Hàu tươi'),
+    ('Hàu nướng phô mai', 'Rau củ tổng hợp'),
+    ('Ghẹ rang me', 'Ghẹ tươi'),
+    ('Ghẹ rang me', 'Rau củ tổng hợp'),
+    ('Sò điệp nướng mỡ hành', 'Sò điệp'),
+    ('Sò điệp nướng mỡ hành', 'Rau củ tổng hợp'),
+    ('Lẩu hải sản Tomyum', 'Tôm sú'),
+    ('Lẩu hải sản Tomyum', 'Mực tươi'),
+    ('Lẩu hải sản Tomyum', 'Rau củ tổng hợp'),
+    ('Gà nướng mật ong', 'Thịt gà'),
+    ('Gà nướng mật ong', 'Rau củ tổng hợp'),
+    ('Gà hấp lá chanh', 'Thịt gà'),
+    ('Gà hấp lá chanh', 'Rau củ tổng hợp'),
+    ('Gà chiên nước mắm', 'Thịt gà'),
+    ('Gà chiên nước mắm', 'Rau củ tổng hợp'),
+    ('Lẩu gà lá é', 'Thịt gà'),
+    ('Lẩu gà lá é', 'Rau củ tổng hợp'),
+    ('Nấm đùi gà nướng giấy bạc', 'Nấm kim châm'),
+    ('Nấm đùi gà nướng giấy bạc', 'Rau củ tổng hợp'),
+    ('Đậu hũ non sốt nấm đông cô', 'Đậu hũ non'),
+    ('Đậu hũ non sốt nấm đông cô', 'Nấm kim châm'),
+    ('Rau củ xào ngũ sắc', 'Rau củ tổng hợp'),
+    ('Lẩu nấm chay', 'Nấm kim châm'),
+    ('Lẩu nấm chay', 'Đậu hũ non'),
+    ('Lẩu nấm chay', 'Rau củ tổng hợp'),
+    ('Chè khúc bạch', 'Rau củ tổng hợp'),
+    ('Bánh flan caramel', 'Sữa tươi'),
+    ('Trái cây theo mùa', 'Rau củ tổng hợp'),
+    ('Trà đào cam sả', 'Đào'),
+    ('Trà đào cam sả', 'Cam'),
+    ('Nước chanh dây', 'Chanh dây'),
+    ('Nước suối tinh khiết', 'Nước suối'),
+    ('Bò Wagyu nướng đá', 'Thịt bò'),
+    ('Bò Wagyu nướng đá', 'Rau củ tổng hợp'),
+    ('Sườn cừu nướng thảo mộc', 'Thịt cừu'),
+    ('Sườn cừu nướng thảo mộc', 'Rau củ tổng hợp'),
+    ('Tôm hùm bỏ lò phô mai', 'Tôm hùm'),
+    ('Tôm hùm bỏ lò phô mai', 'Rau củ tổng hợp'),
+    ('Cua hoàng đế hấp', 'Cua hoàng đế'),
+    ('Cua hoàng đế hấp', 'Rau củ tổng hợp'),
+    ('Cá tầm nướng muối ớt', 'Cá tầm'),
+    ('Cá tầm nướng muối ớt', 'Rau củ tổng hợp'),
+    ('Cơm chiên hải sản', 'Tôm sú'),
+    ('Cơm chiên hải sản', 'Rau củ tổng hợp'),
+    ('Mì xào bò rau củ', 'Thịt bò'),
+    ('Mì xào bò rau củ', 'Rau củ tổng hợp'),
+    ('Đậu hũ chiên sả ớt', 'Đậu hũ non'),
+    ('Đậu hũ chiên sả ớt', 'Rau củ tổng hợp'),
+    ('Chè hạt sen long nhãn', 'Hạt sen'),
+    ('Trà vải', 'Vải tươi')
+) AS x(dish_name, ingredient_name)
+JOIN dish d ON d.dish_name = x.dish_name
+JOIN ingredient i ON i.ingredient_name = x.ingredient_name
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM dish_detail dd
+    WHERE dd.dish_id = d.dish_id
+      AND dd.ingredient_id = i.ingredient_id
+);
 
 -- ============
 -- Menus (2 cũ + 10 mới)
