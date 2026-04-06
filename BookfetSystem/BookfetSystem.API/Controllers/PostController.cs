@@ -33,7 +33,8 @@ namespace BookfetSystem.API.Controllers
         //}
 
         [HttpPost]
-        public async Task<ActionResult> CreatePost([FromBody] PostCreateRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> CreatePost([FromForm] PostCreateRequest request)
         {
             var result = await _postService.CreateAsync(request);
             if (result.Success)

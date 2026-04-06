@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace BookfetSystem.Services.Models.Response
 {
@@ -10,7 +11,7 @@ namespace BookfetSystem.Services.Models.Response
         public string? Slug { get; set; }
         public string? Title { get; set; }
         public string? Excerpt { get; set; }
-        public int? CoverImageId { get; set; }
+        public List<string>? CoverImage { get; set; }
         public string? Status { get; set; }
         public DateTime? PublishedAt { get; set; }
         public DateTime? CreatedAt { get; set; }

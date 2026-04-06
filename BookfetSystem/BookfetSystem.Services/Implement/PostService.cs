@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
@@ -8,6 +9,9 @@ using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -16,11 +20,16 @@ namespace BookfetSystem.Services.Implement
     {
         private readonly PostRepository _postRepository;
         private readonly BlogCategoryRepository _blogCategoryRepository;
+            private readonly IImageStorageService _imageStorageService;
 
-        public PostService(PostRepository postRepository, BlogCategoryRepository blogCategoryRepository)
+        public PostService(
+            PostRepository postRepository,
+            BlogCategoryRepository blogCategoryRepository,
+            IImageStorageService imageStorageService)
         {
             _postRepository = postRepository;
             _blogCategoryRepository = blogCategoryRepository;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<PostResponse>> GetAllPostFilteredAsync(PostFilterRequest request, int page, int pageSize)
@@ -29,11 +38,11 @@ namespace BookfetSystem.Services.Implement
             var query = _postRepository.GetAllPostFiltered(entityFilter);
 
             var totalCount = await query.CountAsync();
-            var items = await query
-                .ProjectToType<PostResponse>()
+            var entities = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+            var items = entities.Select(ToResponse).ToList();
 
             return new PagedResponse<PostResponse>
             {
@@ -57,7 +66,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var response = entity.Adapt<PostResponse>();
+            var response = ToResponse(entity);
             return new ApiResponse<PostResponse>
             {
                 Success = true,
@@ -121,7 +130,7 @@ namespace BookfetSystem.Services.Implement
                 Slug = normalizedSlug,
                 Title = normalizedTitle,
                 Excerpt = request.Excerpt?.Trim(),
-                CoverImageId = request.CoverImageId,
+                Coverimage = null,
                 Status = request.Status.ToString(),
                 BlogCategoryId = request.BlogCategoryId,
                 PublishedAt = request.Status == PostStatus.Published ? DateTime.UtcNow : null,
@@ -129,10 +138,46 @@ namespace BookfetSystem.Services.Implement
                 UpdatedAt = DateTime.UtcNow
             };
 
+            if (request.CoverImageFiles != null && request.CoverImageFiles.Count > 5)
+            {
+                return new ApiResponse<PostResponse>
+                {
+                    Success = false,
+                    Message = "Maximum 5 cover images are allowed per request.",
+                    Data = null
+                };
+            }
+
+            if (request.CoverImageFiles != null && request.CoverImageFiles.Count > 0)
+            {
+                try
+                {
+                    var uploadedUrls = new List<string>();
+                    foreach (var file in request.CoverImageFiles.Where(f => f != null))
+                    {
+                        var url = await _imageStorageService.UploadImageAsync(file, CloudinaryFolder.Post);
+                        uploadedUrls.Add(url);
+                    }
+
+                    entity.Coverimage = uploadedUrls.Count > 0
+                        ? JsonSerializer.Serialize(uploadedUrls)
+                        : null;
+                }
+                catch (Exception ex)
+                {
+                    return new ApiResponse<PostResponse>
+                    {
+                        Success = false,
+                        Message = $"Failed to upload post cover images: {ex.Message}",
+                        Data = null
+                    };
+                }
+            }
+
             var affected = await _postRepository.CreateAsync(entity);
             if (affected > 0)
             {
-                var response = entity.Adapt<PostResponse>();
+                var response = ToResponse(entity);
                 return new ApiResponse<PostResponse>
                 {
                     Success = true,
@@ -213,7 +258,7 @@ namespace BookfetSystem.Services.Implement
             entity.Slug = normalizedSlug;
             entity.Title = normalizedTitle;
             entity.Excerpt = request.Excerpt?.Trim();
-            entity.CoverImageId = request.CoverImageId;
+            entity.Coverimage = GetCoverImageJsonString(request.CoverImage);
             entity.Status = request.Status.ToString();
             entity.BlogCategoryId = request.BlogCategoryId;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -226,7 +271,7 @@ namespace BookfetSystem.Services.Implement
             var affected = await _postRepository.UpdateAsync(entity);
             if (affected > 0)
             {
-                var response = entity.Adapt<PostResponse>();
+                var response = ToResponse(entity);
                 return new ApiResponse<PostResponse>
                 {
                     Success = true,
@@ -272,6 +317,31 @@ namespace BookfetSystem.Services.Implement
                 Success = false,
                 Message = "Failed to delete post.",
                 Data = false
+            };
+        }
+
+        private static string? GetCoverImageJsonString(JsonElement? value)
+        {
+            if (!value.HasValue || value.Value.ValueKind == JsonValueKind.Null || value.Value.ValueKind == JsonValueKind.Undefined)
+                return null;
+            return value.Value.GetRawText();
+        }
+
+        private static PostResponse ToResponse(Post entity)
+        {
+            return new PostResponse
+            {
+                PostId = entity.PostId,
+                BlogCategoryId = entity.BlogCategoryId,
+                BlogCategoryName = entity.BlogCategory?.Name,
+                Slug = entity.Slug,
+                Title = entity.Title,
+                Excerpt = entity.Excerpt,
+                CoverImage = SnapshotParser.TryParseJsonToStringList(entity.Coverimage),
+                Status = entity.Status,
+                PublishedAt = entity.PublishedAt,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt
             };
         }
     }

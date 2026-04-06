@@ -800,7 +800,9 @@ public partial class GSP26SE10DBContext : DbContext
 
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.BlogCategoryId).HasColumnName("blog_category_id");
-            entity.Property(e => e.CoverImageId).HasColumnName("cover_image_id");
+            entity.Property(e => e.Coverimage)
+                .HasColumnType("jsonb")
+                .HasColumnName("coverimage");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");

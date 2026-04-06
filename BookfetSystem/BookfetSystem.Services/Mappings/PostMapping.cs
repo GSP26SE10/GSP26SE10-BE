@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
@@ -10,7 +11,8 @@ namespace BookfetSystem.Services.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<PostFilterRequest, Post>()
-                .IgnoreNullValues(true);
+                .IgnoreNullValues(true)
+                .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
 
             config.NewConfig<Post, PostResponse>()
                 .Map(dest => dest.BlogCategoryName, src => src.BlogCategory != null ? src.BlogCategory.Name : null);

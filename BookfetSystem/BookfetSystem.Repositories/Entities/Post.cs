@@ -17,7 +17,7 @@ public partial class Post
 
     public string Excerpt { get; set; }
 
-    public int? CoverImageId { get; set; }
+    public string Coverimage { get; set; }
 
     public string Status { get; set; }
 
