@@ -1661,18 +1661,17 @@ namespace BookfetSystem.Services.Services
 <div style=""border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px;background:#f8fafc;"">
   {imageHtml}
   <p style=""margin:10px 0 4px 0;font-weight:700;"">{menuName}</p>
-  <p style=""margin:0;color:#334155;"">Mã tiệc: <strong>#{detail.OrderDetailId}</strong></p>
   <p style=""margin:4px 0 0 0;color:#334155;"">Thời gian bắt đầu: <strong>{startTimeText}</strong></p>
 </div>";
 
-                    var plainText = $"tiec #{detail.OrderDetailId} ({menuName}) bat dau luc {startTimeText}";
+                    var plainText = $"{menuName} bắt đầu lúc {startTimeText}";
                     return (html, plainText);
                 })
                 .ToList();
 
             return (
                 string.Join(string.Empty, detailCards.Select(x => x.html)),
-                detailCards.Count == 0 ? "khong co du lieu tiec" : string.Join("; ", detailCards.Select(x => x.plainText))
+                detailCards.Count == 0 ? "không có dữ liệu tiệc" : string.Join("; ", detailCards.Select(x => x.plainText))
             );
         }
 
