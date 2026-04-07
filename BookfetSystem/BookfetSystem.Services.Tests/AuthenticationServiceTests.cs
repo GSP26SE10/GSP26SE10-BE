@@ -20,6 +20,8 @@ public class AuthenticationServiceTests
     private Mock<ICache> _cacheMock = null!;
     private AuthenticationService _sut = null!;
 
+    #region Init
+
     [TestInitialize]
     public void Setup()
     {
@@ -52,7 +54,10 @@ public class AuthenticationServiceTests
             _cacheMock.Object,
             configuration);
     }
+    #endregion
 
+    #region Register / Sign Up
+    //Function 1 - TC1
     [TestMethod]
     public async Task Register_WhenValidRequest_ShouldCreateInactiveUserAndSendVerificationEmail()
     {
@@ -93,7 +98,72 @@ public class AuthenticationServiceTests
                 null),
             Times.Once);
     }
+    //Function 1 - TC2
+    [TestMethod]
+    public async Task Register_WhenEmailAlreadyExists_ShouldReturnFailure()
+    {
+        _dbContext.Users.Add(new User
+        {
+            UserName = "existing-user",
+            Email = "existing@test.com",
+            FullName = "Existing User",
+            Status = "ACTIVE",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
 
+        var request = new RegisterRequest
+        {
+            UserName = "newuser",
+            Password = "123456",
+            FullName = "New User",
+            Email = "existing@test.com"
+        };
+
+        var result = await _sut.Register(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Email is already registered.");
+        _emailServiceMock.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
+    }
+
+    //Function 1 - TC3
+    [TestMethod]
+    public async Task Register_WhenUsernameAlreadyExists_ShouldReturnFailure()
+    {
+        _dbContext.Users.Add(new User
+        {
+            UserName = "duplicated-user",
+            Email = "another@test.com",
+            FullName = "Existing User",
+            Status = "ACTIVE",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var request = new RegisterRequest
+        {
+            UserName = "duplicated-user",
+            Password = "123456",
+            FullName = "New User",
+            Email = "new-email@test.com"
+        };
+
+        var result = await _sut.Register(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Username already exists.");
+        _emailServiceMock.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
+    }
+
+    #endregion
+
+    #region Login / Sign In
+    //Function 2 - TC1
     [TestMethod]
     public async Task Login_WhenCredentialsAreValidAndUserIsActive_ShouldReturnAccessToken()
     {
@@ -125,7 +195,66 @@ public class AuthenticationServiceTests
         result.Data.AccessToken.Should().NotBeNullOrWhiteSpace();
         result.Message.Should().Be("Login successful");
     }
+    //Function 2 - TC3
+    [TestMethod]
+    public async Task Login_WhenPasswordIsWrong_ShouldReturnFailure()
+    {
+        _dbContext.Users.Add(new User
+        {
+            UserName = "active-user",
+            Email = "active@test.com",
+            FullName = "Active User",
+            Status = "ACTIVE",
+            RoleId = 4,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
 
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = "active@test.com",
+            Password = "wrong-password"
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeNull();
+        result.Message.Should().Be("Email/Username or password is invalid");
+    }
+    //Function 2 - TC5
+    [TestMethod]
+    public async Task Login_WhenUserIsInactive_ShouldReturnFailure()
+    {
+        _dbContext.Users.Add(new User
+        {
+            UserName = "inactive-user",
+            Email = "inactive@test.com",
+            FullName = "Inactive User",
+            Status = "INACTIVE",
+            RoleId = 4,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = "inactive@test.com",
+            Password = "123456"
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeNull();
+        result.Message.Should().Be("Your account is not active");
+    }
+
+    #endregion
+    #region Verify Email
+    //Function 3 - TC1
     [TestMethod]
     public async Task VerifyEmail_WhenCodeMatches_ShouldActivateUserAndClearCache()
     {
@@ -162,123 +291,7 @@ public class AuthenticationServiceTests
 
         _cacheMock.Verify(c => c.Remove($"verify:{email}"), Times.Once);
     }
-
-    [TestMethod]
-    public async Task Register_WhenEmailAlreadyExists_ShouldReturnFailure()
-    {
-        _dbContext.Users.Add(new User
-        {
-            UserName = "existing-user",
-            Email = "existing@test.com",
-            FullName = "Existing User",
-            Status = "ACTIVE",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-            CreatedAt = DateTime.UtcNow
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var request = new RegisterRequest
-        {
-            UserName = "newuser",
-            Password = "123456",
-            FullName = "New User",
-            Email = "existing@test.com"
-        };
-
-        var result = await _sut.Register(request);
-
-        result.Success.Should().BeFalse();
-        result.Data.Should().BeFalse();
-        result.Message.Should().Be("Email is already registered.");
-        _emailServiceMock.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
-    }
-
-    [TestMethod]
-    public async Task Register_WhenUsernameAlreadyExists_ShouldReturnFailure()
-    {
-        _dbContext.Users.Add(new User
-        {
-            UserName = "duplicated-user",
-            Email = "another@test.com",
-            FullName = "Existing User",
-            Status = "ACTIVE",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-            CreatedAt = DateTime.UtcNow
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var request = new RegisterRequest
-        {
-            UserName = "duplicated-user",
-            Password = "123456",
-            FullName = "New User",
-            Email = "new-email@test.com"
-        };
-
-        var result = await _sut.Register(request);
-
-        result.Success.Should().BeFalse();
-        result.Data.Should().BeFalse();
-        result.Message.Should().Be("Username already exists.");
-        _emailServiceMock.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
-    }
-
-    [TestMethod]
-    public async Task Login_WhenPasswordIsWrong_ShouldReturnFailure()
-    {
-        _dbContext.Users.Add(new User
-        {
-            UserName = "active-user",
-            Email = "active@test.com",
-            FullName = "Active User",
-            Status = "ACTIVE",
-            RoleId = 4,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-            CreatedAt = DateTime.UtcNow
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var request = new LoginRequest
-        {
-            UserNameOrEmail = "active@test.com",
-            Password = "wrong-password"
-        };
-
-        var result = await _sut.Login(request);
-
-        result.Success.Should().BeFalse();
-        result.Data.Should().BeNull();
-        result.Message.Should().Be("Email/Username or password is invalid");
-    }
-
-    [TestMethod]
-    public async Task Login_WhenUserIsInactive_ShouldReturnFailure()
-    {
-        _dbContext.Users.Add(new User
-        {
-            UserName = "inactive-user",
-            Email = "inactive@test.com",
-            FullName = "Inactive User",
-            Status = "INACTIVE",
-            RoleId = 4,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-            CreatedAt = DateTime.UtcNow
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var request = new LoginRequest
-        {
-            UserNameOrEmail = "inactive@test.com",
-            Password = "123456"
-        };
-
-        var result = await _sut.Login(request);
-
-        result.Success.Should().BeFalse();
-        result.Data.Should().BeNull();
-        result.Message.Should().Be("Your account is not active");
-    }
-
+    //Function 3 - TC2
     [TestMethod]
     public async Task VerifyEmail_WhenOtpIsWrong_ShouldReturnFailure()
     {
@@ -308,7 +321,7 @@ public class AuthenticationServiceTests
         result.Message.Should().Be("Invalid verification code.");
         _cacheMock.Verify(c => c.Remove(It.IsAny<string>()), Times.Never);
     }
-
+    //Function 3 - TC3
     [TestMethod]
     public async Task VerifyEmail_WhenOtpExpired_ShouldReturnFailure()
     {
@@ -325,4 +338,6 @@ public class AuthenticationServiceTests
         result.Data.Should().BeFalse();
         result.Message.Should().Contain("Code has expired or does not exist");
     }
+
+    #endregion
 }
