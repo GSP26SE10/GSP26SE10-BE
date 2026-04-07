@@ -291,7 +291,7 @@ namespace BookfetSystem.Services.Implement
     <p style=""margin:0 0 14px 0;"">
       Trạng thái:
       <span style=""display:inline-block;padding:4px 10px;border-radius:999px;background:#fef9c3;color:#854d0e;font-weight:700;"">
-        CHỜ ADMIN DUYỆT
+        CHỜ DUYỆT
       </span>
     </p>
     <div style=""margin:12px 0 14px 0;padding:12px;border-radius:10px;background:#ecfdf5;border:1px solid #bbf7d0;color:#166534;"">
