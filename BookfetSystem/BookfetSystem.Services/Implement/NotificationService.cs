@@ -7,6 +7,7 @@ using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using BookfetSystem.Services.Options;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,17 +22,20 @@ namespace BookfetSystem.Services.Implement
         private readonly UserDeviceRepository _userDeviceRepository;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<NotificationService> _logger;
+        private readonly NotificationOptions _notificationOptions;
 
         public NotificationService(
             NotificationRepository notificationRepository,
             UserDeviceRepository userDeviceRepository,
             IHttpClientFactory httpClientFactory,
-            ILogger<NotificationService> logger)
+            ILogger<NotificationService> logger,
+            Microsoft.Extensions.Options.IOptions<NotificationOptions> notificationOptions)
         {
             _notificationRepository = notificationRepository;
             _userDeviceRepository = userDeviceRepository;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _notificationOptions = notificationOptions.Value ?? new NotificationOptions();
         }
 
         public async Task SendToUserAsync(int userId, string title, string body, NotificationType type, Dictionary<string, string>? data = null)
@@ -137,12 +141,15 @@ namespace BookfetSystem.Services.Implement
                 }
             }
 
+            var iconUrl = _notificationOptions.ExpoIconUrl;
+
             var payload = new
             {
                 to = token,
                 title,
                 body,
-                data = payloadData
+                data = payloadData,
+                icon = string.IsNullOrWhiteSpace(iconUrl) ? null : iconUrl
             };
 
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
