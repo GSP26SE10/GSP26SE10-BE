@@ -10,8 +10,8 @@ COPY BookfetSystem/BookfetSystem.Repositories/BookfetSystem.Repositories.csproj 
 COPY BookfetSystem/BookfetSystem.Services/BookfetSystem.Services.csproj BookfetSystem.Services/
 COPY BookfetSystem/BookfetSystem.API/BookfetSystem.API.csproj BookfetSystem.API/
 
-# Restore
-RUN dotnet restore
+# Restore only API dependency graph to avoid test-project coupling in container builds
+RUN dotnet restore BookfetSystem.API/BookfetSystem.API.csproj
 
 # Copy source code
 COPY BookfetSystem/BookfetSystem.Repositories/ BookfetSystem.Repositories/
