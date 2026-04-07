@@ -423,10 +423,10 @@ INSERT INTO dish_category (dish_category_name, description) VALUES
 
 -- DISH
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
-('Gà nướng mật ong', 150000, 'Gà nướng mật ong mềm thơm', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Có thể chọn mức cay nhẹ'),
-('Bít tết bò', 200000, 'Bò bít tết cao cấp', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 1, 'Chế biến theo yêu cầu độ chín'),
-('Kem dừa', 50000, 'Kem dừa tươi mát', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 2, 'Có chứa sữa'),
-('Nước cam tươi', 30000, 'Nước cam vắt tươi', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1773752703/dish/dish1.png', 3, 'Không thêm đường');
+('Gà nướng mật ong', 150000, 'Gà nướng mật ong mềm thơm', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554489/dish/ganuongmatong.png', 1, 'Có thể chọn mức cay nhẹ'),
+('Bít tết bò', 200000, 'Bò bít tết cao cấp', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554579/dish/bobittet.png', 1, 'Chế biến theo yêu cầu độ chín'),
+('Kem dừa', 50000, 'Kem dừa tươi mát', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554663/dish/kemdua.png', 2, 'Có chứa sữa'),
+('Nước cam tươi', 30000, 'Nước cam vắt tươi', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554902/dish/nuocamtuoi.png', 3, 'Không thêm đường');
 
 -- DISH TEST (2.5k + 2.5k)
 INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
@@ -435,10 +435,10 @@ INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, 
 
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
-('Thịt gà', 'Thịt gà tươi', '/images/ing_chicken.jpg'),
-('Thịt bò', 'Thịt bò cao cấp', '/images/ing_beef.jpg'),
-('Sữa tươi', 'Sữa tươi', '/images/ing_milk.jpg'),
-('Cam tươi', 'Cam tươi', '/images/ing_orange.jpg');
+('Thịt gà', 'Thịt gà tươi', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775555058/ingredient/thitga.png'),
+('Thịt bò', 'Thịt bò cao cấp', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775555110/ingredient/thitbo.png'),
+('Sữa tươi', 'Sữa tươi', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775555227/ingredient/suatuoi.png'),
+('Cam tươi', 'Cam tươi', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775555272/ingredient/camtuoi.png');
 
 -- DISH DETAIL
 INSERT INTO dish_detail (dish_id, ingredient_id) VALUES
