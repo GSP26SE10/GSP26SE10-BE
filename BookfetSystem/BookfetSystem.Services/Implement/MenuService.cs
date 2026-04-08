@@ -250,6 +250,16 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (request.BasePrice.HasValue && request.BasePrice.Value < 0)
+            {
+                return new ApiResponse<MenuResponse>
+                {
+                    Success = false,
+                    Message = "BasePrice must be greater than or equal to 0.",
+                    Data = null
+                };
+            }
+
             var partyCategoryIds = NormalizeIdList(request.PartyCategoryIds);
             if (partyCategoryIds.Count == 0)
             {
