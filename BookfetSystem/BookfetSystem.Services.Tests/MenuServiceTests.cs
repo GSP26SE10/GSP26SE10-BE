@@ -460,6 +460,67 @@ public class MenuServiceTests
     }
     #endregion
 
+    // Function 7 — bỏ TC5 ở unit test: gửi chữ thay vì số là việc route/model binding (400 Bad Request), không đi qua MenuService; dùng Postman.
+    #region Function 7 - Delete Menu
+    //Function 7 - TC1
+    [TestMethod]
+    public async Task DeleteMenu_WhenValidId_ShouldSucceed()
+    {
+        var result = await _sut.DeleteAsync(5);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
+        result.Message.Should().Be("Menu deleted successfully.");
+
+        var gone = await _dbContext.Menus.FindAsync(5);
+        gone.Should().BeNull();
+    }
+
+    //Function 7 - TC2
+    [TestMethod]
+    public async Task DeleteMenu_WhenIdDoesNotExist_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(999);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu not found.");
+    }
+
+    //Function 7 - TC3
+    [TestMethod]
+    public async Task DeleteMenu_WhenIdIsZero_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(0);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu not found.");
+    }
+
+    //Function 7 - TC4
+    [TestMethod]
+    public async Task DeleteMenu_WhenIdIsNegative_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(-1);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu not found.");
+    }
+
+    //Function 7 - TC6
+    [TestMethod]
+    public async Task DeleteMenu_WhenSameIdDeletedTwice_SecondShouldFail()
+    {
+        var first = await _sut.DeleteAsync(4);
+        first.Success.Should().BeTrue();
+
+        var second = await _sut.DeleteAsync(4);
+
+        second.Success.Should().BeFalse();
+        second.Message.Should().Be("Menu not found.");
+    }
+    #endregion
+
     private async Task SeedMenusAsync()
     {
         var menuCategory = new MenuCategory
