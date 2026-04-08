@@ -195,6 +195,36 @@ public class AuthenticationServiceTests
         result.Data.AccessToken.Should().NotBeNullOrWhiteSpace();
         result.Message.Should().Be("Login successful");
     }
+    //Function 2 - TC2
+    [TestMethod]
+    public async Task Login_WhenLoginByEmail_ShouldReturnAccessToken()
+    {
+        var password = "123456";
+        _dbContext.Users.Add(new User
+        {
+            UserName = "email-login-user",
+            Email = "email-login@test.com",
+            FullName = "Email Login User",
+            Status = "ACTIVE",
+            RoleId = 4,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = "email-login@test.com",
+            Password = password
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Email.Should().Be("email-login@test.com");
+        result.Data.AccessToken.Should().NotBeNullOrWhiteSpace();
+    }
     //Function 2 - TC3
     [TestMethod]
     public async Task Login_WhenPasswordIsWrong_ShouldReturnFailure()
@@ -215,6 +245,22 @@ public class AuthenticationServiceTests
         {
             UserNameOrEmail = "active@test.com",
             Password = "wrong-password"
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeNull();
+        result.Message.Should().Be("Email/Username or password is invalid");
+    }
+    //Function 2 - TC4
+    [TestMethod]
+    public async Task Login_WhenUserDoesNotExist_ShouldReturnFailure()
+    {
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = "not-found@test.com",
+            Password = "123456"
         };
 
         var result = await _sut.Login(request);
@@ -250,6 +296,38 @@ public class AuthenticationServiceTests
         result.Success.Should().BeFalse();
         result.Data.Should().BeNull();
         result.Message.Should().Be("Your account is not active");
+    }
+    //Function 2 - TC6
+    [TestMethod]
+    public async Task Login_WhenUserNameOrEmailIsMissing_ShouldReturnFailure()
+    {
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = null,
+            Password = "123456"
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeNull();
+        result.Message.Should().Be("Email/Username or password is invalid");
+    }
+    //Function 2 - TC7
+    [TestMethod]
+    public async Task Login_WhenPasswordIsMissing_ShouldReturnFailure()
+    {
+        var request = new LoginRequest
+        {
+            UserNameOrEmail = "not-found@test.com",
+            Password = null
+        };
+
+        var result = await _sut.Login(request);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeNull();
+        result.Message.Should().Be("Email/Username or password is invalid");
     }
 
     #endregion
@@ -337,6 +415,20 @@ public class AuthenticationServiceTests
         result.Success.Should().BeFalse();
         result.Data.Should().BeFalse();
         result.Message.Should().Contain("Code has expired or does not exist");
+    }
+    //Function 3 - TC4
+    [TestMethod]
+    public async Task VerifyEmail_WhenOtpIsMissing_ShouldReturnFailure()
+    {
+        var result = await _sut.VerifyEmail(new VerifyEmailRequest
+        {
+            Email = "user@test.com",
+            Code = ""
+        });
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Email and verification code are required.");
     }
 
     #endregion

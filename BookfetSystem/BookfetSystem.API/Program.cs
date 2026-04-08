@@ -22,11 +22,16 @@ using BookfetSystem.Services.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using BookfetSystem.Services.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using BookfetSystem.API.Filters;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<NormalizePaginationActionFilter>();
+});
+builder.Services.AddScoped<NormalizePaginationActionFilter>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
