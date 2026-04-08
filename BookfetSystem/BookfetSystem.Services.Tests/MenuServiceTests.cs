@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
@@ -277,6 +278,185 @@ public class MenuServiceTests
 
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("Failed to upload menu image");
+    }
+    #endregion
+
+    // Function 6
+    #region Function 6 - Update Menu
+    //Function 6 - TC1
+    [TestMethod]
+    public async Task UpdateMenu_WhenValidRequest_ShouldSuccess()
+    {
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "BBQ Premium Renamed",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 310_000,
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu updated successfully.");
+        result.Data!.MenuName.Should().Be("BBQ Premium Renamed");
+    }
+
+    //Function 6 - TC2
+    [TestMethod]
+    public async Task UpdateMenu_WithImage_ShouldSuccess()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(
+                It.IsAny<IFormFile>(),
+                CloudinaryFolder.Menu,
+                2,
+                default))
+            .ReturnsAsync("https://cdn.test/menu-2.jpg");
+
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "Seafood Deluxe Updated",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 460_000,
+            Status = MenuStatus.AVAILABLE,
+            ImgFiles = new List<IFormFile> { CreateFormFile("update.jpg", "image/jpeg") }
+        };
+
+        var result = await _sut.UpdateAsync(2, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu updated successfully.");
+    }
+
+    //Function 6 - TC3
+    [TestMethod]
+    public async Task UpdateMenu_WithoutImage_ShouldSuccess()
+    {
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "Vegetarian Set Updated",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 260_000,
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(3, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu updated successfully.");
+        result.Data!.MenuName.Should().Be("Vegetarian Set Updated");
+    }
+
+    //Function 6 - TC5
+    [TestMethod]
+    public async Task UpdateMenu_WhenPriceIsNegative_ShouldFail()
+    {
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "Family Combo",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = -1,
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(4, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("BasePrice must be greater than or equal to 0.");
+    }
+
+    //Function 6 - TC6
+    [TestMethod]
+    public async Task UpdateMenu_WhenNameIsEmpty_ShouldFail()
+    {
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "   ",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 200_000,
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(4, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("MenuName is required.");
+    }
+
+    //Function 6 - TC7
+    [TestMethod]
+    public async Task UpdateMenu_WhenUploadThrowsException_ShouldFail()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(
+                It.IsAny<IFormFile>(),
+                CloudinaryFolder.Menu,
+                5,
+                default))
+            .ThrowsAsync(new Exception("Invalid image format"));
+
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "Birthday Party Set Updated",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 360_000,
+            Status = MenuStatus.AVAILABLE,
+            ImgFiles = new List<IFormFile> { CreateFormFile("bad.bin", "application/octet-stream") }
+        };
+
+        var result = await _sut.UpdateAsync(5, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Failed to upload menu image");
+    }
+
+    //Function 6 - TC8
+    [TestMethod]
+    public async Task UpdateMenu_WhenIdDoesNotExist_ShouldFail()
+    {
+        var request = new MenuUpdateRequest
+        {
+            MenuName = "Ghost Menu",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 100_000,
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(999, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu not found.");
+    }
+
+    //Function 6 - TC10 (dùng menu 4 để tránh xung đột với TC1 đã đổi tên menu 1)
+    [TestMethod]
+    public async Task UpdateMenu_WhenPayloadUnchanged_ShouldStillSuccess()
+    {
+        var menu = await _dbContext.Menus.FindAsync(4);
+        menu.Should().NotBeNull();
+        var status = int.TryParse(menu!.Status, out var s) ? (MenuStatus)s : MenuStatus.AVAILABLE;
+
+        var request = new MenuUpdateRequest
+        {
+            MenuName = menu.MenuName,
+            MenuCategoryId = menu.MenuCategoryId!.Value,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = menu.BasePrice,
+            Status = status
+        };
+
+        var result = await _sut.UpdateAsync(4, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu updated successfully.");
     }
     #endregion
 
