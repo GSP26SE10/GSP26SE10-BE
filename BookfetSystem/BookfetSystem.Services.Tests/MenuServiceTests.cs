@@ -4,7 +4,10 @@ using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
+using BookfetSystem.Services.Models.Response;
 using FluentAssertions;
+using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -15,10 +18,14 @@ public class MenuServiceTests
 {
     private GSP26SE10DBContext _dbContext = null!;
     private MenuService _sut = null!;
+    private Mock<IImageStorageService> _imageStorageServiceMock = null!;
 
     [TestInitialize]
     public async Task SetupAsync()
     {
+        TypeAdapterConfig.GlobalSettings.NewConfig<Menu, MenuResponse>()
+            .Map(dest => dest.Status, src => ParseNullableInt(src.Status));
+
         var options = new DbContextOptionsBuilder<GSP26SE10DBContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
@@ -29,14 +36,14 @@ public class MenuServiceTests
         var menuCategoryRepository = new MenuCategoryRepository(_dbContext);
         var partyCategoryRepository = new PartyCategoryRepository(_dbContext);
         var partyCategoryMenuRepository = new PartyCategoryMenuRepository(_dbContext);
-        var imageStorageServiceMock = new Mock<IImageStorageService>();
+        _imageStorageServiceMock = new Mock<IImageStorageService>();
 
         _sut = new MenuService(
             menuRepository,
             menuCategoryRepository,
             partyCategoryRepository,
             partyCategoryMenuRepository,
-            imageStorageServiceMock.Object);
+            _imageStorageServiceMock.Object);
 
         await SeedMenusAsync();
     }
@@ -151,6 +158,128 @@ public class MenuServiceTests
     }
     #endregion
 
+    #region Function 5 - Create Menu
+    //Function 5 - TC1
+    [TestMethod]
+    public async Task CreateMenu_WithValidRequestAndImage_ShouldSuccess()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(It.IsAny<IFormFile>(), It.IsAny<BookfetSystem.Services.Enum.CloudinaryFolder>(), null, default))
+            .ReturnsAsync("https://cdn.test/menu-1.jpg");
+
+        var request = new MenuCreateRequest
+        {
+            MenuName = "New Menu With Image",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 120_000,
+            ImgFiles = new List<IFormFile> { CreateFormFile("menu.jpg", "image/jpeg") }
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Message.Should().Be("Menu created successfully.");
+    }
+
+    //Function 5 - TC2
+    [TestMethod]
+    public async Task CreateMenu_WithValidRequestAndNoImage_ShouldSuccess()
+    {
+        var request = new MenuCreateRequest
+        {
+            MenuName = "New Menu No Image",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 100_000
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Message.Should().Be("Menu created successfully.");
+    }
+
+    //Function 5 - TC3
+    [TestMethod]
+    public async Task CreateMenu_WhenNameMissing_ShouldFail()
+    {
+        var request = new MenuCreateRequest
+        {
+            MenuName = "",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 100_000
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("MenuName is required.");
+    }
+
+    //Function 5 - TC4
+    [TestMethod]
+    public async Task CreateMenu_WhenPriceIsNegative_ShouldFail()
+    {
+        var request = new MenuCreateRequest
+        {
+            MenuName = "Negative Price Menu",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = -1
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("BasePrice must be greater than or equal to 0.");
+    }
+
+    //Function 5 - TC5
+    [TestMethod]
+    public async Task CreateMenu_WhenPartyCategoryMissing_ShouldFail()
+    {
+        var request = new MenuCreateRequest
+        {
+            MenuName = "Menu Missing Party Category",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int>(),
+            BasePrice = 100_000
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("At least one PartyCategoryId is required.");
+    }
+
+    //Function 5 - TC7
+    [TestMethod]
+    public async Task CreateMenu_WhenUploadThrowsException_ShouldFail()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(It.IsAny<IFormFile>(), It.IsAny<BookfetSystem.Services.Enum.CloudinaryFolder>(), null, default))
+            .ThrowsAsync(new Exception("Unsupported media type"));
+
+        var request = new MenuCreateRequest
+        {
+            MenuName = "Menu Upload Fail",
+            MenuCategoryId = 1,
+            PartyCategoryIds = new List<int> { 1 },
+            BasePrice = 100_000,
+            ImgFiles = new List<IFormFile> { CreateFormFile("audio.mp3", "audio/mpeg") }
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Failed to upload menu image");
+    }
+    #endregion
+
     private async Task SeedMenusAsync()
     {
         var menuCategory = new MenuCategory
@@ -163,6 +292,14 @@ public class MenuServiceTests
         };
 
         _dbContext.MenuCategories.Add(menuCategory);
+        _dbContext.PartyCategories.Add(new PartyCategory
+        {
+            PartyCategoryId = 1,
+            PartyCategoryName = "Wedding",
+            Description = "Wedding party",
+            Status = "ACTIVE",
+            CreatedAt = DateTime.UtcNow
+        });
 
         _dbContext.Menus.AddRange(
             new Menu { MenuId = 1, MenuName = "BBQ Premium", BasePrice = 300_000, Status = "1", MenuCategoryId = 1, CreatedAt = DateTime.UtcNow },
@@ -173,6 +310,22 @@ public class MenuServiceTests
         );
 
         await _dbContext.SaveChangesAsync();
+    }
+
+    private static IFormFile CreateFormFile(string fileName, string contentType)
+    {
+        var bytes = new byte[] { 1, 2, 3, 4 };
+        var stream = new MemoryStream(bytes);
+        return new FormFile(stream, 0, bytes.Length, "ImgFiles", fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = contentType
+        };
+    }
+
+    private static int? ParseNullableInt(string? value)
+    {
+        return int.TryParse(value, out var parsed) ? parsed : null;
     }
 
     private static void NormalizePagination(ref int page, ref int pageSize)
