@@ -282,6 +282,70 @@ public class MenuCategoryServiceTests
     }
     #endregion
 
+    // Function 11 
+    #region Function 11 - Delete Menu Category
+    //Function 11 - TC1
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenValidId_ShouldSucceed()
+    {
+        var result = await _sut.DeleteAsync(5);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
+        result.Message.Should().Be("Menu category deleted successfully.");
+
+        var deleted = await _dbContext.MenuCategories.FindAsync(5);
+        deleted.Should().BeNull();
+    }
+
+    //Function 11 - TC2
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdNotFound_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(999);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC3
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdIsZero_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(0);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC4
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdIsNegative_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(-1);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC6
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenDeleteSameIdTwice_SecondShouldFail()
+    {
+        var first = await _sut.DeleteAsync(4);
+        first.Success.Should().BeTrue();
+
+        var second = await _sut.DeleteAsync(4);
+
+        second.Success.Should().BeFalse();
+        second.Data.Should().BeFalse();
+        second.Message.Should().Be("Menu category not found.");
+    }
+    #endregion
+
     private async Task SeedMenuCategoriesAsync()
     {
         _dbContext.MenuCategories.AddRange(
