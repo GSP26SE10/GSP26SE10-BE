@@ -24,8 +24,7 @@ public class MenuServiceTests
     [TestInitialize]
     public async Task SetupAsync()
     {
-        TypeAdapterConfig.GlobalSettings.NewConfig<Menu, MenuResponse>()
-            .Map(dest => dest.Status, src => ParseNullableInt(src.Status));
+        MapsterTestBootstrap.EnsureConfigured();
 
         var options = new DbContextOptionsBuilder<GSP26SE10DBContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
