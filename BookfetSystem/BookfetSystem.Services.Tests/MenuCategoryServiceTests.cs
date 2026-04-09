@@ -74,7 +74,7 @@ public class MenuCategoryServiceTests
         result.Items.Should().HaveCount(2);
     }
 
-    //Function 8 - TC5
+    //Function 8 - TC4
     [TestMethod]
     public async Task GetAllMenuCategoryFiltered_WithStatusAvailable_ShouldReturnMatchedItems()
     {
@@ -87,7 +87,7 @@ public class MenuCategoryServiceTests
         result.Items.Should().OnlyContain(x => x.Status == 1);
     }
 
-    //Function 8 - TC6
+    //Function 8 - TC5
     [TestMethod]
     public async Task GetAllMenuCategoryFiltered_WithName_ShouldReturnMatchedItems()
     {
@@ -101,7 +101,7 @@ public class MenuCategoryServiceTests
         result.Items.First().MenuCategoryName.Should().Be("Seafood Set");
     }
 
-    //Function 8 - TC7
+    //Function 8 - TC6
     [TestMethod]
     public async Task GetAllMenuCategoryFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {
@@ -209,7 +209,7 @@ public class MenuCategoryServiceTests
         result.Data.Status.Should().Be(0);
     }
 
-    //Function 10 - TC4
+    //Function 10 - TC2
     [TestMethod]
     public async Task UpdateMenuCategory_WhenNameEmpty_ShouldFail()
     {
@@ -227,7 +227,7 @@ public class MenuCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 10 - TC5
+    //Function 10 - TC3
     [TestMethod]
     public async Task UpdateMenuCategory_WhenIdNotFound_ShouldFail()
     {
@@ -245,7 +245,7 @@ public class MenuCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 10 - TC6
+    //Function 10 - TC4
     [TestMethod]
     public async Task UpdateMenuCategory_WhenIdIsZero_ShouldFail()
     {
@@ -263,7 +263,7 @@ public class MenuCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 10 - TC7
+    //Function 10 - TC5
     [TestMethod]
     public async Task UpdateMenuCategory_WhenIdIsNegative_ShouldFail()
     {
