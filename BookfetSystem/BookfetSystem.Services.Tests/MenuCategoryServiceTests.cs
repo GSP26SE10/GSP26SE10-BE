@@ -186,6 +186,166 @@ public class MenuCategoryServiceTests
     }
     #endregion
 
+    // Function 10 
+    #region Function 10 - Update Menu Category
+    //Function 10 - TC1
+    [TestMethod]
+    public async Task UpdateMenuCategory_WhenValidAllFields_ShouldSucceed()
+    {
+        var request = new MenuCategoryUpdateRequest
+        {
+            MenuCategoryName = "BBQ Set Updated",
+            Description = "Updated description",
+            Status = MenuStatus.UNAVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu category updated successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.MenuCategoryName.Should().Be("BBQ Set Updated");
+        result.Data.Description.Should().Be("Updated description");
+        result.Data.Status.Should().Be(0);
+    }
+
+    //Function 10 - TC4
+    [TestMethod]
+    public async Task UpdateMenuCategory_WhenNameEmpty_ShouldFail()
+    {
+        var request = new MenuCategoryUpdateRequest
+        {
+            MenuCategoryName = "   ",
+            Description = "Updated description",
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("MenuCategoryName is required.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 10 - TC5
+    [TestMethod]
+    public async Task UpdateMenuCategory_WhenIdNotFound_ShouldFail()
+    {
+        var request = new MenuCategoryUpdateRequest
+        {
+            MenuCategoryName = "Ghost category",
+            Description = "Updated description",
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(999, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 10 - TC6
+    [TestMethod]
+    public async Task UpdateMenuCategory_WhenIdIsZero_ShouldFail()
+    {
+        var request = new MenuCategoryUpdateRequest
+        {
+            MenuCategoryName = "Zero id category",
+            Description = "Updated description",
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(0, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 10 - TC7
+    [TestMethod]
+    public async Task UpdateMenuCategory_WhenIdIsNegative_ShouldFail()
+    {
+        var request = new MenuCategoryUpdateRequest
+        {
+            MenuCategoryName = "Negative id category",
+            Description = "Updated description",
+            Status = MenuStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(-1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+        result.Data.Should().BeNull();
+    }
+    #endregion
+
+    // Function 11 
+    #region Function 11 - Delete Menu Category
+    //Function 11 - TC1
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenValidId_ShouldSucceed()
+    {
+        var result = await _sut.DeleteAsync(5);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
+        result.Message.Should().Be("Menu category deleted successfully.");
+
+        var deleted = await _dbContext.MenuCategories.FindAsync(5);
+        deleted.Should().BeNull();
+    }
+
+    //Function 11 - TC2
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdNotFound_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(999);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC3
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdIsZero_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(0);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC4
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenIdIsNegative_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(-1);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Menu category not found.");
+    }
+
+    //Function 11 - TC6
+    [TestMethod]
+    public async Task DeleteMenuCategory_WhenDeleteSameIdTwice_SecondShouldFail()
+    {
+        var first = await _sut.DeleteAsync(4);
+        first.Success.Should().BeTrue();
+
+        var second = await _sut.DeleteAsync(4);
+
+        second.Success.Should().BeFalse();
+        second.Data.Should().BeFalse();
+        second.Message.Should().Be("Menu category not found.");
+    }
+    #endregion
+
     private async Task SeedMenuCategoriesAsync()
     {
         _dbContext.MenuCategories.AddRange(
