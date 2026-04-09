@@ -27,10 +27,8 @@ namespace BookfetSystem.API.Controllers
                 return Unauthorized(new { Message = "Invalid token: missing user id." });
             }
 
-            if (request.UserId != currentUserId)
-            {
-                return BadRequest(new { Message = "Request userId does not match authenticated user." });
-            }
+            // Always trust authenticated user from JWT to avoid account-mismatch issues on shared devices.
+            request.UserId = currentUserId;
 
             var result = await _deviceService.RegisterAsync(request);
             if (result.Success)
