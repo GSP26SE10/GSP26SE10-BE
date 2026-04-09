@@ -153,24 +153,16 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var taskName = NormalizeTaskName(request.TaskName);
-            if (taskName == null)
-            {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
-                {
-                    Success = false,
-                    Message = "TaskName is required.",
-                    Data = null
-                };
-            }
+            var taskName = NormalizeTaskName(request.TaskName) ?? "Công việc";
 
-            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
+            var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName)
+                               ?? await ResolveDefaultActiveTemplateAsync();
             if (taskTemplate == null)
             {
                 return new ApiResponse<OrderDetailStaffTaskResponse>
                 {
                     Success = false,
-                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
+                    Message = "Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.",
                     Data = null
                 };
             }
@@ -267,30 +259,17 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var taskName = NormalizeTaskName(request.TaskName);
-            if (taskName == null)
-            {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
-                {
-                    Success = false,
-                    Message = "TaskName is required.",
-                    Data = null
-                };
-            }
+            var taskName = NormalizeTaskName(request.TaskName)
+                           ?? NormalizeTaskName(entity.TaskName)
+                           ?? "Công việc";
 
             var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName);
-            if (taskTemplate == null)
-            {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
-                {
-                    Success = false,
-                    Message = "Không tìm thấy mẫu công việc phù hợp với TaskName.",
-                    Data = null
-                };
-            }
 
             entity.OrderDetailId = request.OrderDetailId;
-            entity.TaskTemplateId = taskTemplate.TaskTemplateId;
+            if (taskTemplate != null)
+            {
+                entity.TaskTemplateId = taskTemplate.TaskTemplateId;
+            }
             entity.TaskName = taskName;
             entity.StaffId = request.StaffId;
             if (request.TaskStatus.HasValue)
@@ -534,6 +513,15 @@ namespace BookfetSystem.Services.Implement
             return _taskTemplateRepository
                 .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = taskName })
                 .Where(t => t.IsActive == true && t.TaskName != null && t.TaskName.ToLower() == taskName.ToLower())
+                .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        private Task<TaskTemplate?> ResolveDefaultActiveTemplateAsync()
+        {
+            return _taskTemplateRepository
+                .GetAllTaskTemplateFiltered(new TaskTemplate { IsActive = true })
+                .Where(t => t.IsActive == true)
                 .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
                 .FirstOrDefaultAsync();
         }
