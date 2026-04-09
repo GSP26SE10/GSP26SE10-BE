@@ -2,6 +2,7 @@ using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
+using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
@@ -20,8 +21,7 @@ public class MenuCategoryServiceTests
     [TestInitialize]
     public async Task SetupAsync()
     {
-        TypeAdapterConfig.GlobalSettings.NewConfig<MenuCategory, MenuCategoryResponse>()
-            .Map(dest => dest.Status, src => ParseNullableInt(src.Status));
+        MapsterTestBootstrap.EnsureConfigured();
 
         var options = new DbContextOptionsBuilder<GSP26SE10DBContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -123,22 +123,80 @@ public class MenuCategoryServiceTests
     }
     #endregion
 
+    // Function 9 
+    #region Function 9 - Create Menu Category
+    //Function 9 - TC1
+    [TestMethod]
+    public async Task CreateMenuCategory_WhenValid_ShouldSucceed()
+    {
+        var request = new MenuCategoryCreateRequest
+        {
+            MenuCategoryName = "New Category",
+            Description = "New category description"
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu category created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.MenuCategoryName.Should().Be("New Category");
+        result.Data.Description.Should().Be("New category description");
+        result.Data.Status.Should().Be(1);
+
+        (await _dbContext.MenuCategories.CountAsync()).Should().Be(6);
+        (await _dbContext.MenuCategories.AnyAsync(x => x.MenuCategoryName == "New Category")).Should().BeTrue();
+    }
+
+    //Function 9 - TC2
+    [TestMethod]
+    public async Task CreateMenuCategory_WhenNameMissing_ShouldFail()
+    {
+        var request = new MenuCategoryCreateRequest
+        {
+            MenuCategoryName = null,
+            Description = "Desc"
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("MenuCategoryName is required.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 9 - TC3
+    [TestMethod]
+    public async Task CreateMenuCategory_WhenDescriptionEmpty_ShouldStillSucceed()
+    {
+        var request = new MenuCategoryCreateRequest
+        {
+            MenuCategoryName = "No Desc Category",
+            Description = "   "
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Menu category created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.MenuCategoryName.Should().Be("No Desc Category");
+        result.Data.Description.Should().BeNullOrEmpty();
+        result.Data.Status.Should().Be(1);
+    }
+    #endregion
+
     private async Task SeedMenuCategoriesAsync()
     {
         _dbContext.MenuCategories.AddRange(
-            new MenuCategory { MenuCategoryId = 1, MenuCategoryName = "BBQ Set", Description = "BBQ party set", Status = "1", CreatedAt = DateTime.UtcNow },
-            new MenuCategory { MenuCategoryId = 2, MenuCategoryName = "Seafood Set", Description = "Seafood party set", Status = "1", CreatedAt = DateTime.UtcNow },
-            new MenuCategory { MenuCategoryId = 3, MenuCategoryName = "Vegetarian Set", Description = "Vegetarian party set", Status = "1", CreatedAt = DateTime.UtcNow },
-            new MenuCategory { MenuCategoryId = 4, MenuCategoryName = "Family Set", Description = "Family set", Status = "1", CreatedAt = DateTime.UtcNow },
-            new MenuCategory { MenuCategoryId = 5, MenuCategoryName = "Archived Set", Description = "Old set", Status = "0", CreatedAt = DateTime.UtcNow }
+            new MenuCategory { MenuCategoryId = 1, MenuCategoryName = "BBQ Set", Description = "BBQ party set", Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new MenuCategory { MenuCategoryId = 2, MenuCategoryName = "Seafood Set", Description = "Seafood party set", Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new MenuCategory { MenuCategoryId = 3, MenuCategoryName = "Vegetarian Set", Description = "Vegetarian party set", Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new MenuCategory { MenuCategoryId = 4, MenuCategoryName = "Family Set", Description = "Family set", Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new MenuCategory { MenuCategoryId = 5, MenuCategoryName = "Archived Set", Description = "Old set", Status = "UNAVAILABLE", CreatedAt = DateTime.UtcNow }
         );
 
         await _dbContext.SaveChangesAsync();
-    }
-
-    private static int? ParseNullableInt(string? value)
-    {
-        return int.TryParse(value, out var parsed) ? parsed : null;
     }
 
     private static void NormalizePagination(ref int page, ref int pageSize)

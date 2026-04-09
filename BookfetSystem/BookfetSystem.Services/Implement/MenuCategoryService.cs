@@ -73,7 +73,7 @@ namespace BookfetSystem.Services.Implement
             {
                 MenuCategoryName = normalizedName,
                 Description = request.Description?.Trim(),
-                Status = MenuStatus.AVAILABLE.ToString()    
+                Status = MenuStatus.AVAILABLE.ToString()
             };
 
             var affected = await _menuCategoryRepository.CreateAsync(entity);
