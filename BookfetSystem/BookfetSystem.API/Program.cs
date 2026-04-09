@@ -120,7 +120,6 @@ builder.Services.AddScoped<ICache, MemoryCacheService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.Configure<CloudinaryOptions>(builder.Configuration.GetSection("Cloudinary"));
-builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection("Notification"));
 builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
