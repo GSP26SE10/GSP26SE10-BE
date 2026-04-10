@@ -1,4 +1,5 @@
 using BookfetSystem.Repositories;
+using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Common;
@@ -32,9 +33,15 @@ namespace BookfetSystem.Services.Implement
 
                 var (start, end) = GetRange(normalizedGroupBy);
                 var now = DateTime.UtcNow;
+                var completedStatus = OrderStatus.COMPLETED.ToString().ToLower();
 
                 var payments = await _paymentRepository.GetPaidPayments()
-                    .Where(p => p.PaidAt >= start && p.PaidAt <= end)
+                    .Where(p =>
+                        p.PaidAt >= start &&
+                        p.PaidAt <= end &&
+                        p.Order != null &&
+                        p.Order.Status != null &&
+                        p.Order.Status.ToLower() == completedStatus)
                     .ToListAsync();
 
                 var data = normalizedGroupBy == "day"
