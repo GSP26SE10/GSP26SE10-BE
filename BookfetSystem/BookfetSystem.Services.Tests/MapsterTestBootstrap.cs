@@ -25,6 +25,9 @@ internal static class MapsterTestBootstrap
 
         TypeAdapterConfig.GlobalSettings.NewConfig<MenuCategory, MenuCategoryResponse>()
             .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<MenuStatus>(src.Status));
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<PartyCategory, PartyCategoryResponse>()
+            .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<PartyCategoryStatus>(src.Status));
     }
 
     private static int? ParseNullableInt(string? value)
