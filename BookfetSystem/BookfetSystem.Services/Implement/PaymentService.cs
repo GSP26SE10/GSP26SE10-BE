@@ -65,6 +65,28 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<PagedResponse<PaymentResponse>> GetMyPaymentsFilteredAsync(int customerUserId, PaymentFilterRequest request, int page, int pageSize)
+        {
+            var entityFilter = request.Adapt<Payment>();
+            var query = _paymentRepository.GetAllPaymentFiltered(entityFilter, customerUserId);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .ProjectToType<PaymentResponse>()
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResponse<PaymentResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<ApiResponse<PaymentResponse>> CreateAsync(PaymentCreateRequest request)
         {
             var order = await _orderRepository.GetByIdAsync(request.OrderId);

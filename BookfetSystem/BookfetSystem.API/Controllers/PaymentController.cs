@@ -32,10 +32,31 @@ namespace BookfetSystem.API.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// All payments (admin, leader, staff). Role 4 customers should use GET my-payment.
+        /// </summary>
+        [Authorize(Roles = "1,2,3")]
         [HttpGet]
         public async Task<ActionResult> GetAllPaymentsFiltered([FromQuery] PaymentFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var payments = await _paymentService.GetAllPaymentFilteredAsync(filter, page, pageSize);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Customer payments only: orders where Order.CustomerId is the current user. Requires Bearer token.
+        /// </summary>
+        [Authorize]
+        [HttpGet("my-payment")]
+        public async Task<ActionResult> GetMyPayments([FromQuery] PaymentFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var userIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing user id." });
+            }
+
+            var payments = await _paymentService.GetMyPaymentsFilteredAsync(userId, filter, page, pageSize);
             return Ok(payments);
         }
 
