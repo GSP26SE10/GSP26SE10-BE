@@ -9,6 +9,7 @@ namespace BookfetSystem.Services.Interface
     public interface IPaymentService
     {
         Task<PagedResponse<PaymentResponse>> GetAllPaymentFilteredAsync(PaymentFilterRequest request, int page, int pageSize);
+        Task<PagedResponse<PaymentResponse>> GetMyPaymentsFilteredAsync(int customerUserId, PaymentFilterRequest request, int page, int pageSize);
         Task<ApiResponse<PaymentResponse>> CreateAsync(PaymentCreateRequest request);
         Task<ApiResponse<PaymentResponse>> UpdateAsync(int id, PaymentUpdateRequest request);
         Task<ApiResponse<bool>> DeleteAsync(int id);

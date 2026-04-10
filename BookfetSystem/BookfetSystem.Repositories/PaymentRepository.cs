@@ -14,11 +14,16 @@ namespace BookfetSystem.Repositories
         {
         }
 
-        public IQueryable<Payment> GetAllPaymentFiltered(Payment filter)
+        public IQueryable<Payment> GetAllPaymentFiltered(Payment filter, int? orderCustomerUserId = null)
         {
             var query = _context.Payments
                 .Include(p => p.Order)
                 .AsQueryable();
+
+            if (orderCustomerUserId.HasValue)
+            {
+                query = query.Where(p => p.Order != null && p.Order.CustomerId == orderCustomerUserId.Value);
+            }
 
             if (filter.PaymentId != 0)
             {
