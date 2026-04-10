@@ -256,7 +256,7 @@ public class MenuServiceTests
         result.Message.Should().Be("At least one PartyCategoryId is required.");
     }
 
-    //Function 5 - TC7
+    //Function 5 - TC6
     [TestMethod]
     public async Task CreateMenu_WhenUploadThrowsException_ShouldFail()
     {
@@ -339,7 +339,7 @@ public class MenuServiceTests
             MenuName = "Vegetarian Set Updated",
             MenuCategoryId = 1,
             PartyCategoryIds = new List<int> { 1 },
-            BasePrice = 260_000,
+            BasePrice = 460_000,
             Status = MenuStatus.AVAILABLE
         };
 
@@ -350,7 +350,7 @@ public class MenuServiceTests
         result.Data!.MenuName.Should().Be("Vegetarian Set Updated");
     }
 
-    //Function 6 - TC5
+    //Function 6 - TC4
     [TestMethod]
     public async Task UpdateMenu_WhenPriceIsNegative_ShouldFail()
     {
@@ -369,7 +369,7 @@ public class MenuServiceTests
         result.Message.Should().Be("BasePrice must be greater than or equal to 0.");
     }
 
-    //Function 6 - TC6
+    //Function 6 - TC5
     [TestMethod]
     public async Task UpdateMenu_WhenNameIsEmpty_ShouldFail()
     {
@@ -388,7 +388,7 @@ public class MenuServiceTests
         result.Message.Should().Be("MenuName is required.");
     }
 
-    //Function 6 - TC7
+    //Function 6 - TC6
     [TestMethod]
     public async Task UpdateMenu_WhenUploadThrowsException_ShouldFail()
     {
@@ -416,7 +416,7 @@ public class MenuServiceTests
         result.Message.Should().Contain("Failed to upload menu image");
     }
 
-    //Function 6 - TC8
+    //Function 6 - TC7
     [TestMethod]
     public async Task UpdateMenu_WhenIdDoesNotExist_ShouldFail()
     {
@@ -435,7 +435,7 @@ public class MenuServiceTests
         result.Message.Should().Be("Menu not found.");
     }
 
-    //Function 6 - TC10 (dùng menu 4 để tránh xung đột với TC1 đã đổi tên menu 1)
+    //Function 6 - TC8 (dùng menu 4 để tránh xung đột với TC1 đã đổi tên menu 1)
     [TestMethod]
     public async Task UpdateMenu_WhenPayloadUnchanged_ShouldStillSuccess()
     {
@@ -506,7 +506,7 @@ public class MenuServiceTests
         result.Message.Should().Be("Menu not found.");
     }
 
-    //Function 7 - TC6
+    //Function 7 - TC5
     [TestMethod]
     public async Task DeleteMenu_WhenSameIdDeletedTwice_SecondShouldFail()
     {
