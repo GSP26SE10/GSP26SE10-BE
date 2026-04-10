@@ -6,6 +6,7 @@ using BookfetSystem.Services.Implement;
 using BookfetSystem.Services.Interface;
 using BookfetSystem.Services.Models.Request;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -122,6 +123,135 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
+    // Function 13
+    #region Function 13 - Create Party Category
+    //Function 13 - TC1
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenValid_ShouldSucceed()
+    {
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = "Gala Dinner",
+            Description = "Evening gala event",
+            NumberOfGuests = 120
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Party category created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.PartyCategoryName.Should().Be("Gala Dinner");
+        result.Data.Description.Should().Be("Evening gala event");
+        result.Data.NumberOfGuests.Should().Be(120);
+        result.Data.Status.Should().Be(1);
+
+        (await _dbContext.PartyCategories.CountAsync()).Should().Be(6);
+    }
+
+    //Function 13 - TC2
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenNameMissing_ShouldFail()
+    {
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = null,
+            Description = "Desc",
+            NumberOfGuests = 100
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("PartyCategoryName is required.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 13 - TC3
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenDescriptionEmpty_ShouldStillSucceed()
+    {
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = "No Desc Party",
+            Description = "   ",
+            NumberOfGuests = 70
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Party category created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.PartyCategoryName.Should().Be("No Desc Party");
+        result.Data.Description.Should().BeNullOrEmpty();
+        result.Data.Status.Should().Be(1);
+    }
+
+    //Function 13 - TC5
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenNumberOfGuestsIsNotGreaterThanZero_ShouldFail()
+    {
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = "Invalid Guests",
+            Description = "Desc",
+            NumberOfGuests = 0
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("NumberOfGuests must be greater than 0.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 13 - TC6
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenNameAlreadyExists_ShouldFail()
+    {
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = "  weDdiNg  ",
+            Description = "Desc",
+            NumberOfGuests = 100
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("PartyCategoryName is existed.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 13 - TC7
+    [TestMethod]
+    public async Task CreatePartyCategory_WhenUploadImageThrows_ShouldFail()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(
+                It.IsAny<IFormFile>(),
+                CloudinaryFolder.PartyCategory,
+                null,
+                default))
+            .ThrowsAsync(new Exception("Invalid image format"));
+
+        var request = new PartyCategoryCreateRequest
+        {
+            PartyCategoryName = "With Image",
+            Description = "Desc",
+            NumberOfGuests = 90,
+            ImageUrl = CreateFormFile("bad.bin", "application/octet-stream")
+        };
+
+        var result = await _sut.CreateAsync(request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Failed to upload party category image");
+        result.Data.Should().BeNull();
+    }
+    #endregion
+
     private async Task SeedPartyCategoriesAsync()
     {
         _dbContext.PartyCategories.AddRange(
@@ -133,6 +263,17 @@ public class PartyCategoryServiceTests
         );
 
         await _dbContext.SaveChangesAsync();
+    }
+
+    private static IFormFile CreateFormFile(string fileName, string contentType)
+    {
+        var bytes = new byte[] { 1, 2, 3, 4 };
+        var stream = new MemoryStream(bytes);
+        return new FormFile(stream, 0, bytes.Length, "ImageUrl", fileName)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = contentType
+        };
     }
 
     private static void NormalizePagination(ref int page, ref int pageSize)
