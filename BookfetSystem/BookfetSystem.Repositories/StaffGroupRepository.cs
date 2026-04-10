@@ -68,6 +68,12 @@ namespace BookfetSystem.Repositories
                 .Include(sg => sg.OrderDetails)
                     .ThenInclude(od => od.OrderDetailExtraCharges)
                         .ThenInclude(ec => ec.CreateByNavigation)
+                .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.OrderServices)
+                        .ThenInclude(os => os.Service)
+                .Include(sg => sg.OrderDetails)
+                    .ThenInclude(od => od.OrderDetailCustoms)
+                        .ThenInclude(oc => oc.Dish)
                 .Where(sg => sg.LeaderId == leaderId)
                 .OrderByDescending(sg => sg.StaffGroupId)
                 .FirstOrDefaultAsync();

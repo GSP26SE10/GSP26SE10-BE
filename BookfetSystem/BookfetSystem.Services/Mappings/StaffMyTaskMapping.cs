@@ -26,6 +26,8 @@ namespace BookfetSystem.Services.Mappings
                        src => src.Menu != null ? src.Menu.MenuName : null)
                       .Map(dest => dest.MenuImage,
                                    src => GetMenuImage(src))
+                  .Map(dest => dest.ServiceSnapshot,
+                       src => SnapshotParser.TryParseServiceSnapshot(src.ServiceSnapshot))
                   .Map(dest => dest.CustomDishSnapshot,
                        src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                   .Map(dest => dest.PartyCategory,

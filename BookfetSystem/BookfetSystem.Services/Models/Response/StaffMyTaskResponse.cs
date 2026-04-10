@@ -20,6 +20,7 @@ namespace BookfetSystem.Services.Models.Response
         public int OrderDetailId { get; set; }
         public string? MenuName { get; set; }
         public string? MenuImage { get; set; }
+        public ServiceSnapshotDto? ServiceSnapshot { get; set; }
         public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
         public string? PartyCategory { get; set; }
         public int? NumberOfGuests { get; set; }
