@@ -382,6 +382,99 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
+    // Function 15 — bỏ case id là chữ ở unit test: thuộc route/model binding API (400), không đi qua service.
+    #region Function 15 - Delete Party Category
+    //Function 15 - TC1
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenValidId_ShouldSucceed()
+    {
+        var result = await _sut.DeleteAsync(5);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().BeTrue();
+        result.Message.Should().Be("Party category deleted successfully.");
+
+        var gone = await _dbContext.PartyCategories.FindAsync(5);
+        gone.Should().BeNull();
+    }
+
+    //Function 15 - TC2
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenIdNotFound_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(999);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Party category not found.");
+    }
+
+    //Function 15 - TC3
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenIdIsZero_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(0);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Party category not found.");
+    }
+
+    //Function 15 - TC4
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenIdIsNegative_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(-1);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Party category not found.");
+    }
+
+    //Function 15 - TC6
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenDeleteSameIdTwice_SecondShouldFail()
+    {
+        var first = await _sut.DeleteAsync(4);
+        first.Success.Should().BeTrue();
+
+        var second = await _sut.DeleteAsync(4);
+
+        second.Success.Should().BeFalse();
+        second.Data.Should().BeFalse();
+        second.Message.Should().Be("Party category not found.");
+    }
+
+    //Function 15 - TC7
+    [TestMethod]
+    public async Task DeletePartyCategory_WhenRelatedDataExists_ShouldFail()
+    {
+        _dbContext.Menus.Add(new Menu
+        {
+            MenuId = 999,
+            MenuName = "Menu uses party category",
+            MenuCategoryId = 1,
+            BasePrice = 100_000,
+            Status = "AVAILABLE",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.PartyCategoryMenus.Add(new PartyCategoryMenu
+        {
+            PartyCategoryMenuId = 999,
+            PartyCategoryId = 1,
+            MenuId = 999
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _sut.DeleteAsync(1);
+
+        result.Success.Should().BeFalse();
+        result.Data.Should().BeFalse();
+        result.Message.Should().Be("Cannot delete because related data exists.");
+    }
+    #endregion
+
     private async Task SeedPartyCategoriesAsync()
     {
         _dbContext.PartyCategories.AddRange(
