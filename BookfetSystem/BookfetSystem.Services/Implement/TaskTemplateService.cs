@@ -20,16 +20,10 @@ namespace BookfetSystem.Services.Implement
             _taskTemplateRepository = taskTemplateRepository;
         }
 
-        public async Task<PagedResponse<TaskTemplateResponse>> GetTaskTemplatesAsync(int actorId, int roleId, TaskTemplateFilterRequest request, int page, int pageSize)
+        public async Task<PagedResponse<TaskTemplateResponse>> GetTaskTemplatesAsync(TaskTemplateFilterRequest request, int page, int pageSize)
         {
             var entityFilter = request.Adapt<TaskTemplate>();
-            var ownerId = roleId == 2 ? (int?)null : actorId;
-            var query = _taskTemplateRepository.GetAllTaskTemplateFiltered(entityFilter, ownerId);
-
-            if (roleId == 2)
-            {
-                query = query.Where(t => t.IsActive == true);
-            }
+            var query = _taskTemplateRepository.GetAllTaskTemplateFiltered(entityFilter);
 
             var totalCount = await query.CountAsync();
 

@@ -20,22 +20,10 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult> GetMyTaskTemplates([FromQuery] TaskTemplateFilterRequest filter, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var ownerIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
-
-            if (!int.TryParse(ownerIdValue, out var actorId) || !int.TryParse(roleValue, out var roleId))
-            {
-                return Unauthorized(new { Message = "Invalid token: missing user or role id." });
-            }
-
-            if (roleId != 1 && roleId != 2)
-            {
-                return StatusCode(403, new { Message = "Only owner and leader can view task templates." });
-            }
-
-            var result = await _taskTemplateService.GetTaskTemplatesAsync(actorId, roleId, filter, page, pageSize);
+            var result = await _taskTemplateService.GetTaskTemplatesAsync(filter, page, pageSize);
             return Ok(result);
         }
 
