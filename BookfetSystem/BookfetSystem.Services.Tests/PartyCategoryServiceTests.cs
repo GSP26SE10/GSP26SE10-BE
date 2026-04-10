@@ -252,6 +252,136 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
+    // Function 14 .
+    #region Function 14 - Update Party Category
+    //Function 14 - TC1
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenValidAllFields_ShouldSucceed()
+    {
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "Wedding Updated",
+            Description = "Updated desc",
+            NumberOfGuests = 250,
+            Status = PartyCategoryStatus.UNAVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Party category updated successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.PartyCategoryName.Should().Be("Wedding Updated");
+        result.Data.Description.Should().Be("Updated desc");
+        result.Data.NumberOfGuests.Should().Be(250);
+        result.Data.Status.Should().Be(0);
+    }
+
+    //Function 14 - TC2
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenIdNotFound_ShouldFail()
+    {
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "Ghost",
+            Description = "Desc",
+            NumberOfGuests = 10,
+            Status = PartyCategoryStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(999, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Party category not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 14 - TC3
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenNameMissing_ShouldFail()
+    {
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "   ",
+            Description = "Desc",
+            NumberOfGuests = 10,
+            Status = PartyCategoryStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("PartyCategoryName is required.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 14 - TC4
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenNumberOfGuestsIsNotGreaterThanZero_ShouldFail()
+    {
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "Wedding",
+            Description = "Desc",
+            NumberOfGuests = 0,
+            Status = PartyCategoryStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("NumberOfGuests must be greater than 0.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 14 - TC5
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenNameAlreadyExists_ShouldFail()
+    {
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "  birthday ",
+            Description = "Desc",
+            NumberOfGuests = 100,
+            Status = PartyCategoryStatus.AVAILABLE
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("PartyCategoryName is existed.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 14 - TC6
+    [TestMethod]
+    public async Task UpdatePartyCategory_WhenUploadImageThrows_ShouldFail()
+    {
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(
+                It.IsAny<IFormFile>(),
+                CloudinaryFolder.PartyCategory,
+                1,
+                default))
+            .ThrowsAsync(new Exception("Invalid image format"));
+
+        var request = new PartyCategoryUpdateRequest
+        {
+            PartyCategoryName = "Wedding",
+            Description = "Desc",
+            NumberOfGuests = 100,
+            Status = PartyCategoryStatus.AVAILABLE,
+            ImageUrl = CreateFormFile("bad.bin", "application/octet-stream")
+        };
+
+        var result = await _sut.UpdateAsync(1, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Failed to upload party category image");
+        result.Data.Should().BeNull();
+    }
+    #endregion
+
     private async Task SeedPartyCategoriesAsync()
     {
         _dbContext.PartyCategories.AddRange(
