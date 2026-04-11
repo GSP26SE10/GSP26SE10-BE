@@ -66,6 +66,7 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.Menu,
                        src => new StaffGroupAssignmentMenuResponse
                        {
+                                 MenuId = src.MenuId,
                            Name = src.Menu != null ? src.Menu.MenuName : null,
                            Image = GetSnapshotMenuImage(src.MenuSnapshot)
                        })
