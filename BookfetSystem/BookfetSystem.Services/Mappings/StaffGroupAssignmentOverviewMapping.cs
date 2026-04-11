@@ -1,6 +1,7 @@
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
+using BookfetSystem.Services.Models;
 using BookfetSystem.Services.Models.Response;
 using Mapster;
 using System;
@@ -68,8 +69,10 @@ namespace BookfetSystem.Services.Mappings
                            Name = src.Menu != null ? src.Menu.MenuName : null,
                            Image = GetSnapshotMenuImage(src.MenuSnapshot)
                        })
+                  .Map(dest => dest.ServiceSnapshot,
+                       src => BuildServiceSnapshot(src))
                   .Map(dest => dest.CustomDishSnapshot,
-                       src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
+                       src => BuildCustomDishSnapshot(src))
                   .Map(dest => dest.Party,
                        src => new StaffGroupAssignmentPartyResponse
                        {
@@ -173,6 +176,80 @@ namespace BookfetSystem.Services.Mappings
           {
                var snapshot = SnapshotParser.TryParseMenuSnapshot(menuSnapshotJson);
                return GetFirstMenuImageFromSnapshot(snapshot?.ImgUrl);
+          }
+
+          private static ServiceSnapshotDto? BuildServiceSnapshot(OrderDetail src)
+          {
+               var parsed = SnapshotParser.TryParseServiceSnapshot(src.ServiceSnapshot);
+               if (parsed != null)
+               {
+                    return parsed;
+               }
+
+               if (src.OrderServices == null || !src.OrderServices.Any())
+               {
+                    return null;
+               }
+
+               var items = src.OrderServices
+                    .Where(x => x.ServiceId.HasValue && x.Service != null)
+                    .Select(x => new ServiceItemSnapshotDto
+                    {
+                         ServiceId = x.ServiceId!.Value,
+                         ServiceName = x.Service!.ServiceName,
+                         BasePrice = x.Service.BasePrice,
+                         Quantity = x.Quantity ?? 0,
+                         Img = x.Service.Img
+                    })
+                    .ToList();
+
+               if (!items.Any())
+               {
+                    return null;
+               }
+
+               return new ServiceSnapshotDto
+               {
+                    Services = items,
+                    CapturedAt = null
+               };
+          }
+
+          private static CustomDishSnapshotDto? BuildCustomDishSnapshot(OrderDetail src)
+          {
+               var parsed = SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot);
+               if (parsed != null)
+               {
+                    return parsed;
+               }
+
+               if (src.OrderDetailCustoms == null || !src.OrderDetailCustoms.Any())
+               {
+                    return null;
+               }
+
+               var items = src.OrderDetailCustoms
+                    .Where(x => x.DishId.HasValue && x.Dish != null)
+                    .Select(x => new CustomDishItemSnapshotDto
+                    {
+                         DishId = x.DishId!.Value,
+                         DishName = x.Dish!.DishName,
+                         UnitPrice = x.Dish.Price,
+                         TotalAmount = x.TotalAmount,
+                         Img = x.Dish.Img
+                    })
+                    .ToList();
+
+               if (!items.Any())
+               {
+                    return null;
+               }
+
+               return new CustomDishSnapshotDto
+               {
+                    CustomDishes = items,
+                    CapturedAt = null
+               };
           }
 
           private static string? GetFirstMenuImageFromSnapshot(object? imgUrl)

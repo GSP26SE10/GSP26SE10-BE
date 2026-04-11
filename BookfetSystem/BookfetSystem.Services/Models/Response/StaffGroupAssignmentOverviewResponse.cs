@@ -31,6 +31,7 @@ namespace BookfetSystem.Services.Models.Response
         public StaffGroupAssignmentPricingResponse Pricing { get; set; } = new();
         public StaffGroupAssignmentCustomerResponse Customer { get; set; } = new();
         public StaffGroupAssignmentMenuResponse Menu { get; set; } = new();
+        public ServiceSnapshotDto? ServiceSnapshot { get; set; }
         public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
         public StaffGroupAssignmentPartyResponse Party { get; set; } = new();
         public StaffGroupAssignmentScheduleResponse Schedule { get; set; } = new();

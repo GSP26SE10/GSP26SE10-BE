@@ -61,6 +61,12 @@ namespace BookfetSystem.Repositories
                     .ThenInclude(od => od.PartyCategory)
                 .Include(t => t.OrderDetail)
                     .ThenInclude(od => od.Order)
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.OrderServices)
+                        .ThenInclude(os => os.Service)
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.OrderDetailCustoms)
+                        .ThenInclude(oc => oc.Dish)
                 .Where(t => t.StaffId == staffId)
                 .OrderByDescending(t => t.StartTime);
         }

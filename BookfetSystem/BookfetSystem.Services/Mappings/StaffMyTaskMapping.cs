@@ -22,10 +22,14 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.OrderDetail, src => src.OrderDetail);
 
             config.NewConfig<OrderDetail, StaffMyTaskOrderDetailResponse>()
+                  .Map(dest => dest.MenuId,
+                       src => src.MenuId)
                   .Map(dest => dest.MenuName,
                        src => src.Menu != null ? src.Menu.MenuName : null)
                       .Map(dest => dest.MenuImage,
                                    src => GetMenuImage(src))
+                  .Map(dest => dest.ServiceSnapshot,
+                       src => SnapshotParser.TryParseServiceSnapshot(src.ServiceSnapshot))
                   .Map(dest => dest.CustomDishSnapshot,
                        src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                   .Map(dest => dest.PartyCategory,

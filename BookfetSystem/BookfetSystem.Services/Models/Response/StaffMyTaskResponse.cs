@@ -18,8 +18,10 @@ namespace BookfetSystem.Services.Models.Response
     public class StaffMyTaskOrderDetailResponse
     {
         public int OrderDetailId { get; set; }
+        public int? MenuId { get; set; }
         public string? MenuName { get; set; }
         public string? MenuImage { get; set; }
+        public ServiceSnapshotDto? ServiceSnapshot { get; set; }
         public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
         public string? PartyCategory { get; set; }
         public int? NumberOfGuests { get; set; }

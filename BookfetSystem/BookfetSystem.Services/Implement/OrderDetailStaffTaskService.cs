@@ -51,11 +51,12 @@ namespace BookfetSystem.Services.Implement
             var query = _taskRepository.GetMyTasksByStaffId(staffId);
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .ProjectToType<StaffMyTaskResponse>()
+            var data = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            var items = data.Adapt<List<StaffMyTaskResponse>>();
 
             return new PagedResponse<StaffMyTaskResponse>
             {
@@ -75,11 +76,12 @@ namespace BookfetSystem.Services.Implement
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .ProjectToType<OrderDetailStaffTaskResponse>()
+            var data = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            var items = data.Adapt<List<OrderDetailStaffTaskResponse>>();
 
             return new PagedResponse<OrderDetailStaffTaskResponse>
             {
