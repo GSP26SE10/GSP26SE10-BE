@@ -93,6 +93,11 @@ namespace BookfetSystem.Services.Implement
                 return (2, "payment already processed");
             }
 
+            if (string.Equals(payment.PaymentStatus, PaymentStatus.CANCELLED.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return (2, "payment cancelled");
+            }
+
             payment.PaymentStatus = PaymentStatus.PAID.ToString();
             payment.PaidAt = DateTime.UtcNow;
             await _paymentRepository.UpdateAsync(payment);

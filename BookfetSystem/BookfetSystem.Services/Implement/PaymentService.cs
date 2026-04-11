@@ -256,7 +256,30 @@ namespace BookfetSystem.Services.Implement
             var existingUnpaid = await _paymentRepository.GetUnpaidDepositByOrderIdAsync(order.OrderId);
             if (existingUnpaid != null)
             {
-                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    var amt = (int)Math.Round(existingUnpaid.Amount ?? 0);
+                    var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
+
+                    return new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = "QR already exists for this order. Use existing payment.",
+                        Data = new
+                        {
+                            orderId = order.OrderId,
+                            paymentCode,
+                            amount = existingUnpaid.Amount,
+                            qrUrl = url
+                        }
+                    };
+                }
+
+                if (string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    await CancelUnpaidPaymentAsync(existingUnpaid);
+                }
+                else
                 {
                     return new ApiResponse<object>
                     {
@@ -264,22 +287,6 @@ namespace BookfetSystem.Services.Implement
                         Message = $"An unpaid deposit already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
                     };
                 }
-
-                var amt = (int)Math.Round(existingUnpaid.Amount ?? 0);
-                var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
-
-                return new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "QR already exists for this order. Use existing payment.",
-                    Data = new
-                    {
-                        orderId = order.OrderId,
-                        paymentCode,
-                        amount = existingUnpaid.Amount,
-                        qrUrl = url
-                    }
-                };
             }
 
             var depositAmount = order.TotalPrice * 0.5m;
@@ -334,17 +341,9 @@ namespace BookfetSystem.Services.Implement
             var depositAmount = order.TotalPrice * 0.5m;
             Payment payment;
 
-            if (existingUnpaid != null)
+            if (existingUnpaid != null &&
+                string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = $"An unpaid deposit already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
-                    };
-                }
-
                 payment = existingUnpaid;
                 if ((payment.Amount ?? 0m) <= 0m)
                 {
@@ -354,6 +353,20 @@ namespace BookfetSystem.Services.Implement
             }
             else
             {
+                if (existingUnpaid != null &&
+                    string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    await CancelUnpaidPaymentAsync(existingUnpaid);
+                }
+                else if (existingUnpaid != null)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid deposit already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
                 payment = new Payment
                 {
                     OrderId = order.OrderId,
@@ -541,7 +554,38 @@ namespace BookfetSystem.Services.Implement
             var existingUnpaid = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(order.OrderId, PaymentType.FULL.ToString());
             if (existingUnpaid != null)
             {
-                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    if ((existingUnpaid.Amount ?? 0m) != fullAmount)
+                    {
+                        existingUnpaid.Amount = fullAmount;
+                        await _paymentRepository.UpdateAsync(existingUnpaid);
+                    }
+
+                    var amt = (int)Math.Round(fullAmount);
+                    var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
+
+                    return new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = "QR already exists for this order. Use existing full payment.",
+                        Data = new
+                        {
+                            orderId = order.OrderId,
+                            paymentCode,
+                            remainingAmount,
+                            extraChargeAmount,
+                            amount = fullAmount,
+                            qrUrl = url
+                        }
+                    };
+                }
+
+                if (string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    await CancelUnpaidPaymentAsync(existingUnpaid);
+                }
+                else
                 {
                     return new ApiResponse<object>
                     {
@@ -549,30 +593,6 @@ namespace BookfetSystem.Services.Implement
                         Message = $"An unpaid full payment already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
                     };
                 }
-
-                if ((existingUnpaid.Amount ?? 0m) != fullAmount)
-                {
-                    existingUnpaid.Amount = fullAmount;
-                    await _paymentRepository.UpdateAsync(existingUnpaid);
-                }
-
-                var amt = (int)Math.Round(fullAmount);
-                var url = $"{qrBaseUrl}?acc={Uri.EscapeDataString(qrAccount)}&bank={Uri.EscapeDataString(qrBank)}&amount={amt}&des={Uri.EscapeDataString(paymentCode)}";
-
-                return new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "QR already exists for this order. Use existing full payment.",
-                    Data = new
-                    {
-                        orderId = order.OrderId,
-                        paymentCode,
-                        remainingAmount,
-                        extraChargeAmount,
-                        amount = fullAmount,
-                        qrUrl = url
-                    }
-                };
             }
 
             var payment = new Payment
@@ -625,17 +645,9 @@ namespace BookfetSystem.Services.Implement
             var existingUnpaid = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(order.OrderId, PaymentType.FULL.ToString());
             Payment payment;
 
-            if (existingUnpaid != null)
+            if (existingUnpaid != null &&
+                string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
             {
-                if (!string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.ZALOPAY.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = $"An unpaid full payment already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
-                    };
-                }
-
                 payment = existingUnpaid;
                 if ((payment.Amount ?? 0m) != fullAmount)
                 {
@@ -645,6 +657,20 @@ namespace BookfetSystem.Services.Implement
             }
             else
             {
+                if (existingUnpaid != null &&
+                    string.Equals(existingUnpaid.PaymentMethod, PaymentMethod.BANK_TRANSFER.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    await CancelUnpaidPaymentAsync(existingUnpaid);
+                }
+                else if (existingUnpaid != null)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"An unpaid full payment already exists with method {existingUnpaid.PaymentMethod}. Please complete or cancel that payment first."
+                    };
+                }
+
                 payment = new Payment
                 {
                     OrderId = order.OrderId,
@@ -785,6 +811,8 @@ namespace BookfetSystem.Services.Implement
                     Message = "Order is already fully paid."
                 };
             }
+
+            await CancelUnpaidElectronicFullPaymentsForOrderAsync(order.OrderId);
 
             var remainingAmount = order.RemainingAmount ?? ((order.TotalPrice ?? 0m) - (order.DepositAmount ?? 0m));
             if (remainingAmount < 0)
@@ -1306,6 +1334,34 @@ namespace BookfetSystem.Services.Implement
             }
 
             return null;
+        }
+
+        private async Task CancelUnpaidPaymentAsync(Payment payment)
+        {
+            payment.PaymentStatus = PaymentStatus.CANCELLED.ToString();
+            await _paymentRepository.UpdateAsync(payment);
+        }
+
+        private async Task CancelUnpaidElectronicFullPaymentsForOrderAsync(int orderId)
+        {
+            var stale = await _dbContext.Payments
+                .Where(p =>
+                    p.OrderId == orderId &&
+                    p.PaymentType == PaymentType.FULL.ToString() &&
+                    p.PaymentStatus == PaymentStatus.UNPAID.ToString() &&
+                    (p.PaymentMethod == PaymentMethod.BANK_TRANSFER.ToString() ||
+                     p.PaymentMethod == PaymentMethod.ZALOPAY.ToString()))
+                .ToListAsync();
+
+            foreach (var p in stale)
+            {
+                p.PaymentStatus = PaymentStatus.CANCELLED.ToString();
+            }
+
+            if (stale.Count > 0)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
         }
 
         private sealed class ZaloPayMetadata
