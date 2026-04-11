@@ -31,7 +31,9 @@ namespace BookfetSystem.Repositories
 
             if (!string.IsNullOrWhiteSpace(filter.Status))
             {
-                query = query.Where(d => d.Status != null && d.Status.ToLower().Contains(filter.Status.ToLower()));
+                // Exact match (DB stores "AVAILABLE"/"UNAVAILABLE"); Contains would match UNAVAILABLE when filtering "AVAILABLE".
+                query = query.Where(d => d.Status != null &&
+                    d.Status.ToLower() == filter.Status.ToLower());
             }
 
             if (filter.DishCategoryId.HasValue)
