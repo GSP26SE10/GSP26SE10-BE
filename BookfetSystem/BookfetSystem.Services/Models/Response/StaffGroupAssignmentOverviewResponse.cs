@@ -61,6 +61,7 @@ namespace BookfetSystem.Services.Models.Response
 
     public class StaffGroupAssignmentMenuResponse
     {
+        public int? MenuId { get; set; }
         public string? Name { get; set; }
         public string? Image { get; set; }
     }
