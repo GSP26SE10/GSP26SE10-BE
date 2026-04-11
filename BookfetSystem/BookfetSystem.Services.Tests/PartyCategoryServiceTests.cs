@@ -382,7 +382,7 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
-    // Function 15 — bỏ case id là chữ ở unit test: thuộc route/model binding API (400), không đi qua service.
+    // Function 15 
     #region Function 15 - Delete Party Category
     //Function 15 - TC1
     [TestMethod]

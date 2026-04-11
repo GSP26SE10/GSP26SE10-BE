@@ -46,7 +46,7 @@ namespace BookfetSystem.Services.Implement
             }
 
             var paymentType = ExtractPaymentType(payload.Code) ?? ExtractPaymentType(payload.Content) ?? PaymentType.DEPOSIT;
-            var payment = await _paymentRepository.GetUnpaidByOrderIdAndTypeAsync(orderId.Value, paymentType.ToString());
+            var payment = await _paymentRepository.GetUnpaidBankTransferByOrderIdAndTypeAsync(orderId.Value, paymentType.ToString());
             if (payment == null)
             {
                 _logger.LogWarning("No unpaid {PaymentType} payment found for orderId={OrderId}", paymentType, orderId.Value);

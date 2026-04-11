@@ -71,6 +71,18 @@ namespace BookfetSystem.Repositories
                     p.PaymentStatus != null && p.PaymentStatus.ToLower() == "unpaid");
         }
 
+        /// <summary>Unpaid SePay/bank QR row only — avoids matching a ZaloPay UNPAID row for the same order.</summary>
+        public async Task<Payment?> GetUnpaidBankTransferByOrderIdAndTypeAsync(int orderId, string paymentType)
+        {
+            return await _context.Payments
+                .FirstOrDefaultAsync(p =>
+                    p.OrderId == orderId &&
+                    p.PaymentType != null && p.PaymentType.ToLower() == paymentType.ToLower() &&
+                    p.PaymentStatus != null && p.PaymentStatus.ToLower() == "unpaid" &&
+                    p.PaymentMethod != null &&
+                    p.PaymentMethod.ToLower() == "bank_transfer");
+        }
+
         public IQueryable<Payment> GetPaidPayments()
         {
             return _context.Payments

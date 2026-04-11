@@ -35,7 +35,7 @@ namespace BookfetSystem.Services.Models.Request
         [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Invalid payment method. Use 1 for CASH, 2 for BANK_TRANSFER, 3 for ZALOPAY.")]
         public PaymentMethod PaymentMethod { get; set; }
 
-        [EnumDataType(typeof(PaymentStatus), ErrorMessage = "Invalid payment status. Use 1 for UNPAID, 2 for PAID.")]
+        [EnumDataType(typeof(PaymentStatus), ErrorMessage = "Invalid payment status. Use 1 for UNPAID, 2 for PAID, 3 for CANCELLED.")]
         public PaymentStatus? PaymentStatus { get; set; }
 
         public DateTime? PaidAt { get; set; }
