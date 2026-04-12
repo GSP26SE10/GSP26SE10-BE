@@ -31,17 +31,41 @@ jobs:
       - name: Kill old API
         shell: powershell
         run: |
-          Write-Host "Stopping all dotnet processes..."
-          taskkill /F /IM dotnet.exe /T
-          exit 0
+          $port = 5121
+          Write-Host "Checking process on port $port..."
+
+          $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -ne $conn) {
+            $pid = $conn.OwningProcess
+            Write-Host "Stopping process id $pid on port $port"
+            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+          }
+          else {
+            Write-Host "No running API found on port $port"
+          }
 
       - name: Start new app
         shell: powershell
         run: |
           $projectDir = "C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API"
+          $port = 5121
+          $logPath = "$projectDir\runtime.log"
 
           Write-Host "Starting app from $projectDir"
-          
-          Start-Process -FilePath "dotnet" `
-            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:5121" `
-            -WorkingDirectory $projectDir
+
+          $proc = Start-Process -FilePath "dotnet" `
+            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:$port" `
+            -WorkingDirectory $projectDir `
+            -RedirectStandardOutput $logPath `
+            -RedirectStandardError $logPath `
+            -PassThru
+
+          Start-Sleep -Seconds 5
+
+          if ($proc.HasExited) {
+            Write-Host "API exited early. Check log: $logPath"
+            Get-Content $logPath -ErrorAction SilentlyContinue | Select-Object -Last 80
+            throw "API failed to start"
+          }
+
+          Write-Host "API started with PID $($proc.Id) on port $port"
