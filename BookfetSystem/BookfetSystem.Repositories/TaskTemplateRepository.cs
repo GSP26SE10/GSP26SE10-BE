@@ -13,14 +13,9 @@ namespace BookfetSystem.Repositories
         {
         }
 
-        public IQueryable<TaskTemplate> GetAllTaskTemplateFiltered(TaskTemplate filter, int? ownerId = null)
+        public IQueryable<TaskTemplate> GetAllTaskTemplateFiltered(TaskTemplate filter)
         {
             var query = _context.TaskTemplates.AsQueryable();
-
-            if (ownerId.HasValue)
-            {
-                query = query.Where(t => t.OwnerId == ownerId.Value);
-            }
 
             if (filter.TaskTemplateId != 0)
             {

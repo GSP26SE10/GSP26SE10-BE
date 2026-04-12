@@ -261,7 +261,6 @@ CREATE TABLE order_detail_extra_charge (
 
 CREATE TABLE task_template (
     task_template_id SERIAL PRIMARY KEY,
-    owner_id INT REFERENCES users(user_id),
     task_name VARCHAR(255) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -556,10 +555,10 @@ INSERT INTO staff_group_member (staff_group_id, staff_id, status) VALUES
 (1, 3, 'ACTIVE'); -- Staff
 
 -- TASK TEMPLATE (User 1-N TaskTemplate)
-INSERT INTO task_template (owner_id, task_name, is_active, created_at, updated_at) VALUES
-(2, 'Setup tables and serve guests', TRUE, NOW(), NOW()),
-(2, 'Coordinate with kitchen and timeline', TRUE, NOW(), NOW()),
-(2, 'Support guest check-in and directions', TRUE, NOW(), NOW());
+INSERT INTO task_template (task_name, is_active, created_at, updated_at) VALUES
+('Setup tables and serve guests', TRUE, NOW(), NOW()),
+('Coordinate with kitchen and timeline', TRUE, NOW(), NOW()),
+('Support guest check-in and directions', TRUE, NOW(), NOW());
 
 -- CONTACT REQUEST
 INSERT INTO contact_request (customer_id, full_name, email, phone, subject, content, status) VALUES

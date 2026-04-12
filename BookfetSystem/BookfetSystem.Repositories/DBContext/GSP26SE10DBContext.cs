@@ -957,7 +957,6 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
-            entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.TaskName)
                 .IsRequired()
                 .HasMaxLength(255)
@@ -965,10 +964,6 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Owner).WithMany(p => p.TaskTemplates)
-                .HasForeignKey(d => d.OwnerId)
-                .HasConstraintName("task_template_owner_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>

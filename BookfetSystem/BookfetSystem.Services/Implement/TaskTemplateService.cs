@@ -42,7 +42,28 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<TaskTemplateResponse>> CreateAsync(int ownerId, TaskTemplateCreateRequest request)
+        public async Task<ApiResponse<TaskTemplateResponse>> GetByIdAsync(int id)
+        {
+            var entity = await _taskTemplateRepository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                return new ApiResponse<TaskTemplateResponse>
+                {
+                    Success = false,
+                    Message = "Task template not found.",
+                    Data = null
+                };
+            }
+
+            return new ApiResponse<TaskTemplateResponse>
+            {
+                Success = true,
+                Message = "Task template retrieved successfully.",
+                Data = entity.Adapt<TaskTemplateResponse>()
+            };
+        }
+
+        public async Task<ApiResponse<TaskTemplateResponse>> CreateAsync(TaskTemplateCreateRequest request)
         {
             var normalizedName = request.TaskName?.Trim();
             if (string.IsNullOrWhiteSpace(normalizedName))
@@ -56,7 +77,7 @@ namespace BookfetSystem.Services.Implement
             }
 
             var exists = await _taskTemplateRepository
-                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = normalizedName }, ownerId)
+                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = normalizedName })
                 .AnyAsync(t => t.TaskName.ToLower() == normalizedName.ToLower());
 
             if (exists)
@@ -72,7 +93,6 @@ namespace BookfetSystem.Services.Implement
             var now = DateTime.UtcNow;
             var entity = new TaskTemplate
             {
-                OwnerId = ownerId,
                 TaskName = normalizedName,
                 IsActive = request.IsActive ?? true,
                 CreatedAt = now,
@@ -99,10 +119,10 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<TaskTemplateResponse>> UpdateAsync(int id, int ownerId, TaskTemplateUpdateRequest request)
+        public async Task<ApiResponse<TaskTemplateResponse>> UpdateAsync(int id, TaskTemplateUpdateRequest request)
         {
             var entity = await _taskTemplateRepository.GetByIdAsync(id);
-            if (entity == null || entity.OwnerId != ownerId)
+            if (entity == null)
             {
                 return new ApiResponse<TaskTemplateResponse>
                 {
@@ -124,7 +144,7 @@ namespace BookfetSystem.Services.Implement
             }
 
             var exists = await _taskTemplateRepository
-                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = normalizedName }, ownerId)
+                .GetAllTaskTemplateFiltered(new TaskTemplate { TaskName = normalizedName })
                 .AnyAsync(t => t.TaskTemplateId != id && t.TaskName.ToLower() == normalizedName.ToLower());
 
             if (exists)
@@ -161,10 +181,10 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<ApiResponse<bool>> DeleteAsync(int id, int ownerId)
+        public async Task<ApiResponse<bool>> DeleteAsync(int id)
         {
             var entity = await _taskTemplateRepository.GetByIdAsync(id);
-            if (entity == null || entity.OwnerId != ownerId)
+            if (entity == null)
             {
                 return new ApiResponse<bool>
                 {
@@ -176,10 +196,24 @@ namespace BookfetSystem.Services.Implement
 
             if (await _taskTemplateRepository.HasRelatedDataAsync(id))
             {
+                entity.IsActive = false;
+                entity.UpdatedAt = DateTime.UtcNow;
+
+                var updated = await _taskTemplateRepository.UpdateAsync(entity);
+                if (updated > 0)
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = true,
+                        Message = "Task template is in use and has been deactivated instead of deleted.",
+                        Data = true
+                    };
+                }
+
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Cannot delete task template because it is being used in related data.",
+                    Message = "Failed to deactivate task template.",
                     Data = false
                 };
             }
