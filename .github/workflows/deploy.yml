@@ -36,9 +36,9 @@ jobs:
 
           $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($null -ne $conn) {
-            $pid = $conn.OwningProcess
-            Write-Host "Stopping process id $pid on port $port"
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            $processId = $conn.OwningProcess
+            Write-Host "Stopping process id $processId on port $port"
+            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
           }
           else {
             Write-Host "No running API found on port $port"
