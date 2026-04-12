@@ -26,7 +26,7 @@ jobs:
         shell: powershell
         run: |
           cd C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API
-          dotnet publish -c Release -o publish
+          dotnet build -c Release
 
       - name: Kill old API
         shell: powershell
