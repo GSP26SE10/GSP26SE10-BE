@@ -9,8 +9,6 @@ public partial class TaskTemplate
 {
     public int TaskTemplateId { get; set; }
 
-    public int? OwnerId { get; set; }
-
     public string TaskName { get; set; }
 
     public bool? IsActive { get; set; }
@@ -20,6 +18,4 @@ public partial class TaskTemplate
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<OrderDetailStaffTask> OrderDetailStaffTasks { get; set; } = new List<OrderDetailStaffTask>();
-
-    public virtual User Owner { get; set; }
 }
