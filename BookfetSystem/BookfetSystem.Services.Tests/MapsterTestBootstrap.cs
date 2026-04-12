@@ -38,6 +38,11 @@ internal static class MapsterTestBootstrap
             .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<DishStatus>(src.Status))
             .Map(dest => dest.DishCategoryName,
                 src => src.DishCategory != null ? src.DishCategory.DishCategoryName : null);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<DishCategoryFilterRequest, DishCategory>()
+            .IgnoreNullValues(true);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<DishCategory, DishCategoryResponse>();
     }
 
     private static int? ParseNullableInt(string? value)
