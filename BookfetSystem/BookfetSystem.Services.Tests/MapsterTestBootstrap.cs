@@ -43,6 +43,11 @@ internal static class MapsterTestBootstrap
             .IgnoreNullValues(true);
 
         TypeAdapterConfig.GlobalSettings.NewConfig<DishCategory, DishCategoryResponse>();
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<IngredientFilterRequest, Ingredient>()
+            .IgnoreNullValues(true);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<Ingredient, IngredientResponse>();
     }
 
     private static int? ParseNullableInt(string? value)
