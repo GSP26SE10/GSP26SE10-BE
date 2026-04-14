@@ -26,22 +26,71 @@ jobs:
         shell: powershell
         run: |
           cd C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API
-          dotnet publish -c Release -o publish
+          dotnet build -c Release
 
       - name: Kill old API
         shell: powershell
         run: |
-          Write-Host "Stopping all dotnet processes..."
-          taskkill /F /IM dotnet.exe /T
-          exit 0
+          $port = 5121
+          Write-Host "Checking process on port $port..."
+
+          $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -ne $conn) {
+            $processId = $conn.OwningProcess
+            Write-Host "Stopping process id $processId on port $port"
+            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+          }
+          else {
+            Write-Host "No running API found on port $port"
+          }
 
       - name: Start new app
         shell: powershell
         run: |
           $projectDir = "C:\Code\GSP26SE10-BE\BookfetSystem\BookfetSystem.API"
+          $port = 5121
+          $stdoutLog = "$projectDir\runtime.out.log"
+          $stderrLog = "$projectDir\runtime.err.log"
 
           Write-Host "Starting app from $projectDir"
-          
-          Start-Process -FilePath "dotnet" `
-            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:5121" `
-            -WorkingDirectory $projectDir
+
+          # Prevent GitHub runner from killing this process as an orphan at job end.
+          $runnerTrackingId = $env:RUNNER_TRACKING_ID
+          Remove-Item Env:RUNNER_TRACKING_ID -ErrorAction SilentlyContinue
+
+          $proc = Start-Process -FilePath "dotnet" `
+            -ArgumentList "run --configuration Release --urls=http://0.0.0.0:$port" `
+            -WorkingDirectory $projectDir `
+            -RedirectStandardOutput $stdoutLog `
+            -RedirectStandardError $stderrLog `
+            -PassThru
+
+          if ($null -ne $runnerTrackingId -and $runnerTrackingId -ne "") {
+            $env:RUNNER_TRACKING_ID = $runnerTrackingId
+          }
+
+          $started = $false
+          for ($i = 0; $i -lt 15; $i++) {
+            Start-Sleep -Seconds 2
+
+            $listen = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $listen) {
+              $started = $true
+              break
+            }
+
+            if ($proc.HasExited) {
+              break
+            }
+          }
+
+          if (-not $started) {
+            Write-Host "API failed to listen on port $port"
+            Write-Host "Last stdout logs:"
+            Get-Content $stdoutLog -ErrorAction SilentlyContinue | Select-Object -Last 80
+            Write-Host "Last stderr logs:"
+            Get-Content $stderrLog -ErrorAction SilentlyContinue | Select-Object -Last 80
+            throw "API failed to start"
+          }
+
+          Write-Host "API started with PID $($proc.Id) on port $port"
