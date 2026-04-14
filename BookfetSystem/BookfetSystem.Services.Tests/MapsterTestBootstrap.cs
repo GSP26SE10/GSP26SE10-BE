@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Helpers;
@@ -43,6 +45,18 @@ internal static class MapsterTestBootstrap
             .IgnoreNullValues(true);
 
         TypeAdapterConfig.GlobalSettings.NewConfig<DishCategory, DishCategoryResponse>();
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<IngredientFilterRequest, Ingredient>()
+            .IgnoreNullValues(true);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<Ingredient, IngredientResponse>();
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<ServiceFilterRequest, Service>()
+            .IgnoreNullValues(true)
+            .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<Service, ServiceResponse>()
+            .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status));
     }
 
     private static int? ParseNullableInt(string? value)
