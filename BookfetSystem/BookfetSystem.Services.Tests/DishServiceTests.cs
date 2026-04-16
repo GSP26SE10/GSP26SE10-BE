@@ -37,9 +37,9 @@ public class DishServiceTests
         await SeedDishesAsync();
     }
 
-    // Function 16 
-    #region Function 16 - Get Dish List
-    //Function 16 - TC1
+    // Function 12 
+    #region Function 12 - Get Dish List
+    //Function 12 - TC1
     [TestMethod]
     public async Task GetAllDishFiltered_GetAll_ShouldReturnAllItems()
     {
@@ -51,7 +51,7 @@ public class DishServiceTests
         result.PageSize.Should().Be(10);
     }
 
-    //Function 16 - TC2
+    //Function 12 - TC2
     [TestMethod]
     public async Task GetAllDishFiltered_WithPageAndPageSize_ShouldReturnPagedItems()
     {
@@ -63,7 +63,7 @@ public class DishServiceTests
         result.PageSize.Should().Be(2);
     }
 
-    //Function 16 - TC3
+    //Function 12 - TC3
     [TestMethod]
     public async Task GetAllDishFiltered_WhenPageIsZero_ShouldNormalizeToPageOne()
     {
@@ -77,7 +77,7 @@ public class DishServiceTests
         result.Items.Should().HaveCount(2);
     }
 
-    //Function 16 - TC4
+    //Function 12 - TC4
     [TestMethod]
     public async Task GetAllDishFiltered_WithStatusAvailable_ShouldReturnMatchedItems()
     {
@@ -90,7 +90,7 @@ public class DishServiceTests
         result.Items.Should().OnlyContain(x => x.Status == 1);
     }
 
-    //Function 16 - TC5
+    //Function 12 - TC5
     [TestMethod]
     public async Task GetAllDishFiltered_WithName_ShouldReturnMatchedItems()
     {
@@ -104,7 +104,7 @@ public class DishServiceTests
         result.Items.First().DishName.Should().Be("Caesar Salad");
     }
 
-    //Function 16 - TC6
+    //Function 12 - TC6&7
     [TestMethod]
     public async Task GetAllDishFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {
@@ -124,9 +124,9 @@ public class DishServiceTests
     }
     #endregion
 
-    // Function 17 
-    #region Function 17 - Create Dish
-    //Function 17 - TC1
+    // Function 13 
+    #region Function 13 - Create Dish
+    //Function 13 - TC1
     [TestMethod]
     public async Task CreateDish_WhenValid_ShouldSucceed()
     {
@@ -153,7 +153,7 @@ public class DishServiceTests
         (await _dbContext.Dishes.CountAsync()).Should().Be(6);
     }
 
-    //Function 17 - TC2
+    //Function 13 - TC2
     [TestMethod]
     public async Task CreateDish_WhenNameMissing_ShouldFail()
     {
@@ -171,7 +171,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 17 - TC3
+    //Function 13 - TC3
     [TestMethod]
     public async Task CreateDish_WhenDescriptionEmpty_ShouldStillSucceed()
     {
@@ -191,7 +191,7 @@ public class DishServiceTests
         result.Data.Description.Should().BeNullOrEmpty();
     }
 
-    //Function 17 - TC4
+    //Function 13 - TC4
     [TestMethod]
     public async Task CreateDish_WhenNameAlreadyExists_ShouldFail()
     {
@@ -209,7 +209,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 17 - TC5
+    //Function 13 - TC5
     [TestMethod]
     public async Task CreateDish_WhenDishCategoryNotFound_ShouldFail()
     {
@@ -227,7 +227,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 17 - TC6
+    //Function 13 - TC6
     [TestMethod]
     public async Task CreateDish_WhenUploadImageThrows_ShouldFail()
     {
@@ -255,9 +255,9 @@ public class DishServiceTests
     }
     #endregion
 
-    // Function 18 
-    #region Function 18 - Update Dish
-    //Function 18 - TC1
+    // Function 14 
+    #region Function 14 - Update Dish
+    //Function 14 - TC1
     [TestMethod]
     public async Task UpdateDish_WhenValidAllFields_ShouldSucceed()
     {
@@ -281,7 +281,7 @@ public class DishServiceTests
         result.Data.Status.Should().Be(0);
     }
 
-    //Function 18 - TC2
+    //Function 14 - TC2
     [TestMethod]
     public async Task UpdateDish_WhenNameEmpty_ShouldFail()
     {
@@ -300,7 +300,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC3
+    //Function 14 - TC3
     [TestMethod]
     public async Task UpdateDish_WhenIdNotFound_ShouldFail()
     {
@@ -319,7 +319,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC4
+    //Function 14 - TC4
     [TestMethod]
     public async Task UpdateDish_WhenIdIsZero_ShouldFail()
     {
@@ -338,7 +338,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC5
+    //Function 14 - TC5
     [TestMethod]
     public async Task UpdateDish_WhenIdIsNegative_ShouldFail()
     {
@@ -357,7 +357,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC6
+    //Function 14 - TC6
     [TestMethod]
     public async Task UpdateDish_WhenNameAlreadyExists_ShouldFail()
     {
@@ -376,7 +376,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC7
+    //Function 14 - TC7
     [TestMethod]
     public async Task UpdateDish_WhenDishCategoryNotFound_ShouldFail()
     {
@@ -395,7 +395,7 @@ public class DishServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 18 - TC8
+    //Function 14 - TC8
     [TestMethod]
     public async Task UpdateDish_WhenUploadImageThrows_ShouldFail()
     {
@@ -424,9 +424,9 @@ public class DishServiceTests
     }
     #endregion
 
-    // Function 19 
-    #region Function 19 - Delete Dish
-    //Function 19 - TC1
+    // Function 15 
+    #region Function 15 - Delete Dish
+    //Function 15 - TC1
     [TestMethod]
     public async Task DeleteDish_WhenValidId_ShouldSucceed()
     {
@@ -439,7 +439,7 @@ public class DishServiceTests
         (await _dbContext.Dishes.FindAsync(5)).Should().BeNull();
     }
 
-    //Function 19 - TC2
+    //Function 15 - TC2
     [TestMethod]
     public async Task DeleteDish_WhenIdNotFound_ShouldFail()
     {
@@ -450,7 +450,7 @@ public class DishServiceTests
         result.Message.Should().Be("Dish not found.");
     }
 
-    //Function 19 - TC3
+    //Function 15 - TC3
     [TestMethod]
     public async Task DeleteDish_WhenIdIsZero_ShouldFail()
     {
@@ -461,7 +461,7 @@ public class DishServiceTests
         result.Message.Should().Be("Dish not found.");
     }
 
-    //Function 19 - TC4
+    //Function 15 - TC4
     [TestMethod]
     public async Task DeleteDish_WhenIdIsNegative_ShouldFail()
     {
@@ -472,7 +472,7 @@ public class DishServiceTests
         result.Message.Should().Be("Dish not found.");
     }
 
-    //Function 19 - TC5
+    //Function 15 - TC5
     [TestMethod]
     public async Task DeleteDish_WhenDeleteSameIdTwice_SecondShouldFail()
     {
@@ -486,7 +486,7 @@ public class DishServiceTests
         second.Message.Should().Be("Dish not found.");
     }
 
-    //Function 19 - TC6
+    //Function 15 - TC6
     [TestMethod]
     public async Task DeleteDish_WhenRelatedDataExists_ShouldFail()
     {

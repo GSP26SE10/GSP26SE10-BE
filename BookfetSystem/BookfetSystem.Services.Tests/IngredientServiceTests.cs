@@ -103,7 +103,7 @@ public class IngredientServiceTests
         result.Items.First().IngredientName.Should().Be("Sugar");
     }
 
-    //Function 24 - TC6
+    //Function 24 - TC6&7
     [TestMethod]
     public async Task GetAllIngredientFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {

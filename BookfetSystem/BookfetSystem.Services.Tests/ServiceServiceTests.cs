@@ -103,7 +103,7 @@ public class ServiceServiceTests
         result.Items.First().ServiceName.Should().Be("Photography");
     }
 
-    //Function 28 - TC6
+    //Function 28 - TC6&7
     [TestMethod]
     public async Task GetAllServiceFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {
