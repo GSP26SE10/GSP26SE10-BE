@@ -106,5 +106,14 @@ namespace BookfetSystem.Repositories
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<List<(string Token, string Platform, int UserDeviceId)>> GetActiveDevicesWithPlatformAsync(int userId)
+        {
+            return await _context.UserDevices
+                .Where(x => x.UserId == userId && x.IsActive == true && !string.IsNullOrWhiteSpace(x.ExpoPushToken))
+                .Select(x => new ValueTuple<string, string, int>(x.ExpoPushToken, x.Platform, x.UserDeviceId))
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }

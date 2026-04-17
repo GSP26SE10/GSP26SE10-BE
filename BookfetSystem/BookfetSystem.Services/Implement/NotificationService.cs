@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.Json;
 using BookfetSystem.Repositories;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
@@ -15,22 +13,23 @@ namespace BookfetSystem.Services.Implement
 {
     public class NotificationService : INotificationService
     {
-        private const string ExpoPushSendEndpoint = "https://exp.host/--/api/v2/push/send";
-
         private readonly NotificationRepository _notificationRepository;
         private readonly UserDeviceRepository _userDeviceRepository;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ExpoPushProvider _expoProvider;
+        private readonly FcmPushProvider _fcmProvider;
         private readonly ILogger<NotificationService> _logger;
 
         public NotificationService(
             NotificationRepository notificationRepository,
             UserDeviceRepository userDeviceRepository,
-            IHttpClientFactory httpClientFactory,
+            ExpoPushProvider expoProvider,
+            FcmPushProvider fcmProvider,
             ILogger<NotificationService> logger)
         {
             _notificationRepository = notificationRepository;
             _userDeviceRepository = userDeviceRepository;
-            _httpClientFactory = httpClientFactory;
+            _expoProvider = expoProvider;
+            _fcmProvider = fcmProvider;
             _logger = logger;
         }
 
@@ -38,22 +37,51 @@ namespace BookfetSystem.Services.Implement
         {
             await SaveInAppNotificationAsync(userId, title, body, type);
 
-            var tokens = await _userDeviceRepository.GetActiveTokensByUserIdAsync(userId);
-            if (!tokens.Any())
+            var devices = await _userDeviceRepository.GetActiveDevicesWithPlatformAsync(userId);
+            if (!devices.Any())
             {
                 return;
             }
 
-            var client = _httpClientFactory.CreateClient();
-            foreach (var token in tokens)
+            foreach (var (token, platform, deviceId) in devices)
             {
-                await SendOnePushAsync(client, token, title, body, type, data);
+                await SendToPlatformAsync(token, platform, deviceId, title, body, type, data);
+            }
+        }
+
+        private async Task SendToPlatformAsync(string token, string platform, int deviceId, string title, string body, NotificationType type, Dictionary<string, string>? data)
+        {
+            bool success = false;
+
+            try
+            {
+                platform = platform?.ToLowerInvariant() ?? "ios";
+
+                if (platform == "android")
+                {
+                    success = await _fcmProvider.SendAsync(token, title, body, type, data);
+                }
+                else
+                {
+                    // Default to Expo for iOS and unknown platforms
+                    success = await _expoProvider.SendAsync(token, title, body, type, data);
+                }
+
+                if (!success)
+                {
+                    await _userDeviceRepository.DeactivateByExpoPushTokenAsync(token);
+                    _logger.LogWarning("Device token deactivated due to send failure. DeviceId: {DeviceId}, Platform: {Platform}", deviceId, platform);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send push to device {DeviceId} on platform {Platform}", deviceId, platform);
+                await _userDeviceRepository.DeactivateByExpoPushTokenAsync(token);
             }
         }
 
         public async Task<PagedResponse<NotificationResponse>> GetAllNotificationFilteredAsync(NotificationFilterRequest request, int userId, int page, int pageSize)
         {
-
             var entityFilter = request.Adapt<Notification>();
             var query = _notificationRepository.GetAllNotificationFiltered(entityFilter, userId);
             var totalCount = await query.CountAsync();
@@ -120,94 +148,6 @@ namespace BookfetSystem.Services.Implement
             };
 
             await _notificationRepository.CreateAsync(entity);
-        }
-
-        private async Task SendOnePushAsync(HttpClient client, string token, string title, string body, NotificationType type, Dictionary<string, string>? data)
-        {
-            var payloadData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["notificationType"] = ((int)type).ToString()
-            };
-
-            if (data != null)
-            {
-                foreach (var item in data)
-                {
-                    payloadData[item.Key] = item.Value;
-                }
-            }
-
-            var payload = new
-            {
-                to = token,
-                title,
-                body,
-                data = payloadData
-            };
-
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-            try
-            {
-                var response = await client.PostAsync(ExpoPushSendEndpoint, content);
-                var responseText = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Expo push failed with status {StatusCode}. Response: {Response}", response.StatusCode, responseText);
-                }
-
-                if (ContainsDeviceNotRegistered(responseText))
-                {
-                    await _userDeviceRepository.DeactivateByExpoPushTokenAsync(token);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send Expo push notification to token {Token}", token);
-            }
-        }
-
-        private static bool ContainsDeviceNotRegistered(string responseText)
-        {
-            if (string.IsNullOrWhiteSpace(responseText))
-            {
-                return false;
-            }
-
-            try
-            {
-                using var document = JsonDocument.Parse(responseText);
-                if (!document.RootElement.TryGetProperty("data", out var dataElement) || dataElement.ValueKind != JsonValueKind.Array)
-                {
-                    return false;
-                }
-
-                foreach (var item in dataElement.EnumerateArray())
-                {
-                    if (!item.TryGetProperty("details", out var detailsElement) || detailsElement.ValueKind != JsonValueKind.Object)
-                    {
-                        continue;
-                    }
-
-                    if (!detailsElement.TryGetProperty("error", out var errorElement))
-                    {
-                        continue;
-                    }
-
-                    var errorValue = errorElement.GetString();
-                    if (string.Equals(errorValue, "DeviceNotRegistered", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            catch
-            {
-                return responseText.Contains("DeviceNotRegistered", StringComparison.OrdinalIgnoreCase);
-            }
-
-            return false;
         }
     }
 }
