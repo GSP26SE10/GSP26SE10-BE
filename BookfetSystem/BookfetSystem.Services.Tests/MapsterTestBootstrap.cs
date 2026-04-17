@@ -57,6 +57,26 @@ internal static class MapsterTestBootstrap
 
         TypeAdapterConfig.GlobalSettings.NewConfig<Service, ServiceResponse>()
             .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status));
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<OrderDetail, OrderDetailResponse>()
+            .Map(dest => dest.MenuName,
+                src => src.Menu != null ? src.Menu.MenuName : null)
+            .Map(dest => dest.PartyCategoryName,
+                src => src.PartyCategory != null ? src.PartyCategory.PartyCategoryName : null)
+            .Map(dest => dest.MenuSnapshot,
+                src => SnapshotParser.TryParseMenuSnapshot(src.MenuSnapshot))
+            .Map(dest => dest.ServiceSnapshot,
+                src => SnapshotParser.TryParseServiceSnapshot(src.ServiceSnapshot))
+            .Map(dest => dest.CustomDishSnapshot,
+                src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
+            .Map(dest => dest.Status,
+                src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status))
+            .Map(dest => dest.Type,
+                src => EnumHelper.TryParseToInt<OrderDetailType>(src.Type))
+            .Map(dest => dest.ExtraChargeCost,
+                src => src.OrderDetailExtraCharges != null && src.OrderDetailExtraCharges.Any()
+                    ? src.OrderDetailExtraCharges.Sum(ec => ec.TotalAmount)
+                    : null);
     }
 
     private static int? ParseNullableInt(string? value)
