@@ -84,6 +84,13 @@ Desktop.ini
 !**/appsettings.json
 
 ####################################
+# Firebase Credentials
+####################################
+# ❌ NEVER commit Firebase credentials with private keys
+*firebase-adminsdk*.json
+gsp26se10-27295-firebase-adminsdk-fbsvc-c019727245.json
+
+####################################
 # Docker (optional)
 ####################################
 docker-compose.override.yml
