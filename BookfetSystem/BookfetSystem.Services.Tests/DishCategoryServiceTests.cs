@@ -84,7 +84,7 @@ public class DishCategoryServiceTests
         result.Items.First().DishCategoryName.Should().Be("Desserts");
     }
 
-    //Function 20 - TC6 
+    //Function 20 - TC5
     [TestMethod]
     public async Task GetAllDishCategoryFiltered_WithDescription_ShouldReturnMatchedItems()
     {
@@ -97,7 +97,7 @@ public class DishCategoryServiceTests
         result.Items.First().DishCategoryName.Should().Be("Beverages");
     }
 
-    //Function 20 - TC7
+    //Function 20 - TC6&7
     [TestMethod]
     public async Task GetAllDishCategoryFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {

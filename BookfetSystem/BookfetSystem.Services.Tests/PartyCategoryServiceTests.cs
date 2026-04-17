@@ -36,9 +36,9 @@ public class PartyCategoryServiceTests
         await SeedPartyCategoriesAsync();
     }
 
-    // Function 12
-    #region Function 12 - Get Party Category List
-    //Function 12 - TC1
+    // Function 16
+    #region Function 16 - Get Party Category List
+    //Function 16 - TC1
     [TestMethod]
     public async Task GetAllPartyCategoryFiltered_GetAll_ShouldReturnAllItems()
     {
@@ -76,7 +76,7 @@ public class PartyCategoryServiceTests
         result.Items.Should().HaveCount(2);
     }
 
-    //TC5
+    //TC4
     [TestMethod]
     public async Task GetAllPartyCategoryFiltered_WithStatusAvailable_ShouldReturnMatchedItems()
     {
@@ -89,7 +89,7 @@ public class PartyCategoryServiceTests
         result.Items.Should().OnlyContain(x => x.Status == 1);
     }
 
-    //TC6
+    //TC5
     [TestMethod]
     public async Task GetAllPartyCategoryFiltered_WithName_ShouldReturnMatchedItems()
     {
@@ -103,7 +103,7 @@ public class PartyCategoryServiceTests
         result.Items.First().PartyCategoryName.Should().Be("Wedding");
     }
 
-    //TC7
+    //TC6
     [TestMethod]
     public async Task GetAllPartyCategoryFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
     {
@@ -123,9 +123,9 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
-    // Function 13
-    #region Function 13 - Create Party Category
-    //Function 13 - TC1
+    // Function 17
+    #region Function 17 - Create Party Category
+    //Function 17 - TC1
     [TestMethod]
     public async Task CreatePartyCategory_WhenValid_ShouldSucceed()
     {
@@ -149,7 +149,7 @@ public class PartyCategoryServiceTests
         (await _dbContext.PartyCategories.CountAsync()).Should().Be(6);
     }
 
-    //Function 13 - TC2
+    //Function 17 - TC2
     [TestMethod]
     public async Task CreatePartyCategory_WhenNameMissing_ShouldFail()
     {
@@ -188,7 +188,7 @@ public class PartyCategoryServiceTests
         result.Data.Status.Should().Be(1);
     }
 
-    //Function 13 - TC5
+    //Function 17 - TC4
     [TestMethod]
     public async Task CreatePartyCategory_WhenNumberOfGuestsIsNotGreaterThanZero_ShouldFail()
     {
@@ -206,7 +206,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 13 - TC6
+    //Function 17 - TC5
     [TestMethod]
     public async Task CreatePartyCategory_WhenNameAlreadyExists_ShouldFail()
     {
@@ -224,7 +224,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 13 - TC7
+    //Function 17 - TC6
     [TestMethod]
     public async Task CreatePartyCategory_WhenUploadImageThrows_ShouldFail()
     {
@@ -252,9 +252,9 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
-    // Function 14 .
-    #region Function 14 - Update Party Category
-    //Function 14 - TC1
+    // Function 18
+    #region Function 18 - Update Party Category
+    //Function 18 - TC1
     [TestMethod]
     public async Task UpdatePartyCategory_WhenValidAllFields_ShouldSucceed()
     {
@@ -277,7 +277,7 @@ public class PartyCategoryServiceTests
         result.Data.Status.Should().Be(0);
     }
 
-    //Function 14 - TC2
+    //Function 18 - TC2
     [TestMethod]
     public async Task UpdatePartyCategory_WhenIdNotFound_ShouldFail()
     {
@@ -296,7 +296,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 14 - TC3
+    //Function 18 - TC3
     [TestMethod]
     public async Task UpdatePartyCategory_WhenNameMissing_ShouldFail()
     {
@@ -315,7 +315,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 14 - TC4
+    //Function 18 - TC4
     [TestMethod]
     public async Task UpdatePartyCategory_WhenNumberOfGuestsIsNotGreaterThanZero_ShouldFail()
     {
@@ -334,7 +334,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 14 - TC5
+    //Function 18 - TC5
     [TestMethod]
     public async Task UpdatePartyCategory_WhenNameAlreadyExists_ShouldFail()
     {
@@ -353,7 +353,7 @@ public class PartyCategoryServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 14 - TC6
+    //Function 18 - TC6
     [TestMethod]
     public async Task UpdatePartyCategory_WhenUploadImageThrows_ShouldFail()
     {
@@ -382,9 +382,9 @@ public class PartyCategoryServiceTests
     }
     #endregion
 
-    // Function 15 
-    #region Function 15 - Delete Party Category
-    //Function 15 - TC1
+    // Function 19 
+    #region Function 19 - Delete Party Category
+    //Function 19 - TC1
     [TestMethod]
     public async Task DeletePartyCategory_WhenValidId_ShouldSucceed()
     {
@@ -398,7 +398,7 @@ public class PartyCategoryServiceTests
         gone.Should().BeNull();
     }
 
-    //Function 15 - TC2
+    //Function 19 - TC2
     [TestMethod]
     public async Task DeletePartyCategory_WhenIdNotFound_ShouldFail()
     {
@@ -409,7 +409,7 @@ public class PartyCategoryServiceTests
         result.Message.Should().Be("Party category not found.");
     }
 
-    //Function 15 - TC3
+    //Function 19 - TC3
     [TestMethod]
     public async Task DeletePartyCategory_WhenIdIsZero_ShouldFail()
     {
@@ -420,7 +420,7 @@ public class PartyCategoryServiceTests
         result.Message.Should().Be("Party category not found.");
     }
 
-    //Function 15 - TC4
+    //Function 19 - TC4
     [TestMethod]
     public async Task DeletePartyCategory_WhenIdIsNegative_ShouldFail()
     {
@@ -431,7 +431,7 @@ public class PartyCategoryServiceTests
         result.Message.Should().Be("Party category not found.");
     }
 
-    //Function 15 - TC6
+    //Function 19 - TC5
     [TestMethod]
     public async Task DeletePartyCategory_WhenDeleteSameIdTwice_SecondShouldFail()
     {
@@ -445,7 +445,7 @@ public class PartyCategoryServiceTests
         second.Message.Should().Be("Party category not found.");
     }
 
-    //Function 15 - TC7
+    //Function 19 - TC6
     [TestMethod]
     public async Task DeletePartyCategory_WhenRelatedDataExists_ShouldFail()
     {
