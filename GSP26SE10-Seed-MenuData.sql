@@ -270,4 +270,3 @@ JOIN party_category pc ON pc.party_category_name = x.party_category_name
 JOIN menu m ON m.menu_name = x.menu_name
 ON CONFLICT (party_category_id, menu_id) DO NOTHING;
 
--- feedback_menu: không seed (cần order_id / order_detail_id thật; để trống cho dữ liệu runtime)
