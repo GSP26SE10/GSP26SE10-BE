@@ -131,7 +131,8 @@ namespace BookfetSystem.Services.Implement
                                 ? SnapshotParser.TryParseJsonToObject(x.ImgUrl)
                                 : snapshot?.ImgUrl,
                             TotalOrders = x.TotalOrders,
-                            TotalGuests = x.TotalGuests
+                            TotalGuests = x.TotalGuests,
+                            SoldQuantity = x.TotalGuests
                         };
                     }).ToList()
                 };
