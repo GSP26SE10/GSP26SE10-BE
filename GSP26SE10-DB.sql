@@ -402,17 +402,17 @@ INSERT INTO role (role_name) VALUES
 
 -- USERS
 INSERT INTO users (full_name, email, password_hash, user_name, phone, avatar, address, status, role_id) VALUES
-('Admin', 'hanmi200485@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '123 Admin St', 'ACTIVE', 1),
-('Team Leader Nguyen', 'leader@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '456 Leader St', 'ACTIVE', 2),
-('Staff Member A', 'staff@buffet.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '789 Staff St', 'ACTIVE', 3),
-('Phan Võ Thành Tài', 'phanvothanhtai1007@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://hips.hearstapps.com/hmg-prod/images/neal-mohan-ceo-youtube-and-mrbeast-attend-youtube-brandcast-news-photo-1765229990.pjpeg?crop=0.281xw:0.368xh;0.452xw,0.0335xh&resize=640:*', '321 User St', 'ACTIVE', 4);
+('Mai Hân', 'hanmi200485@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'admin', '0901234567', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1776500186/z7738524821400_2bfe558f39fd9982e1ea9271db390207_oxvz1e.jpg', '123 Admin St', 'ACTIVE', 1),
+('Kiến Quốc', 'quocthkse183295@fpt.edu.vn', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'leader', '0901234568', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1776500291/0efe4c97-7932-496d-9c65-d2298a1ab25f.png', '456 Leader St', 'ACTIVE', 2),
+('Quốc Huy', 'nguyenquochuy10987@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'staff', '0901234569', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1776500404/177c3c7b-fe4d-4d84-9b01-291e8fca5212.png', '789 Staff St', 'ACTIVE', 3),
+('Thành Tài', 'phanvothanhtai1007@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1776500677/95f299a1-c88f-47d2-82f6-cd3be7ff7ea5.png', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
 INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
 ('Tiệc cưới', 'Tiệc cưới sang trọng và ấm cúng', 'AVAILABLE', 200, '/images/wedding.jpg'),
 ('Tiệc sinh nhật', 'Tiệc sinh nhật vui vẻ cho gia đình và bạn bè', 'AVAILABLE', 50, '/images/birthday.jpg'),
 ('Tiệc doanh nghiệp', 'Tiệc doanh nghiệp chuyên nghiệp', 'AVAILABLE', 100, '/images/corporate.jpg'),
-('Test party 1 people', 'Party category for minimum 1 guest testing', 'AVAILABLE', 1, '/images/test-party-1.jpg');
+('Tiệc hẹn hò', 'Party category for minimum 1 guest testing', 'AVAILABLE', 2, '/images/test-party-1.jpg');
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
@@ -427,11 +427,6 @@ INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, 
 ('Kem dừa', 50000, 'Kem dừa tươi mát', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554663/dish/kemdua.png', 2, 'Có chứa sữa'),
 ('Nước cam tươi', 30000, 'Nước cam vắt tươi', 'AVAILABLE', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775554902/dish/nuocamtuoi.png', 3, 'Không thêm đường');
 
--- DISH TEST (2.5k + 2.5k)
-INSERT INTO dish (dish_name, price, description, status, img, dish_category_id, note) VALUES
-('Món test 1 - 2.5k', 2500, 'Món mẫu dùng để test menu', 'AVAILABLE', NULL, 1, 'Dữ liệu test'),
-('Món test 2 - 2.5k', 2500, 'Món mẫu dùng để test menu', 'AVAILABLE', NULL, 1, 'Dữ liệu test');
-
 -- INGREDIENT
 INSERT INTO ingredient (ingredient_name, description, img) VALUES
 ('Thịt gà', 'Thịt gà tươi', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1775555058/ingredient/thitga.png'),
@@ -444,9 +439,7 @@ INSERT INTO dish_detail (dish_id, ingredient_id) VALUES
 (1, 1),
 (2, 2),
 (3, 3),
-(4, 4),
-(5, 1),
-(6, 2);
+(4, 4);
 
 -- MENU CATEGORY
 INSERT INTO menu_category (menu_category_name, description, status) VALUES
@@ -466,9 +459,6 @@ INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALU
 ('Combo Hải Sản Premium', 620000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138024/menu/haisanpremium1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138044/menu/haisanpremium2.png"]'::jsonb, 'AVAILABLE', 2),
 ('Combo Hải Sản Đại Dương', 850000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138213/menu/haisandaiduong1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1775138315/menu/haisandaiduong2.png"]'::jsonb, 'AVAILABLE', 2);
 
--- MENU TEST 5K
-INSERT INTO menu (menu_name, base_price, img_url, status, menu_category_id) VALUES
-('menu test 5k', 5000, '["https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png","https://res.cloudinary.com/dl0dri4pf/image/upload/v1772536026/menu/menu1.png"]'::jsonb, 'AVAILABLE', 1);
 
 -- MENU - DISH
 INSERT INTO menu_dish (menu_id, dish_id) VALUES
@@ -503,14 +493,6 @@ INSERT INTO menu_dish (menu_id, dish_id) VALUES
 (10, 3),
 (10, 4);
 
--- MENU_DISH cho menu test 5k và 2 dish test 2.5k
-INSERT INTO menu_dish (menu_id, dish_id)
-SELECT m.menu_id, d.dish_id
-FROM menu m
-CROSS JOIN dish d
-WHERE m.menu_name = 'menu test 5k'
-  AND d.dish_name IN ('dish1 test 2.5k', 'dish2 test 2.5k');
-
 -- PARTY CATEGORY - MENU
 INSERT INTO party_category_menu (party_category_id, menu_id) VALUES
 (1, 1),
@@ -532,52 +514,13 @@ INSERT INTO service (service_name, description, base_price, status, img) VALUES
 
 -- EXTRA CHARGE CATALOG
 INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_price, status) VALUES
-('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'item', 1000, 'ACTIVE'),
-('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'hour', 500000, 'ACTIVE'),
-('EXTRA_SERVICE', 'Phát sinh thêm dịch vụ', 'Phụ thu cho các dịch vụ phát sinh ngoài gói', 'service', 300000, 'ACTIVE'),
-('EXTRA_EQUIPMENT', 'Phát sinh thêm thiết bị', 'Phụ thu cho thiết bị phát sinh thêm', 'item', 400000, 'ACTIVE'),
-('CLEANING', 'Phí vệ sinh thêm', 'Phụ thu cho chi phí vệ sinh phát sinh', 'session', 250000, 'ACTIVE'),
-('TRANSPORT', 'Phí vận chuyển phát sinh', 'Phụ thu vận chuyển ngoài phạm vi tiêu chuẩn', 'trip', 800000, 'ACTIVE'),
-('COMPENSATION', 'Phí bồi thường khác', 'Các khoản bồi thường phát sinh khác', 'case', 1000000, 'ACTIVE'),
-('PENALTY', 'Phí phạt', 'Phụ phí phạt theo điều khoản hợp đồng', 'case', 500000, 'ACTIVE'),
-('OTHER', 'Chi phí khác', 'Các chi phí phát sinh khác không thuộc nhóm trên', 'item', 0, 'ACTIVE');
+('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'món', 1000, 'ACTIVE'),
+('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'giờ', 500000, 'ACTIVE'),
+('EXTRA_SERVICE', 'Phát sinh thêm dịch vụ', 'Phụ thu cho các dịch vụ phát sinh ngoài gói', 'dịch vụ', 300000, 'ACTIVE'),
+('EXTRA_EQUIPMENT', 'Phát sinh thêm thiết bị', 'Phụ thu cho thiết bị phát sinh thêm', 'món', 400000, 'ACTIVE'),
+('CLEANING', 'Phí vệ sinh thêm', 'Phụ thu cho chi phí vệ sinh phát sinh', 'lần', 250000, 'ACTIVE'),
+('TRANSPORT', 'Phí vận chuyển phát sinh', 'Phụ thu vận chuyển ngoài phạm vi tiêu chuẩn', 'chuyến', 800000, 'ACTIVE'),
+('PENALTY', 'Phí phạt', 'Phụ phí phạt theo điều khoản hợp đồng', 'trường hợp', 500000, 'ACTIVE');
 
--- STAFF GROUP (phải tạo trước order_detail)
-INSERT INTO staff_group (staff_group_name, status, leader_id) VALUES 
-('Service Team A', 'ACTIVE', 2);
 
--- orders / order_detail / order_service / order_detail_extra_charge / order_detail_custom / payment / feedback_* :
--- không seed mẫu (bảng để trống cho dữ liệu thật)
 
--- STAFF GROUP MEMBER
-INSERT INTO staff_group_member (staff_group_id, staff_id, status) VALUES 
-(1, 2, 'ACTIVE'), -- Group Leader
-(1, 3, 'ACTIVE'); -- Staff
-
--- TASK TEMPLATE (User 1-N TaskTemplate)
-INSERT INTO task_template (task_name, is_active, created_at, updated_at) VALUES
-('Setup tables and serve guests', TRUE, NOW(), NOW()),
-('Coordinate with kitchen and timeline', TRUE, NOW(), NOW()),
-('Support guest check-in and directions', TRUE, NOW(), NOW());
-
--- CONTACT REQUEST
-INSERT INTO contact_request (customer_id, full_name, email, phone, subject, content, status) VALUES
-(4, 'Nguyen Van A', 'user@buffet.vn', '0901234570', 'Tư vấn menu tiệc cưới', 'Mình muốn được tư vấn gói buffet cho 150 khách.', 'PENDING');
-
--- CONVERSATION
-INSERT INTO conversation (customer_id, owner_id)
-VALUES (4, 1);
-
--- MESSAGE
-INSERT INTO message (conversation_id, sender_id, content, message_type, menu_id)
-VALUES 
-(1, 4, 'I would like to change the event time.', 'TEXT', NULL),
-(1, 2, 'Sure, please provide the new schedule.', 'TEXT', NULL),
-(1, 2, 'I recommend this menu for your event.', 'MENU', 1);
-
--- USER DEVICE
-INSERT INTO user_device (user_id, device_id, expo_push_token, platform, is_active) VALUES
-(4, 'android-device-001', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx1]', 'android', TRUE),
-(4, 'ios-device-001', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx2]', 'ios', TRUE);
-
--- NOTIFICATION (không seed mẫu gắn đơn hàng)

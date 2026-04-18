@@ -20,6 +20,8 @@ namespace BookfetSystem.Services.Mappings
                        src => src.Customer != null ? src.Customer.FullName : null)
                   .Map(dest => dest.Status,
                        src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+                  .Map(dest => dest.MtdZlp,
+                       src => SnapshotParser.TryParseJsonToObject(src.MtdZlp))
                   .Map(dest => dest.OrderDetails,
                        src => src.OrderDetails != null ? src.OrderDetails.Select(od => od.Adapt<OrderDetailResponse>()).ToList() : new List<OrderDetailResponse>());
         }

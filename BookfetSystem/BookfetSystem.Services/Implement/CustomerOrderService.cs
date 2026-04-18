@@ -94,6 +94,7 @@ namespace BookfetSystem.Services.Services
                 DepositAmount = entity.DepositAmount,
                 RemainingAmount = entity.RemainingAmount,
                 NoteOrder = entity.NoteOrder,
+                MtdZlp = SnapshotParser.TryParseJsonToObject(entity.MtdZlp),
                 ReviewedBy = entity.ReviewedBy,
                 ReviewedAt = entity.ReviewedAt,
                 CreatedAt = entity.CreatedAt,
