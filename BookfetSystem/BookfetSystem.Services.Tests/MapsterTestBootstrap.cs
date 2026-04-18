@@ -77,6 +77,20 @@ internal static class MapsterTestBootstrap
                 src => src.OrderDetailExtraCharges != null && src.OrderDetailExtraCharges.Any()
                     ? src.OrderDetailExtraCharges.Sum(ec => ec.TotalAmount)
                     : null);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<OrderFilterRequest, Order>()
+            .IgnoreNullValues(true)
+            .Map(dest => dest.Status, src => src.Status.HasValue ? src.Status.Value.ToString() : null);
+
+        TypeAdapterConfig.GlobalSettings.NewConfig<Order, OrderResponse>()
+            .Map(dest => dest.CustomerName,
+                src => src.Customer != null ? src.Customer.FullName : null)
+            .Map(dest => dest.Status,
+                src => EnumHelper.TryParseToInt<OrderStatus>(src.Status))
+            .Map(dest => dest.OrderDetails,
+                src => src.OrderDetails != null
+                    ? src.OrderDetails.Select(od => od.Adapt<OrderDetailResponse>()).ToList()
+                    : new List<OrderDetailResponse>());
     }
 
     private static int? ParseNullableInt(string? value)

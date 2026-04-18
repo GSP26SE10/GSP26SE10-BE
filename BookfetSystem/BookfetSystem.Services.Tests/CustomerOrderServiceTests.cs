@@ -318,6 +318,84 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
+    #region Function 86 - Get Order List
+    //Function 86 - TC1
+    [TestMethod]
+    public async Task GetAllFilteredAsync_WhenNoFilter_ShouldReturnAllOrders()
+    {
+        await SeedOrdersForListAsync();
+
+        var result = await _sut.GetAllFilteredAsync(new OrderFilterRequest(), 1, 10);
+
+        result.TotalCount.Should().Be(3);
+        result.Items.Should().HaveCount(3);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(10);
+    }
+
+    //Function 86 - TC2
+    [TestMethod]
+    public async Task GetAllFilteredAsync_WithPageAndPageSize_ShouldReturnPagedItems()
+    {
+        await SeedOrdersForListAsync();
+
+        var result = await _sut.GetAllFilteredAsync(new OrderFilterRequest(), 2, 2);
+
+        result.TotalCount.Should().Be(3);
+        result.Items.Should().HaveCount(1);
+        result.Page.Should().Be(2);
+        result.PageSize.Should().Be(2);
+    }
+
+    //Function 86 - TC3
+    [TestMethod]
+    public async Task GetAllFilteredAsync_WhenPageOrPageSizeInvalid_ShouldNormalizeLikeApi()
+    {
+        await SeedOrdersForListAsync();
+
+        var page = 0;
+        var pageSize = 0;
+        NormalizePagination(ref page, ref pageSize);
+
+        var result = await _sut.GetAllFilteredAsync(new OrderFilterRequest(), page, pageSize);
+
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(10);
+        result.TotalCount.Should().Be(3);
+    }
+
+    //Function 86 - TC4
+    [TestMethod]
+    public async Task GetAllFilteredAsync_WithStatusPending_ShouldReturnMatched()
+    {
+        await SeedOrdersForListAsync();
+
+        var result = await _sut.GetAllFilteredAsync(
+            new OrderFilterRequest { Status = OrderStatus.PENDING },
+            1,
+            10);
+
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().ContainSingle();
+        result.Items.First().Status.Should().Be((int)OrderStatus.PENDING);
+    }
+
+    //Function 86 - TC5
+    [TestMethod]
+    public async Task GetAllFilteredAsync_WithNotFoundOrderId_ShouldReturnEmpty()
+    {
+        await SeedOrdersForListAsync();
+
+        var result = await _sut.GetAllFilteredAsync(
+            new OrderFilterRequest { OrderId = 9999 },
+            1,
+            10);
+
+        result.TotalCount.Should().Be(0);
+        result.Items.Should().BeEmpty();
+    }
+    #endregion
+
     #region Function 80 - Cancel Customer Order
     //Function 80 - TC1
     [TestMethod]
@@ -676,6 +754,49 @@ public class CustomerOrderServiceTests
                 }
             }
         };
+    }
+
+    private async Task SeedOrdersForListAsync()
+    {
+        if (await _dbContext.Orders.AnyAsync(x => x.OrderId >= 400 && x.OrderId <= 402))
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        _dbContext.Orders.AddRange(
+            new Order
+            {
+                OrderId = 400,
+                CustomerId = 1,
+                Status = OrderStatus.PENDING.ToString(),
+                TotalPrice = 100_000,
+                CreatedAt = now.AddMinutes(-3)
+            },
+            new Order
+            {
+                OrderId = 401,
+                CustomerId = 1,
+                Status = OrderStatus.APPROVED.ToString(),
+                TotalPrice = 200_000,
+                CreatedAt = now.AddMinutes(-2)
+            },
+            new Order
+            {
+                OrderId = 402,
+                CustomerId = 1,
+                Status = OrderStatus.CANCELLED.ToString(),
+                TotalPrice = 300_000,
+                CreatedAt = now.AddMinutes(-1)
+            });
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    private static void NormalizePagination(ref int page, ref int pageSize)
+    {
+        if (page <= 0) page = 1;
+        if (pageSize <= 0) pageSize = 10;
     }
 
     private async Task CreateOrderWithOneDetailAsync(
