@@ -1489,7 +1489,7 @@ namespace BookfetSystem.Services.Services
             var isApproved = targetStatus == OrderStatus.APPROVED;
             var title = isApproved
                 ? "Đơn tiệc đã được duyệt"
-                : "Đơn tiệc đã bị từ chối";
+                : "Đơn tiệc chưa được xử lí thành công";
 
             var (_, detailPlainText) = BuildOrderDetailCards(order);
             var partyText = string.IsNullOrWhiteSpace(detailPlainText)
@@ -1498,7 +1498,7 @@ namespace BookfetSystem.Services.Services
 
             var body = isApproved
                 ? $"Đơn tiệc của bạn đã được duyệt. Các tiệc: {partyText}."
-                : $"Đơn tiệc của bạn đã bị từ chối. Các tiệc: {partyText}.";
+                : $"Rất tiếc, đơn hàng của bạn hiện chưa thể được xử lý thành công. Mong bạn thông cảm vì sự bất tiện này. Nếu cần hỗ trợ thêm hoặc muốn đặt lại đơn, bạn vui lòng liên hệ với chúng tôi nhé.";
 
             try
             {
