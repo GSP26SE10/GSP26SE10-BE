@@ -6,6 +6,7 @@ using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
+using BookfetSystem.Services.Mappings;
 using Mapster;
 
 namespace BookfetSystem.Services.Tests;
@@ -91,6 +92,9 @@ internal static class MapsterTestBootstrap
                 src => src.OrderDetails != null
                     ? src.OrderDetails.Select(od => od.Adapt<OrderDetailResponse>()).ToList()
                     : new List<OrderDetailResponse>());
+
+        new StaffGroupAssignmentOverviewMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new OrderDetailStaffTaskMapping().Register(TypeAdapterConfig.GlobalSettings);
     }
 
     private static int? ParseNullableInt(string? value)
