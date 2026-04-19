@@ -580,6 +580,159 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
+    #region Function 88 - Assign Order to Staff Group
+    //Function 88 - TC1
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupIdInvalid_ShouldFail()
+    {
+        var result = await _sut.AssignOrderToStaffGroupAsync(1, staffGroupId: 0);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("StaffGroupId must be greater than 0.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC2
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenOrderNotFound_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(999_999, staffGroupId: 50);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC3
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenOrderNotApproved_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(831, OrderStatus.PENDING.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: 100_000);
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(831, staffGroupId: 50);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Only APPROVED orders can be assigned.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC4
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenNotDeposited_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(832, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: null);
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(832, staffGroupId: 50);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order has not been deposited yet.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC5
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupInactive_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(833, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: 100_000);
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(833, staffGroupId: 52);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Staff group not found or inactive.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC6
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupHasNoLeader_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(834, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: 100_000);
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(834, staffGroupId: 51);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Staff group must have a leader before assignment.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC7
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenOrderHasNoDetails_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        _dbContext.Orders.Add(new Order
+        {
+            OrderId = 835,
+            CustomerId = 1,
+            Status = OrderStatus.APPROVED.ToString(),
+            CreatedAt = DateTime.UtcNow,
+            TotalPrice = 1_000_000,
+            DepositAmount = 200_000
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(835, staffGroupId: 50);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order has no order details to assign.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC8
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenAlreadyAssigned_ShouldFail()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(836, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: 100_000);
+        var detail = await _dbContext.OrderDetails.FirstAsync(x => x.OrderId == 836);
+        detail.StaffGroupId = 50;
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(836, staffGroupId: 50);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order is already assigned to a staff group.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 88 - TC9
+    [TestMethod]
+    public async Task AssignOrderToStaffGroupAsync_WhenValid_ShouldAssignDetailsNotifyLeaderAndSetPreparing()
+    {
+        await SeedStaffGroupForAssignmentTestsAsync();
+        await CreateOrderWithOneDetailAsync(830, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(10), depositAmount: 100_000);
+
+        var result = await _sut.AssignOrderToStaffGroupAsync(830, staffGroupId: 50);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Order assigned to staff group successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.Status.Should().Be((int)OrderStatus.PREPARING);
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 830);
+        order.Status.Should().Be(OrderStatus.PREPARING.ToString());
+
+        var details = await _dbContext.OrderDetails.AsNoTracking().Where(x => x.OrderId == 830).ToListAsync();
+        details.Should().OnlyContain(x => x.StaffGroupId == 50);
+        details.Should().OnlyContain(x => x.Status == OrderDetailStatus.PREPARING.ToString());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                20,
+                "Bạn được giao tiệc mới",
+                It.Is<string>(body => body.Contains("Wedding") && body.Contains("Standard Menu")),
+                NotificationType.Order,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["orderId"] == "830" && d["staffGroupId"] == "50")),
+            Times.Once());
+    }
+    #endregion
+
     #region Function 80 - Cancel Customer Order
     //Function 80 - TC1
     [TestMethod]
@@ -938,6 +1091,65 @@ public class CustomerOrderServiceTests
                 }
             }
         };
+    }
+
+    private async Task SeedAssignmentLeaderUserAsync()
+    {
+        if (await _dbContext.Users.AnyAsync(u => u.UserId == 20))
+        {
+            return;
+        }
+
+        _dbContext.Users.Add(new User
+        {
+            UserId = 20,
+            FullName = "Leader Twenty",
+            Email = "leader20@test.com",
+            Phone = "0900000020",
+            Avatar = string.Empty,
+            Status = "ACTIVE",
+            PasswordHash = "hash",
+            UserName = "leader20",
+            Address = "HN",
+            RoleId = 3,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _dbContext.SaveChangesAsync();
+    }
+
+    private async Task SeedStaffGroupForAssignmentTestsAsync()
+    {
+        await SeedAssignmentLeaderUserAsync();
+
+        if (await _dbContext.StaffGroups.AnyAsync(s => s.StaffGroupId == 50))
+        {
+            return;
+        }
+
+        _dbContext.StaffGroups.AddRange(
+            new StaffGroup
+            {
+                StaffGroupId = 50,
+                StaffGroupName = "Team A",
+                Status = StaffGroupStatus.ACTIVE.ToString(),
+                LeaderId = 20
+            },
+            new StaffGroup
+            {
+                StaffGroupId = 51,
+                StaffGroupName = "No Leader Team",
+                Status = StaffGroupStatus.ACTIVE.ToString(),
+                LeaderId = null
+            },
+            new StaffGroup
+            {
+                StaffGroupId = 52,
+                StaffGroupName = "Inactive Team",
+                Status = StaffGroupStatus.INACTIVE.ToString(),
+                LeaderId = 20
+            });
+
+        await _dbContext.SaveChangesAsync();
     }
 
     private async Task SeedOrdersForListAsync()
