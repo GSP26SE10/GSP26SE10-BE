@@ -11,6 +11,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
+using System.Linq;
 
 namespace BookfetSystem.Services.Tests;
 
@@ -396,6 +397,189 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
+    #region Function 87 - Accept / Reject Order (Review)
+    //Function 87 - TC1
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenReviewerInvalid_ShouldFail()
+    {
+        var result = await _sut.ReviewOrderAsync(1, (int)OrderStatus.APPROVED, reviewerId: 0, noteOrder: null);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Mã người duyệt không hợp lệ.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 87 - TC2
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenStatusNotDefined_ShouldFail()
+    {
+        var result = await _sut.ReviewOrderAsync(1, status: 99, reviewerId: 10, noteOrder: null);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Giá trị trạng thái không hợp lệ.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 87 - TC3
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenStatusNotApprovedOrRejected_ShouldFail()
+    {
+        var result = await _sut.ReviewOrderAsync(1, (int)OrderStatus.PENDING, reviewerId: 10, noteOrder: null);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Chỉ cho phép trạng thái APPROVED (2) hoặc REJECTED (3).");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 87 - TC4
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenOrderNotFound_ShouldFail()
+    {
+        var result = await _sut.ReviewOrderAsync(9999, (int)OrderStatus.APPROVED, reviewerId: 10, noteOrder: null);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Không tìm thấy đơn hàng.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 87 - TC5
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenOrderNotPending_ShouldFail()
+    {
+        await CreateOrderWithOneDetailAsync(601, OrderStatus.APPROVED.ToString(), DateTime.UtcNow.AddDays(5));
+
+        var result = await _sut.ReviewOrderAsync(601, (int)OrderStatus.APPROVED, reviewerId: 10, noteOrder: null);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Chỉ đơn hàng ở trạng thái chờ duyệt mới có thể được duyệt.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 87 - TC6
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenRejectAndRefundFails_ShouldNotUpdateOrder()
+    {
+        await CreateOrderWithOneDetailAsync(602, OrderStatus.PENDING.ToString(), DateTime.UtcNow.AddDays(6), depositAmount: 500_000m);
+
+        _paymentServiceMock
+            .Setup(x => x.RefundRejectedOrderDepositAsync(602, It.IsAny<string?>()))
+            .ReturnsAsync(new ApiResponse<object> { Success = false, Message = "ZaloPay timeout" });
+
+        var result = await _sut.ReviewOrderAsync(602, (int)OrderStatus.REJECTED, reviewerId: 10, noteOrder: " Lý do ");
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Không thể từ chối đơn hàng vì hoàn tiền chưa hoàn tất: ZaloPay timeout");
+        result.Data.Should().BeNull();
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 602);
+        order.Status.Should().Be(OrderStatus.PENDING.ToString());
+        order.ReviewedBy.Should().BeNull();
+        order.NoteOrder.Should().BeNull();
+
+        var detail = await _dbContext.OrderDetails.AsNoTracking().FirstAsync(x => x.OrderId == 602);
+        detail.Status.Should().Be(OrderDetailStatus.APPROVED.ToString());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<NotificationType>(),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Never());
+        _emailServiceMock.Verify(x => x.SendAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()),
+            Times.Never());
+    }
+
+    //Function 87 - TC7
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenRejectAndRefundSucceeds_ShouldUpdateOrderAndDetails()
+    {
+        await CreateOrderWithOneDetailAsync(603, OrderStatus.PENDING.ToString(), DateTime.UtcNow.AddDays(7), depositAmount: 500_000m);
+
+        _paymentServiceMock
+            .Setup(x => x.RefundRejectedOrderDepositAsync(603, It.IsAny<string?>()))
+            .ReturnsAsync(new ApiResponse<object> { Success = true, Data = new { amount = 250_000m } });
+
+        var result = await _sut.ReviewOrderAsync(603, (int)OrderStatus.REJECTED, reviewerId: 11, noteOrder: "Không đủ nhân sự");
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Đơn hàng đã bị từ chối thành công.");
+        result.Data.Should().NotBeNull();
+        result.Data!.Status.Should().Be((int)OrderStatus.REJECTED);
+        result.Data.ReviewedBy.Should().Be(11);
+        result.Data.NoteOrder.Should().Be("Không đủ nhân sự");
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 603);
+        order.Status.Should().Be(OrderStatus.REJECTED.ToString());
+
+        var details = await _dbContext.OrderDetails.AsNoTracking().Where(x => x.OrderId == 603).ToListAsync();
+        details.Should().NotBeEmpty();
+        details.Should().OnlyContain(x => x.Status == OrderDetailStatus.REJECTED.ToString());
+
+        _paymentServiceMock.Verify(x => x.RefundRejectedOrderDepositAsync(603, "Không đủ nhân sự"), Times.Once());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                1,
+                "Đơn tiệc đã bị từ chối",
+                It.IsAny<string>(),
+                NotificationType.Order,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["orderId"] == "603" && d["status"] == OrderStatus.REJECTED.ToString())),
+            Times.Once());
+
+        _emailServiceMock.Verify(x => x.SendAsync(
+                "customer@test.com",
+                "[Bookfet] Đơn hàng đã bị từ chối",
+                It.IsAny<string>(),
+                It.IsAny<string?>()),
+            Times.Once());
+    }
+
+    //Function 87 - TC8
+    [TestMethod]
+    public async Task ReviewOrderAsync_WhenApprove_ShouldUpdateOrderAndNotifyCustomer()
+    {
+        await CreateOrderWithOneDetailAsync(604, OrderStatus.PENDING.ToString(), DateTime.UtcNow.AddDays(8));
+
+        var result = await _sut.ReviewOrderAsync(604, (int)OrderStatus.APPROVED, reviewerId: 12, noteOrder: "   ");
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Đơn hàng đã được duyệt thành công.");
+        result.Data.Should().NotBeNull();
+        result.Data!.Status.Should().Be((int)OrderStatus.APPROVED);
+        result.Data.ReviewedBy.Should().Be(12);
+        result.Data.NoteOrder.Should().BeNull();
+
+        var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 604);
+        order.Status.Should().Be(OrderStatus.APPROVED.ToString());
+
+        var detail = await _dbContext.OrderDetails.AsNoTracking().FirstAsync(x => x.OrderId == 604);
+        detail.Status.Should().Be(OrderDetailStatus.APPROVED.ToString());
+
+        _paymentServiceMock.Verify(x => x.RefundRejectedOrderDepositAsync(It.IsAny<int>(), It.IsAny<string?>()), Times.Never());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                1,
+                "Đơn tiệc đã được duyệt",
+                It.IsAny<string>(),
+                NotificationType.Order,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["orderId"] == "604" && d["status"] == OrderStatus.APPROVED.ToString())),
+            Times.Once());
+
+        _emailServiceMock.Verify(x => x.SendAsync(
+                "customer@test.com",
+                "[Bookfet] Đơn hàng đã được duyệt",
+                It.IsAny<string>(),
+                It.IsAny<string?>()),
+            Times.Once());
+    }
+    #endregion
+
     #region Function 80 - Cancel Customer Order
     //Function 80 - TC1
     [TestMethod]
@@ -521,7 +705,7 @@ public class CustomerOrderServiceTests
 
         _paymentServiceMock.Verify(x =>
             x.RefundOrderDepositByAmountAsync(It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<string?>()),
-            Times.Never);
+            Times.Never());
     }
 
     //Function 80 - TC8
@@ -548,7 +732,7 @@ public class CustomerOrderServiceTests
 
         _paymentServiceMock.Verify(x =>
             x.RefundOrderDepositByAmountAsync(206, 100_000m, It.IsAny<string?>()),
-            Times.Once);
+            Times.Once());
     }
 
     //Function 80 - TC9
@@ -575,7 +759,7 @@ public class CustomerOrderServiceTests
 
         _paymentServiceMock.Verify(x =>
             x.RefundOrderDepositByAmountAsync(It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<string?>()),
-            Times.Never);
+            Times.Never());
     }
 
     //Function 80 - TC10
