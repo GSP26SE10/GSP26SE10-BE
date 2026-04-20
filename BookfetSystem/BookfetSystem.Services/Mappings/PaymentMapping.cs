@@ -23,7 +23,9 @@ namespace BookfetSystem.Services.Mappings
                   .Map(dest => dest.PaymentMethod,
                       src => EnumHelper.TryParseToInt<PaymentMethod>(src.PaymentMethod))
                   .Map(dest => dest.PaymentStatus,
-                      src => EnumHelper.TryParseToInt<PaymentStatus>(src.PaymentStatus));
+                      src => EnumHelper.TryParseToInt<PaymentStatus>(src.PaymentStatus))
+                  .Map(dest => dest.MtdZlp,
+                      src => SnapshotParser.TryParseJsonToObject(src.Order != null ? src.Order.MtdZlp : null));
         }
     }
 }

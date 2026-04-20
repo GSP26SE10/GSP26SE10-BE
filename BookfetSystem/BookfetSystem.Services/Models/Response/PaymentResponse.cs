@@ -17,5 +17,7 @@ namespace BookfetSystem.Services.Models.Response
         public int? PaymentStatus { get; set; }
 
         public DateTime? PaidAt { get; set; }
+
+        public object? MtdZlp { get; set; }
     }
 }
