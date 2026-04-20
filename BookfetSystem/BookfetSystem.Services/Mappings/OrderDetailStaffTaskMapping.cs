@@ -29,6 +29,16 @@ namespace BookfetSystem.Services.Mappings
                        src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus));
 
             config.NewConfig<OrderDetailStaffTask, StaffMyTaskResponse>()
+                  .Map(dest => dest.TaskName,
+                       src => src.TaskName)
+                  .Map(dest => dest.TaskStatus,
+                       src => EnumHelper.TryParseToInt<StaffTaskStatus>(src.TaskStatus))
+                  .Map(dest => dest.TaskStartTime,
+                       src => src.StartTime)
+                  .Map(dest => dest.TaskEndTime,
+                       src => src.EndTime)
+                  .Map(dest => dest.Note,
+                       src => src.Note)
                   .Map(dest => dest.OrderDetail,
                        src => new StaffMyTaskOrderDetailResponse
                        {
