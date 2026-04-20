@@ -202,6 +202,31 @@ public class OrderDetailStaffTaskServiceTests
 
         await _dbContext.SaveChangesAsync();
     }
+
+    private async Task<OrderDetailStaffTask> SeedTaskAsync(
+        int taskId,
+        int staffId,
+        StaffTaskStatus status,
+        DateTime? endTime,
+        string? taskName = null,
+        int? orderDetailId = 9001)
+    {
+        var entity = new OrderDetailStaffTask
+        {
+            TaskId = taskId,
+            OrderDetailId = orderDetailId,
+            TaskTemplateId = 1,
+            StaffId = staffId,
+            TaskName = taskName ?? $"Task {taskId}",
+            TaskStatus = status.ToString(),
+            StartTime = DateTime.UtcNow.AddHours(-1),
+            EndTime = endTime
+        };
+
+        _dbContext.OrderDetailStaffTasks.Add(entity);
+        await _dbContext.SaveChangesAsync();
+        return entity;
+    }
     #endregion
 
     #region Function 90 - Create Task Validation
@@ -735,6 +760,196 @@ public class OrderDetailStaffTaskServiceTests
         var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(t => t.TaskId == 7106);
         saved.TaskName.Should().Be("Giữ tên cũ");
         saved.Note.Should().Be("ghi chú mới");
+    }
+    #endregion
+
+    #region Function 96 - Staff View Assigned Task
+    //Function 96 - TC1
+    [TestMethod]
+    public async Task GetMyTasksAsync_WhenNoTaskAssigned_ShouldReturnEmpty()
+    {
+        var result = await _sut.GetMyTasksAsync(staffId: 3, page: 1, pageSize: 10);
+
+        result.TotalCount.Should().Be(0);
+        result.Items.Should().BeEmpty();
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(10);
+    }
+
+    //Function 96 - TC2
+    [TestMethod]
+    public async Task GetMyTasksAsync_WhenTasksExist_ShouldReturnOnlyCurrentStaffTasksWithPaging()
+    {
+        await SeedTaskAsync(7601, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(3), "A Task");
+        await SeedTaskAsync(7602, 3, StaffTaskStatus.IN_PROGRESS, DateTime.UtcNow.AddHours(4), "B Task");
+        await SeedTaskAsync(7603, 4, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(5), "Outsider Task");
+
+        var result = await _sut.GetMyTasksAsync(staffId: 3, page: 1, pageSize: 1);
+
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(1);
+        result.Items.First().TaskName.Should().Match(x => x == "A Task" || x == "B Task");
+        result.Items.First().OrderDetail.OrderDetailId.Should().Be(9001);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(1);
+    }
+
+    //Function 96 - TC3
+    [TestMethod]
+    public async Task GetMyTasksAsync_WhenHasOverdueTask_ShouldAutoMarkOverdueAndNotifyLeader()
+    {
+        await SeedTaskAsync(7604, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(-2), "Overdue task");
+
+        var result = await _sut.GetMyTasksAsync(staffId: 3, page: 1, pageSize: 10);
+
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().ContainSingle();
+        result.Items.First().TaskStatus.Should().Be((int)StaffTaskStatus.OVERDUE);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7604);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.OVERDUE.ToString());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                2,
+                It.Is<string>(title => title.Contains("trễ deadline")),
+                It.Is<string>(body => body.Contains("Overdue task")),
+                NotificationType.Task,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["taskId"] == "7604" &&
+                    d["orderDetailId"] == "9001" &&
+                    d["taskStatus"] == StaffTaskStatus.OVERDUE.ToString())),
+            Times.Once());
+    }
+    #endregion
+
+    #region Function 97 - Staff Update Task Status
+    //Function 97 - TC1
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenTaskNotFound_ShouldFail()
+    {
+        var result = await _sut.UpdateMyTaskStatusAsync(99999, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.COMPLETED
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Không tìm thấy công việc.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 97 - TC2
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenTaskBelongsToAnotherStaff_ShouldFail()
+    {
+        await SeedTaskAsync(7701, 4, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(3), "Other staff task");
+
+        var result = await _sut.UpdateMyTaskStatusAsync(7701, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.IN_PROGRESS
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Bạn không có quyền cập nhật công việc này.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 97 - TC3
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenMarkCompleted_ShouldUpdateAndNotifyLeader()
+    {
+        await SeedTaskAsync(7702, 3, StaffTaskStatus.IN_PROGRESS, DateTime.UtcNow.AddHours(2), "Setup hall");
+
+        var result = await _sut.UpdateMyTaskStatusAsync(7702, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.COMPLETED
+        });
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Cập nhật trạng thái công việc thành công.");
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.COMPLETED);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7702);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                2,
+                It.Is<string>(title => title.Contains("đã hoàn thành công việc")),
+                It.Is<string>(body => body.Contains("Setup hall")),
+                NotificationType.Task,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["taskId"] == "7702" &&
+                    d["orderDetailId"] == "9001" &&
+                    d["staffId"] == "3" &&
+                    d["taskStatus"] == StaffTaskStatus.COMPLETED.ToString())),
+            Times.Once());
+    }
+
+    //Function 97 - TC4
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenRequestInProgressAndStatusUnchanged_ShouldStillNotifyLeader()
+    {
+        await SeedTaskAsync(7703, 3, StaffTaskStatus.IN_PROGRESS, DateTime.UtcNow.AddHours(2), "In-progress task");
+
+        var result = await _sut.UpdateMyTaskStatusAsync(7703, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.IN_PROGRESS
+        });
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.IN_PROGRESS);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7703);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.IN_PROGRESS.ToString());
+
+        _notificationServiceMock.Verify(x => x.SendToUserAsync(
+                2,
+                It.Is<string>(title => title.Contains("đang làm việc")),
+                It.Is<string>(body => body.Contains("In-progress task")),
+                NotificationType.Task,
+                It.Is<Dictionary<string, string>>(d =>
+                    d["taskId"] == "7703" &&
+                    d["taskStatus"] == StaffTaskStatus.IN_PROGRESS.ToString())),
+            Times.Once());
+    }
+
+    //Function 97 - TC5
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenTaskOverdueAndRequestNotCompleted_ShouldSetOverdue()
+    {
+        await SeedTaskAsync(7704, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(-3), "Late task");
+
+        var result = await _sut.UpdateMyTaskStatusAsync(7704, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.IN_PROGRESS
+        });
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.OVERDUE);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7704);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.OVERDUE.ToString());
+    }
+
+    //Function 97 - TC6
+    [TestMethod]
+    public async Task UpdateMyTaskStatusAsync_WhenTaskOverdueButRequestCompleted_ShouldAllowCompleted()
+    {
+        await SeedTaskAsync(7705, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(-2), "Finish late task");
+
+        var result = await _sut.UpdateMyTaskStatusAsync(7705, 3, new StaffUpdateTaskStatusRequest
+        {
+            TaskStatus = StaffTaskStatus.COMPLETED
+        });
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.COMPLETED);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7705);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
     }
     #endregion
 
