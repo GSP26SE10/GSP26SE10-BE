@@ -18,6 +18,6 @@ namespace BookfetSystem.Services.Models.Response
 
         public DateTime? PaidAt { get; set; }
 
-        public string? MtdZlp { get; set; }
+        public object? MtdZlp { get; set; }
     }
 }
