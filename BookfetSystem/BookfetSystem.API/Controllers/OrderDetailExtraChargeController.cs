@@ -63,5 +63,64 @@ namespace BookfetSystem.API.Controllers
 
             return BadRequest(result);
         }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> Update(int id, [FromForm] OrderDetailExtraChargeUpdateRequest request)
+        {
+            var leaderIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(leaderIdValue, out var leaderId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing leader id." });
+            }
+
+            var result = await _orderDetailExtraChargeService.UpdateAsync(id, request, leaderId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order detail extra charge not found." || result.Message == "Extra charge catalog not found.")
+            {
+                return NotFound(result);
+            }
+
+            if (result.Message == "Order detail extra charge does not belong to your staff group.")
+            {
+                return StatusCode(403, result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var leaderIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(leaderIdValue, out var leaderId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing leader id." });
+            }
+
+            var result = await _orderDetailExtraChargeService.DeleteAsync(id, leaderId);
+            if (result.Success)
+            {
+                return NoContent();
+            }
+
+            if (result.Message == "Order detail extra charge not found.")
+            {
+                return NotFound(result);
+            }
+
+            if (result.Message == "Order detail extra charge does not belong to your staff group.")
+            {
+                return StatusCode(403, result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

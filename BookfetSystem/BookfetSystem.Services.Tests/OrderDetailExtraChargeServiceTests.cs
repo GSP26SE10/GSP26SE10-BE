@@ -508,6 +508,94 @@ public class OrderDetailExtraChargeServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
+
+    //Function 94 - TC12
+    [TestMethod]
+    public async Task DeleteAsync_WhenNotFound_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(99999, leaderId: 2);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order detail extra charge not found.");
+        result.Data.Should().BeFalse();
+    }
+
+    //Function 94 - TC13
+    [TestMethod]
+    public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
+    {
+        var created = await _sut.CreateAsync(new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9001,
+            ExtraChargeCatalogId = 100,
+            Quantity = 1
+        }, leaderId: 2);
+
+        created.Success.Should().BeTrue();
+        created.Data.Should().NotBeNull();
+
+        var result = await _sut.DeleteAsync(created.Data!.OrderDetailExtraChargeId, leaderId: 2);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Order detail extra charge deleted successfully.");
+        result.Data.Should().BeTrue();
+
+        var stillExists = await _dbContext.OrderDetailExtraCharges
+            .AnyAsync(x => x.OrderDetailExtraChargeId == created.Data.OrderDetailExtraChargeId);
+        stillExists.Should().BeFalse();
+    }
+
+    //Function 94 - TC14
+    [TestMethod]
+    public async Task UpdateAsync_WhenNotFound_ShouldFail()
+    {
+        var result = await _sut.UpdateAsync(99999, new OrderDetailExtraChargeUpdateRequest
+        {
+            Quantity = 2
+        }, leaderId: 2);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order detail extra charge not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 94 - TC15
+    [TestMethod]
+    public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
+    {
+        var created = await _sut.CreateAsync(new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9001,
+            ExtraChargeCatalogId = 100,
+            Quantity = 1,
+            Note = "old note"
+        }, leaderId: 2);
+
+        created.Success.Should().BeTrue();
+        created.Data.Should().NotBeNull();
+
+        var incurredAt = DateTime.UtcNow.AddMinutes(-10);
+        var result = await _sut.UpdateAsync(created.Data!.OrderDetailExtraChargeId, new OrderDetailExtraChargeUpdateRequest
+        {
+            Quantity = 4,
+            IncurredAt = incurredAt,
+            Note = "  updated note  "
+        }, leaderId: 2);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Order detail extra charge updated successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.Quantity.Should().Be(4);
+        result.Data.TotalAmount.Should().Be(100_000);
+        result.Data.Note.Should().Be("updated note");
+
+        var saved = await _dbContext.OrderDetailExtraCharges.AsNoTracking()
+            .FirstAsync(x => x.OrderDetailExtraChargeId == created.Data.OrderDetailExtraChargeId);
+        saved.Quantity.Should().Be(4);
+        saved.TotalAmount.Should().Be(100_000);
+        saved.Note.Should().Be("updated note");
+        saved.IncurredAt.Should().BeCloseTo(incurredAt, TimeSpan.FromSeconds(1));
+    }
     #endregion
 }
 

@@ -229,6 +229,207 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<ApiResponse<OrderDetailExtraChargeResponse>> UpdateAsync(int orderDetailExtraChargeId, OrderDetailExtraChargeUpdateRequest request, int leaderId)
+        {
+            var staffGroup = await _staffGroupRepository
+                .GetAllStaffGroupFiltered(new StaffGroup { LeaderId = leaderId })
+                .FirstOrDefaultAsync(x => x.Status == "ACTIVE");
+
+            if (staffGroup == null)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Leader does not have an active staff group.",
+                    Data = null
+                };
+            }
+
+            var entity = await _orderDetailExtraChargeRepository
+                .GetAllFiltered(new OrderDetailExtraCharge { OrderDetailExtraChargeId = orderDetailExtraChargeId })
+                .FirstOrDefaultAsync();
+
+            if (entity == null)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Order detail extra charge not found.",
+                    Data = null
+                };
+            }
+
+            if (!entity.OrderDetailId.HasValue)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            var orderDetail = await _orderDetailRepository.GetByIdWithRelationAsync(entity.OrderDetailId.Value);
+            if (orderDetail == null)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            if (orderDetail.StaffGroupId != staffGroup.StaffGroupId)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Order detail extra charge does not belong to your staff group.",
+                    Data = null
+                };
+            }
+
+            entity.Quantity = request.Quantity;
+            entity.TotalAmount = entity.UnitPrice * request.Quantity;
+            entity.IncurredAt = request.IncurredAt ?? entity.IncurredAt ?? DateTime.UtcNow;
+            entity.Note = request.Note?.Trim();
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            try
+            {
+                var files = NormalizeImageFiles(request.ImageFiles);
+                if (files.Count > MaxExtraChargeImagesPerRequest)
+                {
+                    return new ApiResponse<OrderDetailExtraChargeResponse>
+                    {
+                        Success = false,
+                        Message = $"You can upload up to {MaxExtraChargeImagesPerRequest} images at once.",
+                        Data = null
+                    };
+                }
+
+                if (files.Count > 0)
+                {
+                    var uploadedUrls = new List<string>(files.Count);
+                    foreach (var file in files)
+                    {
+                        var uploadedUrl = await _imageStorageService.UploadImageAsync(file, CloudinaryFolder.ExtraCharge);
+                        uploadedUrls.Add(uploadedUrl);
+                    }
+
+                    entity.Image = JsonSerializer.Serialize(uploadedUrls);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to upload extra charge images: {ex.Message}",
+                    Data = null
+                };
+            }
+
+            var affected = await _orderDetailExtraChargeRepository.UpdateAsync(entity);
+            if (affected <= 0)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Failed to update order detail extra charge.",
+                    Data = null
+                };
+            }
+
+            var response = new OrderDetailExtraChargeResponse
+            {
+                OrderDetailExtraChargeId = entity.OrderDetailExtraChargeId,
+                OrderDetailId = entity.OrderDetailId,
+                ExtraChargeCatalogId = entity.ExtraChargeCatalogId,
+                ChargeType = entity.ChargeType,
+                Title = entity.Title,
+                Description = entity.Description,
+                Unit = entity.Unit,
+                UnitPrice = entity.UnitPrice,
+                Quantity = entity.Quantity,
+                TotalAmount = entity.TotalAmount,
+                Status = entity.Status,
+                CreateBy = entity.CreateBy,
+                IncurredAt = entity.IncurredAt,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+                Image = SnapshotParser.TryParseJsonToObject(entity.Image),
+                Note = entity.Note
+            };
+
+            return new ApiResponse<OrderDetailExtraChargeResponse>
+            {
+                Success = true,
+                Message = "Order detail extra charge updated successfully.",
+                Data = response
+            };
+        }
+
+        public async Task<ApiResponse<bool>> DeleteAsync(int orderDetailExtraChargeId, int leaderId)
+        {
+            var staffGroup = await _staffGroupRepository
+                .GetAllStaffGroupFiltered(new StaffGroup { LeaderId = leaderId })
+                .FirstOrDefaultAsync(x => x.Status == "ACTIVE");
+
+            if (staffGroup == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Leader does not have an active staff group.",
+                    Data = false
+                };
+            }
+
+            var entity = await _orderDetailExtraChargeRepository
+                .GetAllFiltered(new OrderDetailExtraCharge { OrderDetailExtraChargeId = orderDetailExtraChargeId })
+                .FirstOrDefaultAsync();
+
+            if (entity == null)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Order detail extra charge not found.",
+                    Data = false
+                };
+            }
+
+            if (entity.OrderDetail == null || entity.OrderDetail.StaffGroupId != staffGroup.StaffGroupId)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Order detail extra charge does not belong to your staff group.",
+                    Data = false
+                };
+            }
+
+            var removed = await _orderDetailExtraChargeRepository.RemoveAsync(entity);
+            if (!removed)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Failed to delete order detail extra charge.",
+                    Data = false
+                };
+            }
+
+            return new ApiResponse<bool>
+            {
+                Success = true,
+                Message = "Order detail extra charge deleted successfully.",
+                Data = true
+            };
+        }
+
         public async Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogAsync(int? serviceId)
         {
             var query = serviceId.HasValue
