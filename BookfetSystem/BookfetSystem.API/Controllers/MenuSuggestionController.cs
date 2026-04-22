@@ -19,7 +19,12 @@ namespace BookfetSystem.API.Controllers
         public async Task<IActionResult> SuggestMenu([FromBody] MenuSuggestionRequest request)
         {
             var result = await _menuSuggestionService.SuggestMenu(request);
-            return Ok(result);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return StatusCode(result.Code ?? 500, result);
         }
     }
 }
