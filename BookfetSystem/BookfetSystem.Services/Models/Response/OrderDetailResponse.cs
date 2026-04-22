@@ -22,6 +22,8 @@ namespace BookfetSystem.Services.Models.Response
 
         public DateTime? EndTime { get; set; }
 
+        public DateTime? ActualEndTime { get; set; }
+
         public int? StaffGroupId { get; set; }
 
         public int? PartyCategoryId { get; set; }

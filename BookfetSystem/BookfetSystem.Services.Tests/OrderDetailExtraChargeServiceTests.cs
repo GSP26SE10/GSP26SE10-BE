@@ -157,6 +157,46 @@ public class OrderDetailExtraChargeServiceTests
                 EndTime = start.AddHours(4)
             });
 
+        _dbContext.Services.Add(new Service
+        {
+            ServiceId = 500,
+            ServiceName = "MC Service",
+            Description = "MC for event",
+            BasePrice = 300000,
+            Status = "AVAILABLE",
+            Img = "https://example.com/service.jpg",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.Services.Add(new Service
+        {
+            ServiceId = 501,
+            ServiceName = "Sound Service",
+            Description = "Sound for event",
+            BasePrice = 500000,
+            Status = "AVAILABLE",
+            Img = "https://example.com/service2.jpg",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.OrderServices.Add(new OrderService
+        {
+            OrderServiceId = 7001,
+            OrderDetailId = 9001,
+            ServiceId = 500,
+            Quantity = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.OrderServices.Add(new OrderService
+        {
+            OrderServiceId = 7002,
+            OrderDetailId = 9001,
+            ServiceId = 501,
+            Quantity = 1,
+            CreatedAt = DateTime.UtcNow
+        });
+
         _dbContext.ExtraChargeCatalogs.Add(new ExtraChargeCatalog
         {
             ExtraChargeCatalogId = 100,
@@ -168,6 +208,43 @@ public class OrderDetailExtraChargeServiceTests
             Status = "ACTIVE",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ExtraChargeCatalogs.Add(new ExtraChargeCatalog
+        {
+            ExtraChargeCatalogId = 101,
+            ChargeType = "OVERTIME",
+            Title = "Overtime fee",
+            Description = "Overtime service fee",
+            Unit = "hour",
+            UnitPrice = 150_000,
+            Status = "ACTIVE",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ServiceExtraChargeCatalogs.Add(new ServiceExtraChargeCatalog
+        {
+            ServiceExtraChargeCatalogId = 8001,
+            ServiceId = 500,
+            ExtraChargeCatalogId = 100,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ServiceExtraChargeCatalogs.Add(new ServiceExtraChargeCatalog
+        {
+            ServiceExtraChargeCatalogId = 8002,
+            ServiceId = 501,
+            ExtraChargeCatalogId = 100,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ServiceExtraChargeCatalogs.Add(new ServiceExtraChargeCatalog
+        {
+            ServiceExtraChargeCatalogId = 8003,
+            ServiceId = 501,
+            ExtraChargeCatalogId = 101,
+            CreatedAt = DateTime.UtcNow
         });
 
         await _dbContext.SaveChangesAsync();
@@ -409,6 +486,27 @@ public class OrderDetailExtraChargeServiceTests
                 It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
+    }
+
+    //Function 94 - TC10
+    [TestMethod]
+    public async Task GetActiveCatalogByOrderDetailAsync_WhenHasMultipleServices_ShouldReturnDistinctUnionCatalogs()
+    {
+        var result = await _sut.GetActiveCatalogByOrderDetailAsync(9001);
+
+        result.Should().NotBeNull();
+        result.Select(x => x.ExtraChargeCatalogId).Should().BeEquivalentTo(new[] { 100, 101 });
+        result.Should().HaveCount(2);
+    }
+
+    //Function 94 - TC11
+    [TestMethod]
+    public async Task GetActiveCatalogByOrderDetailAsync_WhenOrderDetailHasNoService_ShouldReturnEmpty()
+    {
+        var result = await _sut.GetActiveCatalogByOrderDetailAsync(9002);
+
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
     }
     #endregion
 }

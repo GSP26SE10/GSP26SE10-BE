@@ -68,4 +68,10 @@ namespace BookfetSystem.Services.Models.Request
 
         public int? PartyCategoryId { get; set; }
     }
+
+    public class OrderDetailActualEndTimeUpdateRequest
+    {
+        [Required(ErrorMessage = "ActualEndTime is required.")]
+        public DateTime? ActualEndTime { get; set; }
+    }
 }

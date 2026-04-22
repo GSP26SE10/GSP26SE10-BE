@@ -26,4 +26,6 @@ public partial class Service
     public virtual ICollection<FeedbackService> FeedbackServices { get; set; } = new List<FeedbackService>();
 
     public virtual ICollection<OrderService> OrderServices { get; set; } = new List<OrderService>();
+
+    public virtual ICollection<ServiceExtraChargeCatalog> ServiceExtraChargeCatalogs { get; set; } = new List<ServiceExtraChargeCatalog>();
 }

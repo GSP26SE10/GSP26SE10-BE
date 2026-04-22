@@ -114,5 +114,50 @@ namespace BookfetSystem.API.Controllers
 
             return BadRequest(result);
         }
+
+        [Authorize]
+        [HttpPut("{id}/actual-end-time")]
+        public async Task<ActionResult> UpdateActualEndTime(int id, [FromBody] OrderDetailActualEndTimeUpdateRequest request)
+        {
+            var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!int.TryParse(roleValue, out var roleId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing role id." });
+            }
+
+            if (roleId != 2)
+            {
+                return StatusCode(403, new { Message = "Only leader role can update actual end time." });
+            }
+
+            var leaderIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(leaderIdValue, out var leaderId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing leader id." });
+            }
+
+            if (!request.ActualEndTime.HasValue)
+            {
+                return BadRequest(new { Message = "ActualEndTime is required." });
+            }
+
+            var result = await _orderDetailService.UpdateActualEndTimeByLeaderAsync(id, leaderId, request.ActualEndTime.Value);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Order detail not found.")
+            {
+                return NotFound(result);
+            }
+
+            if (result.Message == "Order detail does not belong to your staff group.")
+            {
+                return StatusCode(403, result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

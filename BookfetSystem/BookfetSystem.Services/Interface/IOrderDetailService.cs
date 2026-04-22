@@ -17,5 +17,7 @@ namespace BookfetSystem.Services.Interface
         Task<ApiResponse<bool>> Delete(int id);
 
         Task<ApiResponse<OrderDetailResponse>> EndEarlyByLeaderAsync(int orderDetailId);
+
+        Task<ApiResponse<OrderDetailResponse>> UpdateActualEndTimeByLeaderAsync(int orderDetailId, int leaderId, DateTime actualEndTime);
     }
 }

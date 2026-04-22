@@ -56,6 +56,7 @@ public class MenuSuggestionService : IMenuSuggestionService
                 return new ApiResponse<MenuSuggestionResponse>
                 {
                     Success = false,
+                    Code = 404,
                     Message = "No menus available"
                 };
             }
@@ -114,11 +115,22 @@ public class MenuSuggestionService : IMenuSuggestionService
                 }
             };
         }
+        catch (UpstreamServiceUnavailableException)
+        {
+            return new ApiResponse<MenuSuggestionResponse>
+            {
+                Success = false,
+                Code = 503,
+                Message = "Service unavailable",
+                Data = null
+            };
+        }
         catch (Exception)
         {
             return new ApiResponse<MenuSuggestionResponse>
             {
                 Success = false,
+                Code = 500,
                 Message = "Internal server error",
                 Data = null
             };

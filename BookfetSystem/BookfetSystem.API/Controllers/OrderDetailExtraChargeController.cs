@@ -19,9 +19,16 @@ namespace BookfetSystem.API.Controllers
         }
 
         [HttpGet("catalog/active")]
-        public async Task<ActionResult> GetActiveCatalog()
+        public async Task<ActionResult> GetActiveCatalog([FromQuery] int? serviceId)
         {
-            var result = await _orderDetailExtraChargeService.GetActiveCatalogAsync();
+            var result = await _orderDetailExtraChargeService.GetActiveCatalogAsync(serviceId);
+            return Ok(result);
+        }
+
+        [HttpGet("catalog/active/by-order-detail/{orderDetailId}")]
+        public async Task<ActionResult> GetActiveCatalogByOrderDetail(int orderDetailId)
+        {
+            var result = await _orderDetailExtraChargeService.GetActiveCatalogByOrderDetailAsync(orderDetailId);
             return Ok(result);
         }
 

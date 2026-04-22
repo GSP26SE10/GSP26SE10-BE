@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS feedback_service CASCADE;
 DROP TABLE IF EXISTS feedback_menu CASCADE;
 DROP TABLE IF EXISTS payment CASCADE;
 DROP TABLE IF EXISTS contact_request CASCADE;
+DROP TABLE IF EXISTS service_extra_charge_catalog CASCADE;
 DROP TABLE IF EXISTS order_detail_extra_charge CASCADE;
 DROP TABLE IF EXISTS order_detail_staff_task CASCADE;
 DROP TABLE IF EXISTS task_template CASCADE;
@@ -152,6 +153,14 @@ CREATE TABLE extra_charge_catalog (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE service_extra_charge_catalog (
+    service_extra_charge_catalog_id SERIAL PRIMARY KEY,
+    service_id INT NOT NULL REFERENCES service(service_id) ON DELETE CASCADE,
+    extra_charge_catalog_id INT NOT NULL REFERENCES extra_charge_catalog(extra_charge_catalog_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(service_id, extra_charge_catalog_id)
+);
+
 -- Bảng phụ thuộc level 2
 CREATE TABLE dish_detail (
     dish_detail_id SERIAL PRIMARY KEY,
@@ -206,6 +215,7 @@ CREATE TABLE order_detail (
     type VARCHAR(50), -- 'Order' or 'Custom Order'
     start_time TIMESTAMPTZ,
     end_time TIMESTAMPTZ,
+    actual_end_time TIMESTAMPTZ, -- nullable: giờ kết thúc thực tế
     staff_group_id INT REFERENCES staff_group(staff_group_id),
     party_category_id INT REFERENCES party_category(party_category_id),
     menu_id INT REFERENCES menu(menu_id),
@@ -521,6 +531,19 @@ INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_pr
 ('CLEANING', 'Phí vệ sinh thêm', 'Phụ thu cho chi phí vệ sinh phát sinh', 'lần', 250000, 'ACTIVE'),
 ('TRANSPORT', 'Phí vận chuyển phát sinh', 'Phụ thu vận chuyển ngoài phạm vi tiêu chuẩn', 'chuyến', 800000, 'ACTIVE'),
 ('PENALTY', 'Phí phạt', 'Phụ phí phạt theo điều khoản hợp đồng', 'trường hợp', 500000, 'ACTIVE');
+
+-- SERVICE - EXTRA CHARGE CATALOG (map phí phát sinh theo từng dịch vụ)
+INSERT INTO service_extra_charge_catalog (service_id, extra_charge_catalog_id) VALUES
+(1, 2), -- Trang trí sân khấu: overtime
+(1, 4), -- Trang trí sân khấu: extra equipment
+(1, 7), -- Trang trí sân khấu: penalty
+(2, 2), -- Âm thanh ánh sáng: overtime
+(2, 4), -- Âm thanh ánh sáng: extra equipment
+(2, 5), -- Âm thanh ánh sáng: cleaning
+(2, 7), -- Âm thanh ánh sáng: penalty
+(3, 2), -- MC: overtime
+(3, 3), -- MC: extra service
+(3, 7); -- MC: penalty
 
 
 

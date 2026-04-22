@@ -310,6 +310,65 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
+        public async Task<ApiResponse<OrderDetailResponse>> UpdateActualEndTimeByLeaderAsync(int orderDetailId, int leaderId, DateTime actualEndTime)
+        {
+            var detail = await _repository.GetByIdWithRelationAsync(orderDetailId);
+            if (detail == null)
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Order detail not found.",
+                    Data = null
+                };
+            }
+
+            if (!detail.StaffGroupId.HasValue || detail.StaffGroup == null || detail.StaffGroup.LeaderId != leaderId)
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Order detail does not belong to your staff group.",
+                    Data = null
+                };
+            }
+
+            if (!string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Actual end time can only be updated when order detail is COMPLETED.",
+                    Data = null
+                };
+            }
+
+            var actualEndUtc = actualEndTime.Kind == DateTimeKind.Utc
+                ? actualEndTime
+                : actualEndTime.ToUniversalTime();
+
+            if (detail.StartTime.HasValue && actualEndUtc < detail.StartTime.Value)
+            {
+                return new ApiResponse<OrderDetailResponse>
+                {
+                    Success = false,
+                    Message = "Actual end time cannot be earlier than start time.",
+                    Data = null
+                };
+            }
+
+            detail.ActualEndTime = actualEndUtc;
+            await _repository.UpdateAsync(detail);
+
+            var updated = await GetById(orderDetailId);
+            return new ApiResponse<OrderDetailResponse>
+            {
+                Success = true,
+                Message = "Actual end time updated successfully.",
+                Data = updated
+            };
+        }
+
         public async Task<OrderDetailResponse?> GetById(int id)
         {
             var entity = await _repository.GetByIdWithRelationAsync(id);

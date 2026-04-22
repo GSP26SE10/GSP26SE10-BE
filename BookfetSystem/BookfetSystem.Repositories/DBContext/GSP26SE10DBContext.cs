@@ -70,6 +70,8 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<Service> Services { get; set; }
 
+    public virtual DbSet<ServiceExtraChargeCatalog> ServiceExtraChargeCatalogs { get; set; }
+
     public virtual DbSet<StaffGroup> StaffGroups { get; set; }
 
     public virtual DbSet<StaffGroupMember> StaffGroupMembers { get; set; }
@@ -532,6 +534,7 @@ public partial class GSP26SE10DBContext : DbContext
             entity.ToTable("order_detail");
 
             entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
+            entity.Property(e => e.ActualEndTime).HasColumnName("actual_end_time");
             entity.Property(e => e.Address).HasColumnName("address");
             entity.Property(e => e.CustomDishSnapshot)
                 .HasColumnType("jsonb")
@@ -896,6 +899,32 @@ public partial class GSP26SE10DBContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
+        });
+
+        modelBuilder.Entity<ServiceExtraChargeCatalog>(entity =>
+        {
+            entity.HasKey(e => e.ServiceExtraChargeCatalogId).HasName("service_extra_charge_catalog_pkey");
+
+            entity.ToTable("service_extra_charge_catalog");
+
+            entity.HasIndex(e => new { e.ServiceId, e.ExtraChargeCatalogId }, "service_extra_charge_catalog_service_id_extra_charge_catalo_key").IsUnique();
+
+            entity.Property(e => e.ServiceExtraChargeCatalogId)
+                .HasDefaultValueSql("nextval('service_extra_charge_catalog_service_extra_charge_catalog_i_seq'::regclass)")
+                .HasColumnName("service_extra_charge_catalog_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ExtraChargeCatalogId).HasColumnName("extra_charge_catalog_id");
+            entity.Property(e => e.ServiceId).HasColumnName("service_id");
+
+            entity.HasOne(d => d.ExtraChargeCatalog).WithMany(p => p.ServiceExtraChargeCatalogs)
+                .HasForeignKey(d => d.ExtraChargeCatalogId)
+                .HasConstraintName("service_extra_charge_catalog_extra_charge_catalog_id_fkey");
+
+            entity.HasOne(d => d.Service).WithMany(p => p.ServiceExtraChargeCatalogs)
+                .HasForeignKey(d => d.ServiceId)
+                .HasConstraintName("service_extra_charge_catalog_service_id_fkey");
         });
 
         modelBuilder.Entity<StaffGroup>(entity =>

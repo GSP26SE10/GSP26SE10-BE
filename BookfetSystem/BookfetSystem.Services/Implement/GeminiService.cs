@@ -45,6 +45,11 @@ public class GeminiService
             if (!response.IsSuccessStatusCode)
             {
                 var errorDetail = await response.Content.ReadAsStringAsync();
+                if ((int)response.StatusCode >= 500)
+                {
+                    throw new UpstreamServiceUnavailableException("Service unavailable", (int)response.StatusCode, errorDetail);
+                }
+
                 throw new Exception($"Gemini Error: {response.StatusCode} - {errorDetail}");
             }
 
@@ -58,7 +63,7 @@ public class GeminiService
                 .GetString();
         }
 
-        throw new Exception("Gemini API Rate Limit exceeded after retries.");
+        throw new UpstreamServiceUnavailableException("Service unavailable", 503, "Gemini API Rate Limit exceeded after retries.");
     }
     public async Task<string> SummarizeFeedbackAsync(string menuName, List<string> feedbacks, string? oldSummary)
     {
@@ -108,5 +113,16 @@ public class GeminiService
     4. Văn phong khách quan, trả về thuần văn bản, không xuống dòng thừa.";
 
         return await AskGemini(prompt);
+    }
+}
+
+public class UpstreamServiceUnavailableException : Exception
+{
+    public int UpstreamStatusCode { get; }
+
+    public UpstreamServiceUnavailableException(string message, int upstreamStatusCode, string? detail = null)
+        : base(string.IsNullOrWhiteSpace(detail) ? message : $"{message}: {detail}")
+    {
+        UpstreamStatusCode = upstreamStatusCode;
     }
 }

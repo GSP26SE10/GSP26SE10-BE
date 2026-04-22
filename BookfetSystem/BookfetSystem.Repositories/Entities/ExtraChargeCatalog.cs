@@ -26,4 +26,6 @@ public partial class ExtraChargeCatalog
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<OrderDetailExtraCharge> OrderDetailExtraCharges { get; set; } = new List<OrderDetailExtraCharge>();
+
+    public virtual ICollection<ServiceExtraChargeCatalog> ServiceExtraChargeCatalogs { get; set; } = new List<ServiceExtraChargeCatalog>();
 }

@@ -25,6 +25,8 @@ public partial class OrderDetail
 
     public DateTime? EndTime { get; set; }
 
+    public DateTime? ActualEndTime { get; set; }
+
     public int? StaffGroupId { get; set; }
 
     public int? PartyCategoryId { get; set; }
