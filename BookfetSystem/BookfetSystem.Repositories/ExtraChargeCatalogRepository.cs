@@ -2,6 +2,7 @@ using BookfetSystem.Repositories.Basic;
 using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -48,6 +49,40 @@ namespace BookfetSystem.Repositories
         public Task<bool> HasRelatedDataAsync(int extraChargeCatalogId)
         {
             return _context.OrderDetailExtraCharges.AnyAsync(x => x.ExtraChargeCatalogId == extraChargeCatalogId);
+        }
+
+        public Task<bool> IsMappedToAnyServiceAsync(int extraChargeCatalogId, IEnumerable<int> serviceIds)
+        {
+            var ids = serviceIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return Task.FromResult(false);
+            }
+
+            return _context.ServiceExtraChargeCatalogs.AnyAsync(x =>
+                x.ExtraChargeCatalogId == extraChargeCatalogId &&
+                ids.Contains(x.ServiceId));
+        }
+
+        public IQueryable<ExtraChargeCatalog> GetActiveByServiceId(int serviceId)
+        {
+            return _context.ServiceExtraChargeCatalogs
+                .Where(x => x.ServiceId == serviceId)
+                .Select(x => x.ExtraChargeCatalog)
+                .Where(x => x.Status == "ACTIVE")
+                .OrderBy(x => x.ExtraChargeCatalogId);
+        }
+
+        public IQueryable<ExtraChargeCatalog> GetActiveByOrderDetailId(int orderDetailId)
+        {
+            return _context.OrderServices
+                .Where(os => os.OrderDetailId == orderDetailId && os.ServiceId.HasValue)
+                .SelectMany(os => _context.ServiceExtraChargeCatalogs
+                    .Where(sc => sc.ServiceId == os.ServiceId!.Value)
+                    .Select(sc => sc.ExtraChargeCatalog))
+                .Where(ec => ec.Status == "ACTIVE")
+                .Distinct()
+                .OrderBy(ec => ec.ExtraChargeCatalogId);
         }
     }
 }

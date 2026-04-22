@@ -203,5 +203,109 @@ public class OrderDetailServiceTests
         order.Status.Should().Be(OrderStatus.BILLING.ToString());
     }
     #endregion
+
+    #region Function 96 - Leader Update Actual End Time
+    [TestMethod]
+    public async Task UpdateActualEndTimeByLeaderAsync_WhenOrderDetailNotFound_ShouldFail()
+    {
+        var result = await _sut.UpdateActualEndTimeByLeaderAsync(99999, leaderId: 2, actualEndTime: DateTime.UtcNow);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order detail not found.");
+        result.Data.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task UpdateActualEndTimeByLeaderAsync_WhenOrderDetailNotInLeaderGroup_ShouldFail()
+    {
+        _dbContext.StaffGroups.Add(new StaffGroup
+        {
+            StaffGroupId = 6101,
+            StaffGroupName = "Group A",
+            Status = "ACTIVE",
+            LeaderId = 9
+        });
+
+        _dbContext.OrderDetails.Add(new OrderDetail
+        {
+            OrderDetailId = 9601,
+            OrderId = 950,
+            StaffGroupId = 6101,
+            Status = OrderDetailStatus.COMPLETED.ToString(),
+            StartTime = DateTime.UtcNow.AddHours(-4),
+            EndTime = DateTime.UtcNow.AddHours(-1)
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _sut.UpdateActualEndTimeByLeaderAsync(9601, leaderId: 2, actualEndTime: DateTime.UtcNow.AddHours(-1));
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Order detail does not belong to your staff group.");
+        result.Data.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task UpdateActualEndTimeByLeaderAsync_WhenStatusIsNotCompleted_ShouldFail()
+    {
+        _dbContext.StaffGroups.Add(new StaffGroup
+        {
+            StaffGroupId = 6102,
+            StaffGroupName = "Group B",
+            Status = "ACTIVE",
+            LeaderId = 2
+        });
+
+        _dbContext.OrderDetails.Add(new OrderDetail
+        {
+            OrderDetailId = 9602,
+            OrderId = 950,
+            StaffGroupId = 6102,
+            Status = OrderDetailStatus.IN_PROGRESS.ToString(),
+            StartTime = DateTime.UtcNow.AddHours(-2),
+            EndTime = DateTime.UtcNow.AddHours(1)
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _sut.UpdateActualEndTimeByLeaderAsync(9602, leaderId: 2, actualEndTime: DateTime.UtcNow);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Actual end time can only be updated when order detail is COMPLETED.");
+        result.Data.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task UpdateActualEndTimeByLeaderAsync_WhenValid_ShouldUpdateActualEndTime()
+    {
+        _dbContext.StaffGroups.Add(new StaffGroup
+        {
+            StaffGroupId = 6103,
+            StaffGroupName = "Group C",
+            Status = "ACTIVE",
+            LeaderId = 2
+        });
+
+        _dbContext.OrderDetails.Add(new OrderDetail
+        {
+            OrderDetailId = 9603,
+            OrderId = 950,
+            StaffGroupId = 6103,
+            Status = OrderDetailStatus.COMPLETED.ToString(),
+            StartTime = DateTime.UtcNow.AddHours(-3),
+            EndTime = DateTime.UtcNow.AddHours(-1)
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var actualEnd = DateTime.UtcNow.AddMinutes(-30);
+        var result = await _sut.UpdateActualEndTimeByLeaderAsync(9603, leaderId: 2, actualEndTime: actualEnd);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Actual end time updated successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.ActualEndTime.Should().BeCloseTo(actualEnd, TimeSpan.FromSeconds(1));
+
+        var saved = await _dbContext.OrderDetails.AsNoTracking().FirstAsync(x => x.OrderDetailId == 9603);
+        saved.ActualEndTime.Should().BeCloseTo(actualEnd, TimeSpan.FromSeconds(1));
+    }
+    #endregion
 }
 

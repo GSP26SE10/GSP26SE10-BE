@@ -62,6 +62,7 @@ namespace BookfetSystem.Repositories
                 .Include(x => x.PartyCategory)
                 .Include(x => x.StaffGroup)
                 .Include(x => x.Order)
+                .Include(x => x.OrderServices)
                 .FirstOrDefaultAsync(x => x.OrderDetailId == id);
         }
 

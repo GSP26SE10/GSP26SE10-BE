@@ -55,7 +55,7 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var orderDetail = await _orderDetailRepository.GetByIdAsync(request.OrderDetailId);
+            var orderDetail = await _orderDetailRepository.GetByIdWithRelationAsync(request.OrderDetailId);
             if (orderDetail == null)
             {
                 return new ApiResponse<OrderDetailExtraChargeResponse>
@@ -98,6 +98,35 @@ namespace BookfetSystem.Services.Implement
                 {
                     Success = false,
                     Message = "Extra charge catalog not found.",
+                    Data = null
+                };
+            }
+
+            var serviceIds = orderDetail.OrderServices
+                .Where(x => x.ServiceId.HasValue)
+                .Select(x => x.ServiceId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (!serviceIds.Any())
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Order detail has no services to apply extra charge.",
+                    Data = null
+                };
+            }
+
+            var isMappedToUsedServices = await _extraChargeCatalogRepository
+                .IsMappedToAnyServiceAsync(request.ExtraChargeCatalogId, serviceIds);
+
+            if (!isMappedToUsedServices)
+            {
+                return new ApiResponse<OrderDetailExtraChargeResponse>
+                {
+                    Success = false,
+                    Message = "Extra charge catalog is not applicable to services in this order detail.",
                     Data = null
                 };
             }
@@ -200,10 +229,32 @@ namespace BookfetSystem.Services.Implement
             };
         }
 
-        public async Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogAsync()
+        public async Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogAsync(int? serviceId)
+        {
+            var query = serviceId.HasValue
+                ? _extraChargeCatalogRepository.GetActiveByServiceId(serviceId.Value)
+                : _extraChargeCatalogRepository.GetAllFiltered(new ExtraChargeCatalog(), activeOnly: true);
+
+            var items = await query
+                .Select(x => new ExtraChargeCatalogResponse
+                {
+                    ExtraChargeCatalogId = x.ExtraChargeCatalogId,
+                    ChargeType = x.ChargeType,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Status = x.Status
+                })
+                .ToListAsync();
+
+            return items;
+        }
+
+        public async Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogByOrderDetailAsync(int orderDetailId)
         {
             var items = await _extraChargeCatalogRepository
-                .GetAllFiltered(new ExtraChargeCatalog(), activeOnly: true)
+                .GetActiveByOrderDetailId(orderDetailId)
                 .Select(x => new ExtraChargeCatalogResponse
                 {
                     ExtraChargeCatalogId = x.ExtraChargeCatalogId,
