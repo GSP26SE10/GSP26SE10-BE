@@ -277,7 +277,9 @@ namespace BookfetSystem.Services.Implement
             }
 
             detail.Status = OrderDetailStatus.COMPLETED.ToString();
-            detail.EndTime = DateTime.UtcNow;
+            var completedAtUtc = DateTime.UtcNow;
+            detail.EndTime = completedAtUtc;
+            detail.ActualEndTime = completedAtUtc;
 
             await _repository.UpdateAsync(detail);
 
