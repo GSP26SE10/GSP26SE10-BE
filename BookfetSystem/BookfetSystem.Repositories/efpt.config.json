@@ -128,6 +128,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "public.service_extra_charge_catalog",
+         "ObjectType": 0
+      },
+      {
          "Name": "public.staff_group",
          "ObjectType": 0
       },
