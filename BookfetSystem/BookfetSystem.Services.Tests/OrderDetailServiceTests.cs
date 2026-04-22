@@ -158,6 +158,8 @@ public class OrderDetailServiceTests
         detail.Status.Should().Be(OrderDetailStatus.COMPLETED.ToString());
         detail.EndTime.Should().NotBeNull();
         detail.EndTime!.Value.Should().BeBefore(oldEnd);
+        detail.ActualEndTime.Should().NotBeNull();
+        detail.ActualEndTime!.Value.Should().BeCloseTo(detail.EndTime.Value, TimeSpan.FromSeconds(1));
 
         var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 950);
         order.Status.Should().Be(OrderStatus.IN_PROGRESS.ToString());
@@ -198,6 +200,8 @@ public class OrderDetailServiceTests
         detail.Status.Should().Be(OrderDetailStatus.COMPLETED.ToString());
         detail.EndTime.Should().NotBeNull();
         detail.EndTime!.Value.Should().BeBefore(futureEnd);
+        detail.ActualEndTime.Should().NotBeNull();
+        detail.ActualEndTime!.Value.Should().BeCloseTo(detail.EndTime.Value, TimeSpan.FromSeconds(1));
 
         var order = await _dbContext.Orders.AsNoTracking().FirstAsync(x => x.OrderId == 951);
         order.Status.Should().Be(OrderStatus.BILLING.ToString());
