@@ -9,6 +9,8 @@ namespace BookfetSystem.Services.Interface
     public interface IOrderDetailExtraChargeService
     {
         Task<ApiResponse<OrderDetailExtraChargeResponse>> CreateAsync(OrderDetailExtraChargeCreateRequest request, int leaderId);
+        Task<ApiResponse<OrderDetailExtraChargeResponse>> UpdateAsync(int orderDetailExtraChargeId, OrderDetailExtraChargeUpdateRequest request, int leaderId);
+        Task<ApiResponse<bool>> DeleteAsync(int orderDetailExtraChargeId, int leaderId);
         Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogAsync(int? serviceId);
         Task<List<ExtraChargeCatalogResponse>> GetActiveCatalogByOrderDetailAsync(int orderDetailId);
         Task<List<OrderDetailExtraChargeResponse>> GetByOrderIdAsync(int orderId);
