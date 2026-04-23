@@ -101,6 +101,8 @@ internal static class MapsterTestBootstrap
         new OrderDetailStaffTaskMapping().Register(TypeAdapterConfig.GlobalSettings);
         new NotificationMapping().Register(TypeAdapterConfig.GlobalSettings);
         new UserMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new ConversationMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new MessageMapping().Register(TypeAdapterConfig.GlobalSettings);
     }
 
     private static int? ParseNullableInt(string? value)
