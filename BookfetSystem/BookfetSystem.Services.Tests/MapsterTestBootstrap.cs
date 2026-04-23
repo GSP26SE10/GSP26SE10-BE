@@ -59,6 +59,10 @@ internal static class MapsterTestBootstrap
         TypeAdapterConfig.GlobalSettings.NewConfig<Service, ServiceResponse>()
             .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status));
 
+        new MenuDishMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new DishDetailMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new PartyCategoryMenuMapping().Register(TypeAdapterConfig.GlobalSettings);
+
         TypeAdapterConfig.GlobalSettings.NewConfig<OrderDetail, OrderDetailResponse>()
             .Map(dest => dest.MenuName,
                 src => src.Menu != null ? src.Menu.MenuName : null)
@@ -95,6 +99,10 @@ internal static class MapsterTestBootstrap
 
         new StaffGroupAssignmentOverviewMapping().Register(TypeAdapterConfig.GlobalSettings);
         new OrderDetailStaffTaskMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new NotificationMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new UserMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new ConversationMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new MessageMapping().Register(TypeAdapterConfig.GlobalSettings);
     }
 
     private static int? ParseNullableInt(string? value)
