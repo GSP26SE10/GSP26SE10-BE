@@ -61,6 +61,7 @@ internal static class MapsterTestBootstrap
 
         new MenuDishMapping().Register(TypeAdapterConfig.GlobalSettings);
         new DishDetailMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new PartyCategoryMenuMapping().Register(TypeAdapterConfig.GlobalSettings);
 
         TypeAdapterConfig.GlobalSettings.NewConfig<OrderDetail, OrderDetailResponse>()
             .Map(dest => dest.MenuName,

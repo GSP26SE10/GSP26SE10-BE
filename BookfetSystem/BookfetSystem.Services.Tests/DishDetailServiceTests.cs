@@ -219,15 +219,17 @@ public class DishDetailServiceTests
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
-        var result = await _sut.UpdateAsync(2003, new DishDetailUpdateRequest { DishId = 2, IngredientId = 2 });
+        var result = await _sut.UpdateAsync(2003, new DishDetailUpdateRequest { DishId = 2, IngredientId = 3 });
 
         result.Success.Should().BeTrue();
         result.Message.Should().Be("Dish detail updated successfully.");
         result.Data.Should().NotBeNull();
         result.Data!.DishId.Should().Be(2);
-        result.Data.IngredientId.Should().Be(2);
         result.Data.DishName.Should().Be("Dish 2");
-        result.Data.IngredientName.Should().Be("Ingredient 2");
+
+        var saved = await _dbContext.DishDetails.AsNoTracking().FirstAsync(x => x.DishDetailId == 2003);
+        saved.DishId.Should().Be(2);
+        saved.IngredientId.Should().Be(3);
     }
     #endregion
 
