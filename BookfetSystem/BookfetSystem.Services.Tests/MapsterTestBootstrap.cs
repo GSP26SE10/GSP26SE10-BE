@@ -59,6 +59,9 @@ internal static class MapsterTestBootstrap
         TypeAdapterConfig.GlobalSettings.NewConfig<Service, ServiceResponse>()
             .Map(dest => dest.Status, src => EnumHelper.TryParseToInt<ServiceStatus>(src.Status));
 
+        new MenuDishMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new DishDetailMapping().Register(TypeAdapterConfig.GlobalSettings);
+
         TypeAdapterConfig.GlobalSettings.NewConfig<OrderDetail, OrderDetailResponse>()
             .Map(dest => dest.MenuName,
                 src => src.Menu != null ? src.Menu.MenuName : null)
