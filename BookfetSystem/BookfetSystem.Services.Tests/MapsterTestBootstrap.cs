@@ -106,6 +106,7 @@ internal static class MapsterTestBootstrap
         new ExtraChargeCatalogMapping().Register(TypeAdapterConfig.GlobalSettings);
         new PostMapping().Register(TypeAdapterConfig.GlobalSettings);
         new StaffGroupMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new StaffGroupMemberMapping().Register(TypeAdapterConfig.GlobalSettings);
     }
 
     private static int? ParseNullableInt(string? value)
