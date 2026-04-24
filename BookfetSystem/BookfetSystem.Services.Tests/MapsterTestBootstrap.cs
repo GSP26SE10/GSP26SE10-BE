@@ -103,6 +103,7 @@ internal static class MapsterTestBootstrap
         new UserMapping().Register(TypeAdapterConfig.GlobalSettings);
         new ConversationMapping().Register(TypeAdapterConfig.GlobalSettings);
         new MessageMapping().Register(TypeAdapterConfig.GlobalSettings);
+        new ExtraChargeCatalogMapping().Register(TypeAdapterConfig.GlobalSettings);
     }
 
     private static int? ParseNullableInt(string? value)
