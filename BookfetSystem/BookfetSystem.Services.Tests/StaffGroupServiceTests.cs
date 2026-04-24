@@ -3,6 +3,7 @@ using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Implement;
+using BookfetSystem.Services.Models.Request;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -77,6 +78,20 @@ public class StaffGroupServiceTests
                 Address = "HN",
                 RoleId = 3,
                 CreatedAt = DateTime.UtcNow
+            },
+            new User
+            {
+                UserId = 4,
+                FullName = "Leader Four",
+                Email = "leader4@test.com",
+                Phone = "0900000004",
+                Avatar = string.Empty,
+                Status = "ACTIVE",
+                PasswordHash = "hash",
+                UserName = "leader4",
+                Address = "DN",
+                RoleId = 3,
+                CreatedAt = DateTime.UtcNow
             });
 
         _dbContext.MenuCategories.Add(new MenuCategory
@@ -117,6 +132,13 @@ public class StaffGroupServiceTests
             Status = StaffGroupStatus.ACTIVE.ToString(),
             LeaderId = 2
         });
+        _dbContext.StaffGroups.Add(new StaffGroup
+        {
+            StaffGroupId = 11,
+            StaffGroupName = "Backup Team",
+            Status = StaffGroupStatus.INACTIVE.ToString(),
+            LeaderId = null
+        });
 
         _dbContext.StaffGroupMembers.Add(new StaffGroupMember
         {
@@ -154,6 +176,201 @@ public class StaffGroupServiceTests
 
         await _dbContext.SaveChangesAsync();
     }
+
+    #region Function 71 - GetAllStaffGroupsFiltered
+    //Function 71 - TC1
+    [TestMethod]
+    public async Task GetAllStaffGroupFilteredAsync_WhenFilterByStatus_ShouldReturnMatchedRows()
+    {
+        var result = await _sut.GetAllStaffGroupFilteredAsync(
+            new StaffGroupFilterRequest { Status = StaffGroupStatus.ACTIVE },
+            page: 1,
+            pageSize: 10);
+
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().ContainSingle();
+        result.Items.First().StaffGroupId.Should().Be(10);
+        result.Items.First().LeaderName.Should().Be("Leader Two");
+    }
+
+    //Function 71 - TC2
+    [TestMethod]
+    public async Task GetAllStaffGroupFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
+    {
+        var result = await _sut.GetAllStaffGroupFilteredAsync(
+            new StaffGroupFilterRequest(),
+            page: 2,
+            pageSize: 1);
+
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(1);
+    }
+    #endregion
+
+    #region Function 72 - CreateStaffGroup
+    //Function 72 - TC1
+    [TestMethod]
+    public async Task CreateAsync_WhenLeaderNotFound_ShouldFail()
+    {
+        var result = await _sut.CreateAsync(new StaffGroupCreateRequest
+        {
+            StaffGroupName = "New Team",
+            LeaderId = 99999
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Leader not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 72 - TC2
+    [TestMethod]
+    public async Task CreateAsync_WhenLeaderAlreadyHasGroup_ShouldFail()
+    {
+        var result = await _sut.CreateAsync(new StaffGroupCreateRequest
+        {
+            StaffGroupName = "New Team",
+            LeaderId = 2
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Leader already has a staff group.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 72 - TC3
+    [TestMethod]
+    public async Task CreateAsync_WhenValid_ShouldCreateSuccessfully()
+    {
+        var result = await _sut.CreateAsync(new StaffGroupCreateRequest
+        {
+            StaffGroupName = "  New Team  ",
+            LeaderId = 4
+        });
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Staff group created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.LeaderId.Should().Be(4);
+        result.Data.LeaderName.Should().Be("Leader Four");
+
+        var saved = await _dbContext.StaffGroups.AsNoTracking()
+            .FirstAsync(x => x.StaffGroupId == result.Data.StaffGroupId);
+        saved.StaffGroupName.Should().Be("New Team");
+        saved.Status.Should().Be(StaffGroupStatus.ACTIVE.ToString());
+    }
+    #endregion
+
+    #region Function 73 - UpdateStaffGroup
+    //Function 73 - TC1
+    [TestMethod]
+    public async Task UpdateAsync_WhenStaffGroupNotFound_ShouldFail()
+    {
+        var result = await _sut.UpdateAsync(99999, new StaffGroupUpdateRequest
+        {
+            StaffGroupName = "Updated Team",
+            LeaderId = 4,
+            Status = StaffGroupStatus.INACTIVE
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Staff group not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 73 - TC2
+    [TestMethod]
+    public async Task UpdateAsync_WhenLeaderAlreadyInStaffGroup_ShouldFail()
+    {
+        var result = await _sut.UpdateAsync(11, new StaffGroupUpdateRequest
+        {
+            StaffGroupName = "Updated Team",
+            LeaderId = 2,
+            Status = StaffGroupStatus.ACTIVE
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Leader already in staff group");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 73 - TC3
+    [TestMethod]
+    public async Task UpdateAsync_WhenLeaderNotFound_ShouldFail()
+    {
+        var result = await _sut.UpdateAsync(11, new StaffGroupUpdateRequest
+        {
+            StaffGroupName = "Updated Team",
+            LeaderId = 99999,
+            Status = StaffGroupStatus.ACTIVE
+        });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Leader not found.");
+        result.Data.Should().BeNull();
+    }
+
+    //Function 73 - TC4
+    [TestMethod]
+    public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
+    {
+        var result = await _sut.UpdateAsync(11, new StaffGroupUpdateRequest
+        {
+            StaffGroupName = "  Updated Team  ",
+            LeaderId = 4,
+            Status = StaffGroupStatus.ACTIVE
+        });
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Staff group updated successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.LeaderId.Should().Be(4);
+        result.Data.LeaderName.Should().Be("Leader Four");
+        result.Data.Status.Should().Be((int)StaffGroupStatus.ACTIVE);
+
+        var saved = await _dbContext.StaffGroups.AsNoTracking().FirstAsync(x => x.StaffGroupId == 11);
+        saved.StaffGroupName.Should().Be("Updated Team");
+        saved.LeaderId.Should().Be(4);
+        saved.Status.Should().Be(StaffGroupStatus.ACTIVE.ToString());
+    }
+    #endregion
+
+    #region Function 74 - DeleteStaffGroup
+    //Function 74 - TC1
+    [TestMethod]
+    public async Task DeleteAsync_WhenStaffGroupNotFound_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(99999);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Staff group not found.");
+        result.Data.Should().BeFalse();
+    }
+
+    //Function 74 - TC2
+    [TestMethod]
+    public async Task DeleteAsync_WhenStaffGroupHasOrderDetails_ShouldFail()
+    {
+        var result = await _sut.DeleteAsync(10);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Cannot delete staff group because it is being used in orders.");
+        result.Data.Should().BeFalse();
+    }
+
+    //Function 74 - TC3
+    [TestMethod]
+    public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
+    {
+        var result = await _sut.DeleteAsync(11);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Staff group deleted successfully.");
+        result.Data.Should().BeTrue();
+
+        (await _dbContext.StaffGroups.AnyAsync(x => x.StaffGroupId == 11)).Should().BeFalse();
+    }
+    #endregion
 
     //Function 89 - TC1
     [TestMethod]
