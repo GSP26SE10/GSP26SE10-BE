@@ -249,7 +249,7 @@ public class OrderDetailServiceTests
     }
 
     [TestMethod]
-    public async Task UpdateActualEndTimeByLeaderAsync_WhenStatusIsNotCompleted_ShouldFail()
+    public async Task UpdateActualEndTimeByLeaderAsync_WhenStatusIsNotInProgressOrCompleted_ShouldFail()
     {
         _dbContext.StaffGroups.Add(new StaffGroup
         {
@@ -264,7 +264,7 @@ public class OrderDetailServiceTests
             OrderDetailId = 9602,
             OrderId = 950,
             StaffGroupId = 6102,
-            Status = OrderDetailStatus.IN_PROGRESS.ToString(),
+            Status = OrderDetailStatus.PREPARING.ToString(),
             StartTime = DateTime.UtcNow.AddHours(-2),
             EndTime = DateTime.UtcNow.AddHours(1)
         });
@@ -273,7 +273,7 @@ public class OrderDetailServiceTests
         var result = await _sut.UpdateActualEndTimeByLeaderAsync(9602, leaderId: 2, actualEndTime: DateTime.UtcNow);
 
         result.Success.Should().BeFalse();
-        result.Message.Should().Be("Actual end time can only be updated when order detail is COMPLETED.");
+        result.Message.Should().Be("Actual end time can only be updated when order detail is IN_PROGRESS or COMPLETED.");
         result.Data.Should().BeNull();
     }
 
