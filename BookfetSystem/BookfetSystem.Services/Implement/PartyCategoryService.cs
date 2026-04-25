@@ -84,11 +84,21 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (request.ServiceDurationMinutes.HasValue && request.ServiceDurationMinutes.Value <= 0)
+            {
+                return new ApiResponse<PartyCategoryResponse>
+                {
+                    Success = false,
+                    Message = "ServiceDurationMinutes must be greater than 0."
+                };
+            }
+
             var entity = new PartyCategory
             {
                 PartyCategoryName = normalizedName,
                 Description = request.Description?.Trim(),
                 NumberOfGuests = request.NumberOfGuests,
+                ServiceDurationMinutes = request.ServiceDurationMinutes,
                 Status = PartyCategoryStatus.AVAILABLE.ToString(),
                 ImageUrl = string.Empty,
                 CreatedAt = DateTime.UtcNow
@@ -178,9 +188,19 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
+            if (request.ServiceDurationMinutes.HasValue && request.ServiceDurationMinutes.Value <= 0)
+            {
+                return new ApiResponse<PartyCategoryResponse>
+                {
+                    Success = false,
+                    Message = "ServiceDurationMinutes must be greater than 0."
+                };
+            }
+
             entity.PartyCategoryName = normalizedName;
             entity.Description = request.Description?.Trim();
             entity.NumberOfGuests = request.NumberOfGuests;
+            entity.ServiceDurationMinutes = request.ServiceDurationMinutes;
 
             if (request.Status.HasValue)
             {
