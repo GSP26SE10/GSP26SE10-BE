@@ -98,6 +98,7 @@ public class CloudinaryImageStorageService : IImageStorageService
             CloudinaryFolder.ExtraCharge => "extraCharge",
             CloudinaryFolder.User => "user",
             CloudinaryFolder.Post => "post",
+            CloudinaryFolder.Task => "task",
             _ => throw new InvalidOperationException("Unsupported cloudinary folder.")
         };
     }
