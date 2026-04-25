@@ -103,6 +103,20 @@ public class PartyCategoryServiceTests
         result.Items.First().PartyCategoryName.Should().Be("Wedding");
     }
 
+    [TestMethod]
+    public async Task GetAllPartyCategoryFiltered_WithServiceDurationMinutes_ShouldReturnMatchedItems()
+    {
+        var result = await _sut.GetAllPartyCategoryFilteredAsync(
+            new PartyCategoryFilterRequest { ServiceDurationMinutes = 240 },
+            1,
+            10);
+
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().ContainSingle();
+        result.Items.First().PartyCategoryName.Should().Be("Wedding");
+        result.Items.First().ServiceDurationMinutes.Should().Be(240);
+    }
+
     //TC6
     [TestMethod]
     public async Task GetAllPartyCategoryFiltered_WithNotFoundNameOrId_ShouldReturnEmpty()
@@ -478,11 +492,11 @@ public class PartyCategoryServiceTests
     private async Task SeedPartyCategoriesAsync()
     {
         _dbContext.PartyCategories.AddRange(
-            new PartyCategory { PartyCategoryId = 1, PartyCategoryName = "Wedding", Description = "Wedding party", NumberOfGuests = 200, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
-            new PartyCategory { PartyCategoryId = 2, PartyCategoryName = "Birthday", Description = "Birthday party", NumberOfGuests = 80, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
-            new PartyCategory { PartyCategoryId = 3, PartyCategoryName = "Company Event", Description = "Corporate party", NumberOfGuests = 150, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
-            new PartyCategory { PartyCategoryId = 4, PartyCategoryName = "Family Gathering", Description = "Family party", NumberOfGuests = 50, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
-            new PartyCategory { PartyCategoryId = 5, PartyCategoryName = "Archived Party", Description = "Old category", NumberOfGuests = 60, Status = "UNAVAILABLE", CreatedAt = DateTime.UtcNow }
+            new PartyCategory { PartyCategoryId = 1, PartyCategoryName = "Wedding", Description = "Wedding party", NumberOfGuests = 200, ServiceDurationMinutes = 240, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new PartyCategory { PartyCategoryId = 2, PartyCategoryName = "Birthday", Description = "Birthday party", NumberOfGuests = 80, ServiceDurationMinutes = 180, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new PartyCategory { PartyCategoryId = 3, PartyCategoryName = "Company Event", Description = "Corporate party", NumberOfGuests = 150, ServiceDurationMinutes = 300, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new PartyCategory { PartyCategoryId = 4, PartyCategoryName = "Family Gathering", Description = "Family party", NumberOfGuests = 50, ServiceDurationMinutes = 120, Status = "AVAILABLE", CreatedAt = DateTime.UtcNow },
+            new PartyCategory { PartyCategoryId = 5, PartyCategoryName = "Archived Party", Description = "Old category", NumberOfGuests = 60, ServiceDurationMinutes = 90, Status = "UNAVAILABLE", CreatedAt = DateTime.UtcNow }
         );
 
         await _dbContext.SaveChangesAsync();

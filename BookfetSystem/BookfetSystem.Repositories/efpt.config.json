@@ -52,6 +52,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "public.guest_discount_tier",
+         "ObjectType": 0
+      },
+      {
          "Name": "public.ingredient",
          "ObjectType": 0
       },

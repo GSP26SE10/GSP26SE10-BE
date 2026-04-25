@@ -25,6 +25,8 @@ public partial class OrderDetailStaffTask
 
     public string Note { get; set; }
 
+    public string Img { get; set; }
+
     public virtual OrderDetail OrderDetail { get; set; }
 
     public virtual User Staff { get; set; }

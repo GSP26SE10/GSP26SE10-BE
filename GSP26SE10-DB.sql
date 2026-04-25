@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS payment CASCADE;
 DROP TABLE IF EXISTS contact_request CASCADE;
 DROP TABLE IF EXISTS service_extra_charge_catalog CASCADE;
 DROP TABLE IF EXISTS order_detail_extra_charge CASCADE;
+DROP TABLE IF EXISTS guest_discount_tier CASCADE;
 DROP TABLE IF EXISTS order_detail_staff_task CASCADE;
 DROP TABLE IF EXISTS task_template CASCADE;
 DROP TABLE IF EXISTS staff_group_member CASCADE;
@@ -56,7 +57,8 @@ CREATE TABLE party_category (
     status VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     number_of_guests INT,
-    image_url VARCHAR(255)
+    image_url VARCHAR(255),
+    service_duration_minutes INT CHECK (service_duration_minutes > 0) -- số phút phục vụ chuẩn của loại tiệc
 );
 
 CREATE TABLE dish_category (
@@ -222,7 +224,9 @@ CREATE TABLE order_detail (
     note_order_detail TEXT,
     menu_snapshot JSONB,
     service_snapshot JSONB,
-    custom_dish_snapshot JSONB
+    custom_dish_snapshot JSONB,
+    guest_discount_snapshot JSONB, -- snapshot discount theo mốc khách (rule/applied amount)
+    extra_charge_snapshot JSONB -- snapshot phí phát sinh tại thời điểm chốt đơn/tiệc
 );
 
 CREATE TABLE staff_group_member (
@@ -269,6 +273,17 @@ CREATE TABLE order_detail_extra_charge (
     note TEXT
 );
 
+CREATE TABLE guest_discount_tier (
+    guest_discount_tier_id SERIAL PRIMARY KEY,
+    min_guest_count INT NOT NULL CHECK (min_guest_count > 0),
+    discount_percent NUMERIC(5,2) NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100),
+    note TEXT,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(min_guest_count)
+);
+
 CREATE TABLE task_template (
     task_template_id SERIAL PRIMARY KEY,
     task_name VARCHAR(255) NOT NULL,
@@ -286,7 +301,8 @@ CREATE TABLE order_detail_staff_task (
     task_status VARCHAR(50),
     start_time TIMESTAMPTZ,
     end_time TIMESTAMPTZ,
-    note TEXT
+    note TEXT,
+    img JSONB -- array: ["url1", "url2", ...]
 );
 
 CREATE TABLE payment (
@@ -418,11 +434,11 @@ INSERT INTO users (full_name, email, password_hash, user_name, phone, avatar, ad
 ('Thành Tài', 'phanvothanhtai1007@gmail.com', '$2a$11$oU0cF5Hnquo1BclKPHCoLefeS4Iu0xKSHUhesEpVU.ig2pbQUybpy', 'user', '0901234570', 'https://res.cloudinary.com/dl0dri4pf/image/upload/v1776500677/95f299a1-c88f-47d2-82f6-cd3be7ff7ea5.png', '321 User St', 'ACTIVE', 4);
 
 -- PARTY CATEGORY
-INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url) VALUES
-('Tiệc cưới', 'Tiệc cưới sang trọng và ấm cúng', 'AVAILABLE', 200, '/images/wedding.jpg'),
-('Tiệc sinh nhật', 'Tiệc sinh nhật vui vẻ cho gia đình và bạn bè', 'AVAILABLE', 50, '/images/birthday.jpg'),
-('Tiệc doanh nghiệp', 'Tiệc doanh nghiệp chuyên nghiệp', 'AVAILABLE', 100, '/images/corporate.jpg'),
-('Tiệc hẹn hò', 'Party category for minimum 1 guest testing', 'AVAILABLE', 2, '/images/test-party-1.jpg');
+INSERT INTO party_category (party_category_name, description, status, number_of_guests, image_url, service_duration_minutes) VALUES
+('Tiệc cưới', 'Tiệc cưới sang trọng và ấm cúng', 'AVAILABLE', 200, '/images/wedding.jpg', 300),
+('Tiệc sinh nhật', 'Tiệc sinh nhật vui vẻ cho gia đình và bạn bè', 'AVAILABLE', 50, '/images/birthday.jpg', 180),
+('Tiệc doanh nghiệp', 'Tiệc doanh nghiệp chuyên nghiệp', 'AVAILABLE', 100, '/images/corporate.jpg', 240),
+('Tiệc hẹn hò', 'Party category for minimum 1 guest testing', 'AVAILABLE', 2, '/images/test-party-1.jpg', 120);
 
 -- DISH CATEGORY
 INSERT INTO dish_category (dish_category_name, description) VALUES
@@ -524,8 +540,8 @@ INSERT INTO service (service_name, description, base_price, status, img) VALUES
 
 -- EXTRA CHARGE CATALOG
 INSERT INTO extra_charge_catalog (charge_type, title, description, unit, unit_price, status) VALUES
-('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'món', 1000, 'ACTIVE'),
-('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'giờ', 500000, 'ACTIVE'),
+('DAMAGE', 'Bồi thường hư hỏng', 'Phụ phí bồi thường cho hư hỏng tài sản', 'món', 10000, 'ACTIVE'),
+('LATE_OVERTIME', 'Quá giờ phục vụ', 'Phụ thu do phục vụ quá thời gian dự kiến', 'phút', 3000, 'ACTIVE'),
 ('EXTRA_SERVICE', 'Phát sinh thêm dịch vụ', 'Phụ thu cho các dịch vụ phát sinh ngoài gói', 'dịch vụ', 300000, 'ACTIVE'),
 ('EXTRA_EQUIPMENT', 'Phát sinh thêm thiết bị', 'Phụ thu cho thiết bị phát sinh thêm', 'món', 400000, 'ACTIVE'),
 ('CLEANING', 'Phí vệ sinh thêm', 'Phụ thu cho chi phí vệ sinh phát sinh', 'lần', 250000, 'ACTIVE'),
@@ -544,6 +560,13 @@ INSERT INTO service_extra_charge_catalog (service_id, extra_charge_catalog_id) V
 (3, 2), -- MC: overtime
 (3, 3), -- MC: extra service
 (3, 7); -- MC: penalty
+
+-- GUEST DISCOUNT TIER (master data)
+-- Cấu hình mốc giảm giá trước, sau đó áp dụng + snapshot vào order_detail khi tạo đơn
+INSERT INTO guest_discount_tier (min_guest_count, discount_percent, note, status) VALUES
+(50, 5.00, 'Đạt từ 50 khách giảm 5%', 'ACTIVE'),
+(100, 10.00, 'Đạt từ 100 khách giảm 10%', 'ACTIVE'),
+(150, 15.00, 'Đạt từ 150 khách giảm 15%', 'ACTIVE');
 
 
 

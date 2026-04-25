@@ -24,6 +24,13 @@ namespace BookfetSystem.Services.Models.Response
 
         public DateTime? ActualEndTime { get; set; }
 
+        public int? OvertimeMinutes =>
+            ActualEndTime.HasValue &&
+            EndTime.HasValue &&
+            ActualEndTime.Value > EndTime.Value
+                ? (int)Math.Ceiling((ActualEndTime.Value - EndTime.Value).TotalMinutes)
+                : null;
+
         public int? StaffGroupId { get; set; }
 
         public int? PartyCategoryId { get; set; }
@@ -34,11 +41,17 @@ namespace BookfetSystem.Services.Models.Response
 
         public string? PartyCategoryName { get; set; }
 
+        public int? ServiceDurationMinutes { get; set; }
+
         public MenuSnapshotDto? MenuSnapshot { get; set; }
 
         public ServiceSnapshotDto? ServiceSnapshot { get; set; }
 
         public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
+
+        public GuestDiscountSnapshotDto? GuestDiscountSnapshot { get; set; }
+
+        public ExtraChargeSnapshotDto? ExtraChargeSnapshot { get; set; }
 
         public string? NoteOrderDetail { get; set; }
 

@@ -41,6 +41,11 @@ namespace BookfetSystem.Repositories
                 query = query.Where(pc => pc.NumberOfGuests == filter.NumberOfGuests);
             }
 
+            if (filter.ServiceDurationMinutes.HasValue)
+            {
+                query = query.Where(pc => pc.ServiceDurationMinutes == filter.ServiceDurationMinutes);
+            }
+
             return query.OrderBy(pc => pc.PartyCategoryName);
         }
 

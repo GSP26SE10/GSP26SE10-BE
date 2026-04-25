@@ -14,6 +14,8 @@ namespace BookfetSystem.Services.Models.Response
 
         public string? ImageUrl { get; set; }
 
+        public int? ServiceDurationMinutes { get; set; }
+
         public DateTime? CreatedAt { get; set; }
     }
 }

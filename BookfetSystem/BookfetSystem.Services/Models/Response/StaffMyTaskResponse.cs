@@ -24,6 +24,7 @@ namespace BookfetSystem.Services.Models.Response
         public ServiceSnapshotDto? ServiceSnapshot { get; set; }
         public CustomDishSnapshotDto? CustomDishSnapshot { get; set; }
         public string? PartyCategory { get; set; }
+        public int? ServiceDurationMinutes { get; set; }
         public int? NumberOfGuests { get; set; }
         public string? Address { get; set; }
         public DateTime? StartTime { get; set; }

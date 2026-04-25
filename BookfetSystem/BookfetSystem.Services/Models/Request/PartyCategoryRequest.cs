@@ -15,6 +15,9 @@ namespace BookfetSystem.Services.Models.Request
         [Range(1, int.MaxValue, ErrorMessage = "NumberOfGuests must be greater than 0.")]
         public int NumberOfGuests { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "ServiceDurationMinutes must be greater than 0.")]
+        public int? ServiceDurationMinutes { get; set; }
+
         public IFormFile? ImageUrl { get; set; }
     }
 
@@ -32,6 +35,9 @@ namespace BookfetSystem.Services.Models.Request
         [Range(1, int.MaxValue, ErrorMessage = "NumberOfGuests must be greater than 0.")]
         public int NumberOfGuests { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "ServiceDurationMinutes must be greater than 0.")]
+        public int? ServiceDurationMinutes { get; set; }
+
         public IFormFile? ImageUrl { get; set; }
     }
 
@@ -44,5 +50,7 @@ namespace BookfetSystem.Services.Models.Request
         public PartyCategoryStatus? Status { get; set; }
 
         public int? NumberOfGuests { get; set; }
+
+        public int? ServiceDurationMinutes { get; set; }
     }
 }

@@ -32,6 +32,8 @@ public partial class GSP26SE10DBContext : DbContext
 
     public virtual DbSet<FeedbackService> FeedbackServices { get; set; }
 
+    public virtual DbSet<GuestDiscountTier> GuestDiscountTiers { get; set; }
+
     public virtual DbSet<Ingredient> Ingredients { get; set; }
 
     public virtual DbSet<Menu> Menus { get; set; }
@@ -332,6 +334,32 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasConstraintName("feedback_service_service_id_fkey");
         });
 
+        modelBuilder.Entity<GuestDiscountTier>(entity =>
+        {
+            entity.HasKey(e => e.GuestDiscountTierId).HasName("guest_discount_tier_pkey");
+
+            entity.ToTable("guest_discount_tier");
+
+            entity.HasIndex(e => e.MinGuestCount, "guest_discount_tier_min_guest_count_key").IsUnique();
+
+            entity.Property(e => e.GuestDiscountTierId).HasColumnName("guest_discount_tier_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DiscountPercent)
+                .HasPrecision(5, 2)
+                .HasColumnName("discount_percent");
+            entity.Property(e => e.MinGuestCount).HasColumnName("min_guest_count");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValueSql("'ACTIVE'::character varying")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
         modelBuilder.Entity<Ingredient>(entity =>
         {
             entity.HasKey(e => e.IngredientId).HasName("ingredient_pkey");
@@ -540,6 +568,12 @@ public partial class GSP26SE10DBContext : DbContext
                 .HasColumnType("jsonb")
                 .HasColumnName("custom_dish_snapshot");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.ExtraChargeSnapshot)
+                .HasColumnType("jsonb")
+                .HasColumnName("extra_charge_snapshot");
+            entity.Property(e => e.GuestDiscountSnapshot)
+                .HasColumnType("jsonb")
+                .HasColumnName("guest_discount_snapshot");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.MenuSnapshot)
                 .HasColumnType("jsonb")
@@ -668,6 +702,9 @@ public partial class GSP26SE10DBContext : DbContext
 
             entity.Property(e => e.TaskId).HasColumnName("task_id");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.Img)
+                .HasColumnType("jsonb")
+                .HasColumnName("img");
             entity.Property(e => e.Note).HasColumnName("note");
             entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
             entity.Property(e => e.StaffId).HasColumnName("staff_id");
@@ -738,6 +775,7 @@ public partial class GSP26SE10DBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100)
                 .HasColumnName("party_category_name");
+            entity.Property(e => e.ServiceDurationMinutes).HasColumnName("service_duration_minutes");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");

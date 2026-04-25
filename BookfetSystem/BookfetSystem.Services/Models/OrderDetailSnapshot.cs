@@ -94,4 +94,100 @@ namespace BookfetSystem.Services.Models
         [JsonPropertyName("img")]
         public string? Img { get; set; }
     }
+
+    /// <summary>
+    /// Guest discount snapshot captured at order detail creation/update.
+    /// </summary>
+    public class GuestDiscountSnapshotDto
+    {
+        [JsonPropertyName("guestDiscountTierId")]
+        public int GuestDiscountTierId { get; set; }
+
+        [JsonPropertyName("minGuestCount")]
+        public int MinGuestCount { get; set; }
+
+        [JsonPropertyName("actualGuestCount")]
+        public int ActualGuestCount { get; set; }
+
+        [JsonPropertyName("discountPercent")]
+        public decimal DiscountPercent { get; set; }
+
+        [JsonPropertyName("baseAmount")]
+        public decimal BaseAmount { get; set; }
+
+        [JsonPropertyName("discountAmount")]
+        public decimal DiscountAmount { get; set; }
+
+        [JsonPropertyName("finalAmount")]
+        public decimal FinalAmount { get; set; }
+
+        [JsonPropertyName("note")]
+        public string? Note { get; set; }
+
+        [JsonPropertyName("capturedAt")]
+        public string? CapturedAt { get; set; }
+    }
+
+    /// <summary>
+    /// Extra charge snapshot captured from order detail extra charges.
+    /// </summary>
+    public class ExtraChargeSnapshotDto
+    {
+        [JsonPropertyName("extraCharges")]
+        public List<ExtraChargeSnapshotItemDto> ExtraCharges { get; set; } = new();
+
+        [JsonPropertyName("capturedAt")]
+        public string? CapturedAt { get; set; }
+    }
+
+    public class ExtraChargeSnapshotItemDto
+    {
+        [JsonPropertyName("orderDetailExtraChargeId")]
+        public int OrderDetailExtraChargeId { get; set; }
+
+        [JsonPropertyName("extraChargeCatalogId")]
+        public int? ExtraChargeCatalogId { get; set; }
+
+        [JsonPropertyName("chargeType")]
+        public string? ChargeType { get; set; }
+
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("unit")]
+        public string? Unit { get; set; }
+
+        [JsonPropertyName("unitPrice")]
+        public decimal? UnitPrice { get; set; }
+
+        [JsonPropertyName("quantity")]
+        public int? Quantity { get; set; }
+
+        [JsonPropertyName("totalAmount")]
+        public decimal? TotalAmount { get; set; }
+
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
+
+        [JsonPropertyName("createBy")]
+        public int? CreateBy { get; set; }
+
+        [JsonPropertyName("incurredAt")]
+        public DateTime? IncurredAt { get; set; }
+
+        [JsonPropertyName("createdAt")]
+        public DateTime? CreatedAt { get; set; }
+
+        [JsonPropertyName("updatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+
+        [JsonPropertyName("image")]
+        public object? Image { get; set; }
+
+        [JsonPropertyName("note")]
+        public string? Note { get; set; }
+    }
 }
