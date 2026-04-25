@@ -39,6 +39,7 @@ public class OrderDetailExtraChargeServiceTests
             .ReturnsAsync("https://cdn.test/extra/default.jpg");
 
         _sut = new OrderDetailExtraChargeService(
+            _dbContext,
             new OrderDetailExtraChargeRepository(_dbContext),
             new OrderDetailRepository(_dbContext),
             new ExtraChargeCatalogRepository(_dbContext),
@@ -155,6 +156,17 @@ public class OrderDetailExtraChargeServiceTests
                 StaffGroupId = 99,
                 StartTime = start,
                 EndTime = start.AddHours(4)
+            },
+            new OrderDetail
+            {
+                OrderDetailId = 9004,
+                OrderId = 900,
+                Address = "HN",
+                NumberOfGuests = 40,
+                Status = OrderDetailStatus.IN_PROGRESS.ToString(),
+                StaffGroupId = 10,
+                StartTime = start,
+                EndTime = start.AddHours(3)
             });
 
         _dbContext.Services.Add(new Service
@@ -219,6 +231,32 @@ public class OrderDetailExtraChargeServiceTests
             Unit = "hour",
             UnitPrice = 150_000,
             Status = "ACTIVE",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ExtraChargeCatalogs.Add(new ExtraChargeCatalog
+        {
+            ExtraChargeCatalogId = 102,
+            ChargeType = "MANUAL_EXTRA",
+            Title = "Manual extra fee",
+            Description = "Extra fee entered manually by leader",
+            Unit = "case",
+            UnitPrice = 200_000,
+            Status = "ACTIVE",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        _dbContext.ExtraChargeCatalogs.Add(new ExtraChargeCatalog
+        {
+            ExtraChargeCatalogId = 103,
+            ChargeType = "INACTIVE_EXTRA",
+            Title = "Inactive extra fee",
+            Description = "Inactive catalog for testing",
+            Unit = "case",
+            UnitPrice = 50_000,
+            Status = "INACTIVE",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -348,6 +386,103 @@ public class OrderDetailExtraChargeServiceTests
 
         result.Success.Should().BeFalse();
         result.Message.Should().Be("Extra charge catalog not found.");
+        result.Data.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WhenCatalogIsInactive_ShouldFail()
+    {
+        var request = new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9001,
+            ExtraChargeCatalogId = 103,
+            Quantity = 1
+        };
+
+        var result = await _sut.CreateAsync(request, leaderId: 2);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Extra charge catalog is not active.");
+        result.Data.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WhenCatalogIsNotMappedToUsedServices_ShouldStillCreateSuccessfully()
+    {
+        var request = new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9001,
+            ExtraChargeCatalogId = 102,
+            Quantity = 1
+        };
+
+        var result = await _sut.CreateAsync(request, leaderId: 2);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Order detail extra charge created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.ExtraChargeCatalogId.Should().Be(102);
+        result.Data.UnitPrice.Should().Be(200_000);
+        result.Data.TotalAmount.Should().Be(200_000);
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WhenOrderDetailHasNoService_ShouldStillCreateSuccessfully()
+    {
+        var request = new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9004,
+            ExtraChargeCatalogId = 100,
+            Quantity = 2
+        };
+
+        var result = await _sut.CreateAsync(request, leaderId: 2);
+
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Order detail extra charge created successfully.");
+        result.Data.Should().NotBeNull();
+        result.Data!.OrderDetailId.Should().Be(9004);
+        result.Data.ExtraChargeCatalogId.Should().Be(100);
+        result.Data.TotalAmount.Should().Be(50_000);
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WhenOvertimeCatalogAndHasOvertime_ShouldAutoCalculateByOvertimeMinutes()
+    {
+        var detail = await _dbContext.OrderDetails.FirstAsync(x => x.OrderDetailId == 9001);
+        detail.EndTime = DateTime.UtcNow.AddMinutes(-120);
+        detail.ActualEndTime = detail.EndTime.Value.AddMinutes(90);
+        await _dbContext.SaveChangesAsync();
+
+        var request = new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9001,
+            ExtraChargeCatalogId = 101, // OVERTIME, unitPrice = 150,000 / hour
+            Quantity = 1 // ignored for overtime
+        };
+
+        var result = await _sut.CreateAsync(request, leaderId: 2);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Quantity.Should().Be(90);
+        result.Data.TotalAmount.Should().Be(13_500_000); // 150,000 * 90 (billing by minute)
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WhenOvertimeCatalogButNoOvertime_ShouldFail()
+    {
+        var request = new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9004, // no ActualEndTime in seed
+            ExtraChargeCatalogId = 101,
+            Quantity = 1
+        };
+
+        var result = await _sut.CreateAsync(request, leaderId: 2);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Cannot apply overtime extra charge because order detail has no overtime.");
         result.Data.Should().BeNull();
     }
 

@@ -48,6 +48,7 @@ namespace BookfetSystem.Services.Mappings
                            ServiceSnapshot = BuildServiceSnapshot(src.OrderDetail),
                            CustomDishSnapshot = BuildCustomDishSnapshot(src.OrderDetail),
                            PartyCategory = src.OrderDetail.PartyCategory != null ? src.OrderDetail.PartyCategory.PartyCategoryName : null,
+                           ServiceDurationMinutes = src.OrderDetail.PartyCategory != null ? src.OrderDetail.PartyCategory.ServiceDurationMinutes : null,
                            NumberOfGuests = src.OrderDetail.NumberOfGuests,
                            Address = src.OrderDetail.Address,
                            StartTime = src.OrderDetail.StartTime,

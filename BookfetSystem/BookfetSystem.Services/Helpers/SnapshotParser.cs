@@ -71,6 +71,44 @@ namespace BookfetSystem.Services.Helpers
         }
 
         /// <summary>
+        /// Parses a raw JSON string to <see cref="GuestDiscountSnapshotDto"/>.
+        /// Returns null if input is null/empty or parse fails.
+        /// </summary>
+        public static GuestDiscountSnapshotDto? TryParseGuestDiscountSnapshot(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<GuestDiscountSnapshotDto>(json, JsonOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Parses a raw JSON string to <see cref="ExtraChargeSnapshotDto"/>.
+        /// Returns null if input is null/empty or parse fails.
+        /// </summary>
+        public static ExtraChargeSnapshotDto? TryParseExtraChargeSnapshot(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<ExtraChargeSnapshotDto>(json, JsonOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Parses a raw JSON string to object (array, object, etc.).
         /// Returns null if input is null/empty or parse fails.
         /// Use for JSONB fields like ImgUrl.

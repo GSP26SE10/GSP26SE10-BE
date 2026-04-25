@@ -506,7 +506,9 @@ namespace BookfetSystem.Services.Services
                     }
                 }
 
-                var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal + itemCustomDishTotal;
+                var itemSubTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal + itemCustomDishTotal;
+                var guestDiscountSnapshot = await BuildGuestDiscountSnapshotAsync(itemRequest.NumberOfGuests, itemSubTotal);
+                var itemTotal = guestDiscountSnapshot?.FinalAmount ?? itemSubTotal;
 
                 var dishSnapshots = menuDishes
                     .Where(md => md.Dish != null)
@@ -571,7 +573,8 @@ namespace BookfetSystem.Services.Services
                     NoteOrderDetail = string.IsNullOrWhiteSpace(itemRequest.NoteOrderDetail) ? null : itemRequest.NoteOrderDetail.Trim(),
                     MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
                     ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot),
-                    CustomDishSnapshot = hasCustomDishes ? JsonSerializer.Serialize(customDishSnapshot) : null
+                    CustomDishSnapshot = hasCustomDishes ? JsonSerializer.Serialize(customDishSnapshot) : null,
+                    GuestDiscountSnapshot = guestDiscountSnapshot != null ? JsonSerializer.Serialize(guestDiscountSnapshot) : null
                 };
 
                 await _orderDetailRepository.CreateAsync(orderDetail);
@@ -846,7 +849,9 @@ namespace BookfetSystem.Services.Services
                         }
                     }
 
-                    var itemTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+                    var itemSubTotal = (menuPrice * itemRequest.NumberOfGuests) + itemServiceTotal;
+                    var guestDiscountSnapshot = await BuildGuestDiscountSnapshotAsync(itemRequest.NumberOfGuests, itemSubTotal);
+                    var itemTotal = guestDiscountSnapshot?.FinalAmount ?? itemSubTotal;
 
                     var menuDishes = await _menuDishRepository
                         .GetAllMenuDishFiltered(new MenuDish { MenuId = menu.MenuId })
@@ -904,7 +909,8 @@ namespace BookfetSystem.Services.Services
                         PartyCategoryId = partyCategoryId,
                         NoteOrderDetail = string.IsNullOrWhiteSpace(itemRequest.NoteOrderDetail) ? null : itemRequest.NoteOrderDetail.Trim(),
                         MenuSnapshot = JsonSerializer.Serialize(menuSnapshot),
-                        ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot)
+                        ServiceSnapshot = JsonSerializer.Serialize(serviceSnapshot),
+                        GuestDiscountSnapshot = guestDiscountSnapshot != null ? JsonSerializer.Serialize(guestDiscountSnapshot) : null
                     };
 
                     await _orderDetailRepository.CreateAsync(orderDetail);
@@ -1575,6 +1581,42 @@ namespace BookfetSystem.Services.Services
             {
                 // Email send failure should not break cancellation result.
             }
+        }
+
+        private async Task<GuestDiscountSnapshotDto?> BuildGuestDiscountSnapshotAsync(int numberOfGuests, decimal baseAmount)
+        {
+            if (numberOfGuests <= 0 || baseAmount <= 0)
+            {
+                return null;
+            }
+
+            var matchedTier = await _dbContext.GuestDiscountTiers
+                .Where(x => x.MinGuestCount <= numberOfGuests &&
+                            x.Status != null &&
+                            x.Status.ToUpper() == "ACTIVE")
+                .OrderByDescending(x => x.MinGuestCount)
+                .FirstOrDefaultAsync();
+
+            if (matchedTier == null)
+            {
+                return null;
+            }
+
+            var discountAmount = Math.Round(baseAmount * (matchedTier.DiscountPercent / 100m), 2, MidpointRounding.AwayFromZero);
+            var finalAmount = Math.Max(0m, baseAmount - discountAmount);
+
+            return new GuestDiscountSnapshotDto
+            {
+                GuestDiscountTierId = matchedTier.GuestDiscountTierId,
+                MinGuestCount = matchedTier.MinGuestCount,
+                ActualGuestCount = numberOfGuests,
+                DiscountPercent = matchedTier.DiscountPercent,
+                BaseAmount = baseAmount,
+                DiscountAmount = discountAmount,
+                FinalAmount = finalAmount,
+                Note = matchedTier.Note,
+                CapturedAt = DateTime.UtcNow.ToString("o")
+            };
         }
 
         private static DateTime GetVietnamNow()

@@ -23,6 +23,11 @@ namespace BookfetSystem.Services.Mappings
                            .OrderBy(pcm => pcm.PartyCategoryMenuId)
                            .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.PartyCategoryName : null)
                            .FirstOrDefault())
+                  .Map(dest => dest.ServiceDurationMinutes,
+                       src => src.PartyCategoryMenus
+                           .OrderBy(pcm => pcm.PartyCategoryMenuId)
+                           .Select(pcm => pcm.PartyCategory != null ? pcm.PartyCategory.ServiceDurationMinutes : null)
+                           .FirstOrDefault())
                   .Map(dest => dest.PartyCategoryIds,
                        src => src.PartyCategoryMenus
                            .Where(pcm => pcm.PartyCategoryId.HasValue)
@@ -33,6 +38,12 @@ namespace BookfetSystem.Services.Mappings
                        src => src.PartyCategoryMenus
                            .Where(pcm => pcm.PartyCategory != null && !string.IsNullOrWhiteSpace(pcm.PartyCategory.PartyCategoryName))
                            .Select(pcm => pcm.PartyCategory!.PartyCategoryName)
+                           .Distinct()
+                           .ToList())
+                  .Map(dest => dest.ServiceDurationMinutesList,
+                       src => src.PartyCategoryMenus
+                           .Where(pcm => pcm.PartyCategory != null && pcm.PartyCategory.ServiceDurationMinutes.HasValue)
+                           .Select(pcm => pcm.PartyCategory!.ServiceDurationMinutes!.Value)
                            .Distinct()
                            .ToList())
                   .Map(dest => dest.ImgUrl,

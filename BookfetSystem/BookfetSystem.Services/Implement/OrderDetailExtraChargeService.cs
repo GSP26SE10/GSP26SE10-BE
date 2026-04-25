@@ -1,8 +1,10 @@
 using BookfetSystem.Repositories;
+using BookfetSystem.Repositories.DBContext;
 using BookfetSystem.Repositories.Entities;
 using BookfetSystem.Services.Enum;
 using BookfetSystem.Services.Helpers;
 using BookfetSystem.Services.Interface;
+using BookfetSystem.Services.Models;
 using BookfetSystem.Services.Models.Common;
 using BookfetSystem.Services.Models.Request;
 using BookfetSystem.Services.Models.Response;
@@ -24,14 +26,17 @@ namespace BookfetSystem.Services.Implement
         private readonly ExtraChargeCatalogRepository _extraChargeCatalogRepository;
         private readonly StaffGroupRepository _staffGroupRepository;
         private readonly IImageStorageService _imageStorageService;
+        private readonly GSP26SE10DBContext _dbContext;
 
         public OrderDetailExtraChargeService(
+            GSP26SE10DBContext dbContext,
             OrderDetailExtraChargeRepository orderDetailExtraChargeRepository,
             OrderDetailRepository orderDetailRepository,
             ExtraChargeCatalogRepository extraChargeCatalogRepository,
             StaffGroupRepository staffGroupRepository,
             IImageStorageService imageStorageService)
         {
+            _dbContext = dbContext;
             _orderDetailExtraChargeRepository = orderDetailExtraChargeRepository;
             _orderDetailRepository = orderDetailRepository;
             _extraChargeCatalogRepository = extraChargeCatalogRepository;
@@ -102,31 +107,12 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            var serviceIds = orderDetail.OrderServices
-                .Where(x => x.ServiceId.HasValue)
-                .Select(x => x.ServiceId!.Value)
-                .Distinct()
-                .ToList();
-
-            if (!serviceIds.Any())
+            if (!string.Equals(catalog.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
             {
                 return new ApiResponse<OrderDetailExtraChargeResponse>
                 {
                     Success = false,
-                    Message = "Order detail has no services to apply extra charge.",
-                    Data = null
-                };
-            }
-
-            var isMappedToUsedServices = await _extraChargeCatalogRepository
-                .IsMappedToAnyServiceAsync(request.ExtraChargeCatalogId, serviceIds);
-
-            if (!isMappedToUsedServices)
-            {
-                return new ApiResponse<OrderDetailExtraChargeResponse>
-                {
-                    Success = false,
-                    Message = "Extra charge catalog is not applicable to services in this order detail.",
+                    Message = "Extra charge catalog is not active.",
                     Data = null
                 };
             }
@@ -134,6 +120,23 @@ namespace BookfetSystem.Services.Implement
             var unitPrice = catalog.UnitPrice ?? 0m;
             var quantity = request.Quantity;
             var totalAmount = unitPrice * quantity;
+
+            if (IsOvertimeChargeType(catalog.ChargeType))
+            {
+                var overtimeMinutes = CalculateOvertimeMinutes(orderDetail);
+                if (!overtimeMinutes.HasValue)
+                {
+                    return new ApiResponse<OrderDetailExtraChargeResponse>
+                    {
+                        Success = false,
+                        Message = "Cannot apply overtime extra charge because order detail has no overtime.",
+                        Data = null
+                    };
+                }
+
+                quantity = overtimeMinutes.Value;
+                totalAmount = CalculateOvertimeAmount(unitPrice, overtimeMinutes.Value);
+            }
 
             var entity = new OrderDetailExtraCharge
             {
@@ -199,6 +202,8 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+
+            await RefreshOrderDetailExtraChargeSnapshotAsync(entity.OrderDetailId);
 
             var response = new OrderDetailExtraChargeResponse
             {
@@ -290,8 +295,27 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            entity.Quantity = request.Quantity;
-            entity.TotalAmount = entity.UnitPrice * request.Quantity;
+            if (IsOvertimeChargeType(entity.ChargeType))
+            {
+                var overtimeMinutes = CalculateOvertimeMinutes(orderDetail);
+                if (!overtimeMinutes.HasValue)
+                {
+                    return new ApiResponse<OrderDetailExtraChargeResponse>
+                    {
+                        Success = false,
+                        Message = "Cannot apply overtime extra charge because order detail has no overtime.",
+                        Data = null
+                    };
+                }
+
+                entity.Quantity = overtimeMinutes.Value;
+                entity.TotalAmount = CalculateOvertimeAmount(entity.UnitPrice ?? 0m, overtimeMinutes.Value);
+            }
+            else
+            {
+                entity.Quantity = request.Quantity;
+                entity.TotalAmount = entity.UnitPrice * request.Quantity;
+            }
             entity.IncurredAt = request.IncurredAt ?? entity.IncurredAt ?? DateTime.UtcNow;
             entity.Note = request.Note?.Trim();
             entity.UpdatedAt = DateTime.UtcNow;
@@ -341,6 +365,8 @@ namespace BookfetSystem.Services.Implement
                     Data = null
                 };
             }
+
+            await RefreshOrderDetailExtraChargeSnapshotAsync(entity.OrderDetailId);
 
             var response = new OrderDetailExtraChargeResponse
             {
@@ -421,6 +447,8 @@ namespace BookfetSystem.Services.Implement
                     Data = false
                 };
             }
+
+            await RefreshOrderDetailExtraChargeSnapshotAsync(entity.OrderDetailId);
 
             return new ApiResponse<bool>
             {
@@ -512,6 +540,102 @@ namespace BookfetSystem.Services.Implement
             }
 
             return files;
+        }
+
+        private static bool IsOvertimeChargeType(string? chargeType)
+        {
+            if (string.IsNullOrWhiteSpace(chargeType))
+            {
+                return false;
+            }
+
+            return string.Equals(chargeType, "OVERTIME", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(chargeType, "LATE_OVERTIME", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int? CalculateOvertimeMinutes(OrderDetail orderDetail)
+        {
+            if (!orderDetail.ActualEndTime.HasValue || !orderDetail.EndTime.HasValue)
+            {
+                return null;
+            }
+
+            if (orderDetail.ActualEndTime.Value <= orderDetail.EndTime.Value)
+            {
+                return null;
+            }
+
+            return (int)Math.Ceiling((orderDetail.ActualEndTime.Value - orderDetail.EndTime.Value).TotalMinutes);
+        }
+
+        private static decimal CalculateOvertimeAmount(decimal unitPrice, int overtimeMinutes)
+        {
+            if (overtimeMinutes <= 0 || unitPrice <= 0m)
+            {
+                return 0m;
+            }
+
+            // Overtime is billed by minute by default.
+            return unitPrice * overtimeMinutes;
+        }
+
+        private async Task RefreshOrderDetailExtraChargeSnapshotAsync(int? orderDetailId)
+        {
+            if (!orderDetailId.HasValue || orderDetailId.Value <= 0)
+            {
+                return;
+            }
+
+            var snapshotJson = await BuildExtraChargeSnapshotJsonAsync(orderDetailId.Value);
+            var orderDetail = await _dbContext.OrderDetails
+                .FirstOrDefaultAsync(x => x.OrderDetailId == orderDetailId.Value);
+            if (orderDetail == null)
+            {
+                return;
+            }
+
+            orderDetail.ExtraChargeSnapshot = snapshotJson;
+            await _dbContext.SaveChangesAsync();
+        }
+
+        private async Task<string?> BuildExtraChargeSnapshotJsonAsync(int orderDetailId)
+        {
+            var extraCharges = await _orderDetailExtraChargeRepository
+                .GetAllFiltered(new OrderDetailExtraCharge { OrderDetailId = orderDetailId })
+                .OrderBy(x => x.CreatedAt ?? DateTime.MinValue)
+                .Select(x => new ExtraChargeSnapshotItemDto
+                {
+                    OrderDetailExtraChargeId = x.OrderDetailExtraChargeId,
+                    ExtraChargeCatalogId = x.ExtraChargeCatalogId,
+                    ChargeType = x.ChargeType,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Quantity = x.Quantity,
+                    TotalAmount = x.TotalAmount,
+                    Status = x.Status,
+                    CreateBy = x.CreateBy,
+                    IncurredAt = x.IncurredAt,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt,
+                    Image = SnapshotParser.TryParseJsonToObject(x.Image),
+                    Note = x.Note
+                })
+                .ToListAsync();
+
+            if (!extraCharges.Any())
+            {
+                return null;
+            }
+
+            var snapshot = new ExtraChargeSnapshotDto
+            {
+                ExtraCharges = extraCharges,
+                CapturedAt = DateTime.UtcNow.ToString("o")
+            };
+
+            return JsonSerializer.Serialize(snapshot);
         }
     }
 }

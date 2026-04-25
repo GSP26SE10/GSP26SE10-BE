@@ -34,6 +34,8 @@ namespace BookfetSystem.Services.Mappings
                        src => SnapshotParser.TryParseCustomDishSnapshot(src.CustomDishSnapshot))
                   .Map(dest => dest.PartyCategory,
                        src => src.PartyCategory != null ? src.PartyCategory.PartyCategoryName : null)
+                  .Map(dest => dest.ServiceDurationMinutes,
+                       src => src.PartyCategory != null ? src.PartyCategory.ServiceDurationMinutes : null)
                   .Map(dest => dest.Status,
                        src => EnumHelper.TryParseToInt<OrderDetailStatus>(src.Status))
                   .Map(dest => dest.OrderStatus,
