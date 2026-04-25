@@ -196,7 +196,11 @@ namespace BookfetSystem.API.BackgroundJobs
             }
 
             order.Status = OrderStatus.CANCELLED.ToString();
-            foreach (var detail in order.OrderDetails)
+
+            var orderDetails = await _dbContext.OrderDetails
+                .Where(x => x.OrderId == orderId)
+                .ToListAsync();
+            foreach (var detail in orderDetails)
             {
                 detail.Status = OrderDetailStatus.CANCELLED.ToString();
             }
