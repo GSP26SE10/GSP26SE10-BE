@@ -335,12 +335,16 @@ namespace BookfetSystem.Services.Implement
                 };
             }
 
-            if (!string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase))
+            var isAllowedStatus =
+                string.Equals(detail.Status, OrderDetailStatus.IN_PROGRESS.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(detail.Status, OrderDetailStatus.COMPLETED.ToString(), StringComparison.OrdinalIgnoreCase);
+
+            if (!isAllowedStatus)
             {
                 return new ApiResponse<OrderDetailResponse>
                 {
                     Success = false,
-                    Message = "Actual end time can only be updated when order detail is COMPLETED.",
+                    Message = "Actual end time can only be updated when order detail is IN_PROGRESS or COMPLETED.",
                     Data = null
                 };
             }
