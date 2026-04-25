@@ -41,6 +41,10 @@ public partial class OrderDetail
 
     public string CustomDishSnapshot { get; set; }
 
+    public string GuestDiscountSnapshot { get; set; }
+
+    public string ExtraChargeSnapshot { get; set; }
+
     public virtual Menu Menu { get; set; }
 
     public virtual Order Order { get; set; }
