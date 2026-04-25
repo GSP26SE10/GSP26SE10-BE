@@ -11,5 +11,6 @@ public enum CloudinaryFolder
     FeedbackService,
     ExtraCharge,
     User,
-    Post
+    Post,
+    Task
 }

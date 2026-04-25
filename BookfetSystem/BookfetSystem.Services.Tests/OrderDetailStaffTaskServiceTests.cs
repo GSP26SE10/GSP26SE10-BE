@@ -8,7 +8,9 @@ using BookfetSystem.Services.Models.Request;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Moq;
+using System.Threading;
 
 namespace BookfetSystem.Services.Tests;
 
@@ -19,6 +21,7 @@ public class OrderDetailStaffTaskServiceTests
     private OrderDetailStaffTaskService _sut = null!;
     private Mock<INotificationService> _notificationServiceMock = null!;
     private Mock<IStaffTaskOverdueSchedulerService> _schedulerMock = null!;
+    private Mock<IImageStorageService> _imageStorageServiceMock = null!;
 
     [TestInitialize]
     public async Task SetupAsync()
@@ -45,6 +48,11 @@ public class OrderDetailStaffTaskServiceTests
         _schedulerMock.Setup(x => x.ScheduleTaskOverdueCheckAsync(It.IsAny<int>(), It.IsAny<DateTime?>()))
             .Returns(Task.CompletedTask);
 
+        _imageStorageServiceMock = new Mock<IImageStorageService>();
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(It.IsAny<IFormFile>(), It.IsAny<CloudinaryFolder>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+
         _sut = new OrderDetailStaffTaskService(
             new OrderDetailStaffTaskRepository(_dbContext),
             new OrderDetailRepository(_dbContext),
@@ -53,7 +61,8 @@ public class OrderDetailStaffTaskServiceTests
             new StaffGroupRepository(_dbContext),
             new StaffGroupMemberRepository(_dbContext),
             _notificationServiceMock.Object,
-            _schedulerMock.Object);
+            _schedulerMock.Object,
+            _imageStorageServiceMock.Object);
 
         await SeedTaskWorkflowDataAsync();
     }
@@ -950,6 +959,70 @@ public class OrderDetailStaffTaskServiceTests
 
         var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7705);
         saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
+    }
+    #endregion
+
+    #region Function 98 - Staff Accept/Complete Task
+    [TestMethod]
+    public async Task AcceptMyTaskAsync_WhenTaskBelongsToStaff_ShouldMoveToInProgress()
+    {
+        await SeedTaskAsync(7801, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(2), "Accept me");
+
+        var result = await _sut.AcceptMyTaskAsync(7801, 3);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.IN_PROGRESS);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7801);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.IN_PROGRESS.ToString());
+    }
+
+    [TestMethod]
+    public async Task CompleteMyTaskAsync_WhenValid_ShouldUploadEvidenceAndMarkCompleted()
+    {
+        await SeedTaskAsync(7802, 3, StaffTaskStatus.IN_PROGRESS, DateTime.UtcNow.AddHours(2), "Complete me");
+
+        var formFileMock = new Mock<IFormFile>();
+        var request = new StaffCompleteTaskRequest
+        {
+            CompletionImage = formFileMock.Object,
+            Note = "Đã hoàn tất"
+        };
+
+        var result = await _sut.CompleteMyTaskAsync(7802, 3, request);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.COMPLETED);
+        result.Data.Img.Should().Be("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7802);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
+        saved.Img.Should().Be("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+
+        _imageStorageServiceMock.Verify(x => x.UploadImageAsync(
+                formFileMock.Object,
+                CloudinaryFolder.Task,
+                7802,
+                It.IsAny<CancellationToken>()),
+            Times.Once());
+    }
+
+    [TestMethod]
+    public async Task CompleteMyTaskAsync_WhenTaskNotInProgressOrOverdue_ShouldFail()
+    {
+        await SeedTaskAsync(7803, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(2), "Not started");
+
+        var request = new StaffCompleteTaskRequest
+        {
+            CompletionImage = new Mock<IFormFile>().Object
+        };
+
+        var result = await _sut.CompleteMyTaskAsync(7803, 3, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Chỉ có thể hoàn thành công việc khi trạng thái là IN_PROGRESS hoặc OVERDUE.");
     }
     #endregion
 
