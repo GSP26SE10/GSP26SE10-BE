@@ -177,8 +177,8 @@ public class StaffGroupServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 71 - GetAllStaffGroupsFiltered
-    //Function 71 - TC1
+    #region Function 70 - GetAllStaffGroupsFiltered
+    //Function 70 - TC1
     [TestMethod]
     public async Task GetAllStaffGroupFilteredAsync_WhenFilterByStatus_ShouldReturnMatchedRows()
     {
@@ -193,7 +193,7 @@ public class StaffGroupServiceTests
         result.Items.First().LeaderName.Should().Be("Leader Two");
     }
 
-    //Function 71 - TC2
+    //Function 70 - TC2
     [TestMethod]
     public async Task GetAllStaffGroupFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
     {
@@ -207,8 +207,8 @@ public class StaffGroupServiceTests
     }
     #endregion
 
-    #region Function 72 - CreateStaffGroup
-    //Function 72 - TC1
+    #region Function 71 - CreateStaffGroup
+    //Function 71 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenLeaderNotFound_ShouldFail()
     {
@@ -223,7 +223,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 72 - TC2
+    //Function 71 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenLeaderAlreadyHasGroup_ShouldFail()
     {
@@ -238,7 +238,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 72 - TC3
+    //Function 71 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldCreateSuccessfully()
     {
@@ -261,8 +261,8 @@ public class StaffGroupServiceTests
     }
     #endregion
 
-    #region Function 73 - UpdateStaffGroup
-    //Function 73 - TC1
+    #region Function 72 - UpdateStaffGroup
+    //Function 72 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenStaffGroupNotFound_ShouldFail()
     {
@@ -278,7 +278,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 73 - TC2
+    //Function 72 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenLeaderAlreadyInStaffGroup_ShouldFail()
     {
@@ -294,7 +294,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 73 - TC3
+    //Function 72 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenLeaderNotFound_ShouldFail()
     {
@@ -310,7 +310,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 73 - TC4
+    //Function 72 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -335,8 +335,8 @@ public class StaffGroupServiceTests
     }
     #endregion
 
-    #region Function 74 - DeleteStaffGroup
-    //Function 74 - TC1
+    #region Function 73 - DeleteStaffGroup
+    //Function 73 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenStaffGroupNotFound_ShouldFail()
     {
@@ -347,7 +347,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 74 - TC2
+    //Function 73 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenStaffGroupHasOrderDetails_ShouldFail()
     {
@@ -358,7 +358,7 @@ public class StaffGroupServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 74 - TC3
+    //Function 73 - TC3
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
     {
@@ -372,7 +372,8 @@ public class StaffGroupServiceTests
     }
     #endregion
 
-    //Function 89 - TC1
+    #region Function 88 - ViewAssignedOrders
+    //Function 88 - TC1
     [TestMethod]
     public async Task GetAssignmentOverviewByLeaderAsync_WhenLeaderHasNoGroup_ShouldReturnNull()
     {
@@ -381,7 +382,7 @@ public class StaffGroupServiceTests
         result.Should().BeNull();
     }
 
-    //Function 89 - TC2
+    //Function 88 - TC2
     [TestMethod]
     public async Task GetAssignmentOverviewByLeaderAsync_WhenLeaderHasGroup_ShouldReturnOrdersAndMembers()
     {
@@ -401,3 +402,4 @@ public class StaffGroupServiceTests
         orderVm.Party.Category.Should().Be("Wedding");
     }
 }
+#endregion

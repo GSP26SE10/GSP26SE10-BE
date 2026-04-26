@@ -298,8 +298,8 @@ public class OrderDetailExtraChargeServiceTests
         };
     }
 
-    #region Function 94 - Group Leader Add Extra Charge
-    //Function 94 - TC1
+    #region Function 93 - Group Leader Add Extra Charge
+    //Function 93 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenLeaderHasNoActiveGroup_ShouldFail()
     {
@@ -317,7 +317,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC2
+    //Function 93 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -335,7 +335,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC3
+    //Function 93 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailNotInLeaderGroup_ShouldFail()
     {
@@ -353,7 +353,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC4
+    //Function 93 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailStatusNotAllowed_ShouldFail()
     {
@@ -371,7 +371,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC5
+    //Function 93 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenCatalogNotFound_ShouldFail()
     {
@@ -389,7 +389,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC6
+    //Function 93 - TC6
     [TestMethod]
     public async Task CreateAsync_WhenCatalogIsInactive_ShouldFail()
     {
@@ -407,7 +407,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC7
+    //Function 93 - TC7
     [TestMethod]
     public async Task CreateAsync_WhenCatalogIsNotMappedToUsedServices_ShouldStillCreateSuccessfully()
     {
@@ -428,7 +428,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.TotalAmount.Should().Be(200_000);
     }
 
-    //Function 94 - TC8
+    //Function 93 - TC8
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailHasNoService_ShouldStillCreateSuccessfully()
     {
@@ -449,7 +449,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.TotalAmount.Should().Be(50_000);
     }
 
-    //Function 94 - TC9
+    //Function 93 - TC9
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailStatusIsCompleted_ShouldCreateSuccessfully()
     {
@@ -474,7 +474,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.TotalAmount.Should().Be(50_000);
     }
 
-    //Function 94 - TC10
+    //Function 93 - TC10
     [TestMethod]
     public async Task CreateAsync_WhenOvertimeCatalogAndHasOvertime_ShouldAutoCalculateByOvertimeMinutes()
     {
@@ -498,7 +498,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.TotalAmount.Should().Be(13_500_000); // 150,000 * 90 (billing by minute)
     }
 
-    //Function 94 - TC11
+    //Function 93 - TC11
     [TestMethod]
     public async Task CreateAsync_WhenOvertimeCatalogButNoOvertime_ShouldFail()
     {
@@ -516,7 +516,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC12
+    //Function 93 - TC12
     [TestMethod]
     public async Task CreateAsync_WhenImageCountExceedsLimit_ShouldFail()
     {
@@ -550,7 +550,7 @@ public class OrderDetailExtraChargeServiceTests
             Times.Never());
     }
 
-    //Function 94 - TC13
+    //Function 93 - TC13
     [TestMethod]
     public async Task CreateAsync_WhenImageUploadFails_ShouldFail()
     {
@@ -576,7 +576,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC14
+    //Function 93 - TC14
     [TestMethod]
     public async Task CreateAsync_WhenValidWithoutImages_ShouldCreateSuccessfully()
     {
@@ -610,7 +610,7 @@ public class OrderDetailExtraChargeServiceTests
         saved.Image.Should().BeNull();
     }
 
-    //Function 94 - TC15
+    //Function 93 - TC15
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldRefreshOrderDetailExtraChargeSnapshot()
     {
@@ -636,7 +636,7 @@ public class OrderDetailExtraChargeServiceTests
         savedDetail.ExtraChargeSnapshot.Should().Contain("snapshot create");
     }
 
-    //Function 94 - TC16
+    //Function 93 - TC16
     [TestMethod]
     public async Task CreateAsync_WhenValidWithImages_ShouldUploadAndStoreImageJson()
     {
@@ -678,8 +678,9 @@ public class OrderDetailExtraChargeServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
-
-    //Function 94 - TC17
+#endregion
+#region Function 98 - Group Leader Get Active Catalog By OrderDetail
+    //Function 98 - TC1
     [TestMethod]
     public async Task GetActiveCatalogByOrderDetailAsync_WhenHasMultipleServices_ShouldReturnDistinctUnionCatalogs()
     {
@@ -690,7 +691,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Should().HaveCount(2);
     }
 
-    //Function 94 - TC18
+    //Function 98 - TC2
     [TestMethod]
     public async Task GetActiveCatalogByOrderDetailAsync_WhenOrderDetailHasNoService_ShouldReturnEmpty()
     {
@@ -699,8 +700,9 @@ public class OrderDetailExtraChargeServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
-
-    //Function 94 - TC19
+#endregion
+#region Function 99 - Delete Order Detail Extra Charge
+    //Function 99 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenNotFound_ShouldFail()
     {
@@ -711,7 +713,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 94 - TC20
+    //Function 99 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
     {
@@ -735,8 +737,35 @@ public class OrderDetailExtraChargeServiceTests
             .AnyAsync(x => x.OrderDetailExtraChargeId == created.Data.OrderDetailExtraChargeId);
         stillExists.Should().BeFalse();
     }
+    //Function 99 - TC3
+    [TestMethod]
+    public async Task DeleteAsync_WhenDeletingLastCharge_ShouldClearOrderDetailExtraChargeSnapshot()
+    {
+        var created = await _sut.CreateAsync(new OrderDetailExtraChargeCreateRequest
+        {
+            OrderDetailId = 9004,
+            ExtraChargeCatalogId = 100,
+            Quantity = 1,
+            Note = "only charge"
+        }, leaderId: 2);
 
-    //Function 94 - TC21
+        created.Success.Should().BeTrue();
+        created.Data.Should().NotBeNull();
+
+        var beforeDelete = await _dbContext.OrderDetails.AsNoTracking()
+            .FirstAsync(x => x.OrderDetailId == 9004);
+        beforeDelete.ExtraChargeSnapshot.Should().NotBeNullOrWhiteSpace();
+
+        var deleteResult = await _sut.DeleteAsync(created.Data!.OrderDetailExtraChargeId, leaderId: 2);
+        deleteResult.Success.Should().BeTrue();
+
+        var afterDelete = await _dbContext.OrderDetails.AsNoTracking()
+            .FirstAsync(x => x.OrderDetailId == 9004);
+        afterDelete.ExtraChargeSnapshot.Should().BeNull();
+    }
+#endregion
+#region Function 100 - Delete Order Detail Extra Charge
+    //Function 100 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenNotFound_ShouldFail()
     {
@@ -750,7 +779,7 @@ public class OrderDetailExtraChargeServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 94 - TC22
+    //Function 100 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -788,7 +817,7 @@ public class OrderDetailExtraChargeServiceTests
         saved.IncurredAt.Should().BeCloseTo(incurredAt, TimeSpan.FromSeconds(1));
     }
 
-    //Function 94 - TC23
+    //Function 100 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldRefreshOrderDetailExtraChargeSnapshot()
     {
@@ -818,7 +847,7 @@ public class OrderDetailExtraChargeServiceTests
         savedDetail.ExtraChargeSnapshot.Should().Contain("after update snapshot");
     }
 
-    //Function 94 - TC24
+    //Function 100 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenOvertimeCharge_ShouldRecalculateByOvertimeMinutes()
     {
@@ -856,32 +885,7 @@ public class OrderDetailExtraChargeServiceTests
         updatedResult.Data.Note.Should().Be("overtime updated");
     }
 
-    //Function 94 - TC25
-    [TestMethod]
-    public async Task DeleteAsync_WhenDeletingLastCharge_ShouldClearOrderDetailExtraChargeSnapshot()
-    {
-        var created = await _sut.CreateAsync(new OrderDetailExtraChargeCreateRequest
-        {
-            OrderDetailId = 9004,
-            ExtraChargeCatalogId = 100,
-            Quantity = 1,
-            Note = "only charge"
-        }, leaderId: 2);
-
-        created.Success.Should().BeTrue();
-        created.Data.Should().NotBeNull();
-
-        var beforeDelete = await _dbContext.OrderDetails.AsNoTracking()
-            .FirstAsync(x => x.OrderDetailId == 9004);
-        beforeDelete.ExtraChargeSnapshot.Should().NotBeNullOrWhiteSpace();
-
-        var deleteResult = await _sut.DeleteAsync(created.Data!.OrderDetailExtraChargeId, leaderId: 2);
-        deleteResult.Success.Should().BeTrue();
-
-        var afterDelete = await _dbContext.OrderDetails.AsNoTracking()
-            .FirstAsync(x => x.OrderDetailId == 9004);
-        afterDelete.ExtraChargeSnapshot.Should().BeNull();
-    }
+    
     #endregion
 }
 
