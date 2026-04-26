@@ -357,7 +357,7 @@ public class OrderDetailStaffTaskServiceTests
 
     //Function 90 - TC6
     [TestMethod]
-    public async Task CreateAsync_WhenNoActiveTaskTemplate_ShouldFail()
+    public async Task CreateAsync_WhenNoActiveTaskTemplate_ShouldStillCreateWithoutTemplate()
     {
         var templates = await _dbContext.TaskTemplates.ToListAsync();
         _dbContext.TaskTemplates.RemoveRange(templates);
@@ -374,9 +374,14 @@ public class OrderDetailStaffTaskServiceTests
 
         var result = await _sut.CreateAsync(request, leaderId: 2);
 
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.");
-        result.Data.Should().BeNull();
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Tạo công việc thành công.");
+        result.Data.Should().NotBeNull();
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking()
+            .FirstAsync(t => t.TaskId == result.Data!.TaskId);
+        saved.TaskTemplateId.Should().BeNull();
+        saved.TaskName.Should().Be("Công việc lạ");
     }
 
     //Function 90 - TC7
@@ -416,7 +421,7 @@ public class OrderDetailStaffTaskServiceTests
 
     //Function 90 - TC8
     [TestMethod]
-    public async Task CreateAsync_WhenNoTaskNameAndNoDefaultActiveTemplate_ShouldFail()
+    public async Task CreateAsync_WhenNoTaskNameAndNoDefaultActiveTemplate_ShouldCreateWithoutTemplate()
     {
         var template = await _dbContext.TaskTemplates.FirstAsync(x => x.TaskTemplateId == 1);
         template.IsActive = false;
@@ -433,9 +438,14 @@ public class OrderDetailStaffTaskServiceTests
 
         var result = await _sut.CreateAsync(request, leaderId: 2);
 
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.");
-        result.Data.Should().BeNull();
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Tạo công việc thành công.");
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskName.Should().Be("Công việc");
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking()
+            .FirstAsync(t => t.TaskId == result.Data.TaskId);
+        saved.TaskTemplateId.Should().BeNull();
     }
     #endregion
 
