@@ -162,20 +162,11 @@ namespace BookfetSystem.Services.Implement
 
             var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName)
                                ?? await ResolveDefaultActiveTemplateAsync();
-            if (taskTemplate == null)
-            {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
-                {
-                    Success = false,
-                    Message = "Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.",
-                    Data = null
-                };
-            }
 
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
-                TaskTemplateId = taskTemplate.TaskTemplateId,
+                TaskTemplateId = taskTemplate?.TaskTemplateId,
                 TaskName = taskName,
                 StaffId = request.StaffId,
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),

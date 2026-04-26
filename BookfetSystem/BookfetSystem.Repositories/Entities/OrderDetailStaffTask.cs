@@ -11,7 +11,7 @@ public partial class OrderDetailStaffTask
 
     public int? OrderDetailId { get; set; }
 
-    public int TaskTemplateId { get; set; }
+    public int? TaskTemplateId { get; set; }
 
     public int? StaffId { get; set; }
 
