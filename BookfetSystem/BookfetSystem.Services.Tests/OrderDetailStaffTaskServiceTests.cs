@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Moq;
+using System.Text.Json;
 using System.Threading;
 
 namespace BookfetSystem.Services.Tests;
@@ -1009,7 +1010,7 @@ public class OrderDetailStaffTaskServiceTests
 
         var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7802);
         saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
-        saved.Img.Should().Be("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+        saved.Img.Should().Be(JsonSerializer.Serialize("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg"));
 
         _imageStorageServiceMock.Verify(x => x.UploadImageAsync(
                 formFileMock.Object,
