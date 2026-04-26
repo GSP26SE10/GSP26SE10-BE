@@ -9,6 +9,7 @@ using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -85,6 +86,10 @@ namespace BookfetSystem.Services.Implement
                 .ToListAsync();
 
             var items = data.Adapt<List<OrderDetailStaffTaskResponse>>();
+            foreach (var item in items)
+            {
+                item.Img = ReadImageUrlFromJson(item.Img);
+            }
 
             return new PagedResponse<OrderDetailStaffTaskResponse>
             {
@@ -188,7 +193,7 @@ namespace BookfetSystem.Services.Implement
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note ?? string.Empty,
-                    Img = entity.Img,
+                    Img = ReadImageUrlFromJson(entity.Img),
                     StaffName = staff.FullName ?? string.Empty
                 };
 
@@ -292,7 +297,7 @@ namespace BookfetSystem.Services.Implement
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note ?? string.Empty,
-                    Img = entity.Img,
+                    Img = ReadImageUrlFromJson(entity.Img),
                     StaffName = staff.FullName ?? string.Empty
                 };
 
@@ -370,7 +375,7 @@ namespace BookfetSystem.Services.Implement
 
             var uploadedUrl = await _imageStorageService.UploadImageAsync(request.CompletionImage, CloudinaryFolder.Task, taskId);
 
-            entity.Img = uploadedUrl;
+            entity.Img = WriteImageUrlAsJson(uploadedUrl);
             entity.TaskStatus = StaffTaskStatus.COMPLETED.ToString();
             if (!string.IsNullOrWhiteSpace(request.Note))
             {
@@ -426,7 +431,7 @@ namespace BookfetSystem.Services.Implement
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
                 Note = entity.Note ?? string.Empty,
-                Img = entity.Img,
+                Img = ReadImageUrlFromJson(entity.Img),
                 StaffName = staff?.FullName ?? string.Empty
             };
 
@@ -502,7 +507,7 @@ namespace BookfetSystem.Services.Implement
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
                 Note = entity.Note ?? string.Empty,
-                Img = entity.Img,
+                Img = ReadImageUrlFromJson(entity.Img),
                 StaffName = staff?.FullName ?? string.Empty
             };
 
@@ -631,6 +636,41 @@ namespace BookfetSystem.Services.Implement
         {
             var trimmed = value?.Trim();
             return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        }
+
+        private static string? WriteImageUrlAsJson(string? imageUrl)
+        {
+            var trimmed = imageUrl?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Serialize(trimmed);
+        }
+
+        private static string? ReadImageUrlFromJson(string? rawValue)
+        {
+            var trimmed = rawValue?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            try
+            {
+                var value = JsonSerializer.Deserialize<string>(trimmed);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+            catch
+            {
+                // Fallback for legacy rows that may already store plain string values.
+            }
+
+            return trimmed;
         }
 
         private Task<TaskTemplate?> ResolveTemplateByTaskNameAsync(string taskName)
