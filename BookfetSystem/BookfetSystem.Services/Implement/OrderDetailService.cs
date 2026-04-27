@@ -353,15 +353,15 @@ namespace BookfetSystem.Services.Implement
                 ? actualEndTime
                 : actualEndTime.ToUniversalTime();
 
-            if (detail.StartTime.HasValue && actualEndUtc < detail.StartTime.Value)
-            {
-                return new ApiResponse<OrderDetailResponse>
-                {
-                    Success = false,
-                    Message = "Actual end time cannot be earlier than start time.",
-                    Data = null
-                };
-            }
+            // if (detail.StartTime.HasValue && actualEndUtc < detail.StartTime.Value)
+            // {
+            //     return new ApiResponse<OrderDetailResponse>
+            //     {
+            //         Success = false,
+            //         Message = "Actual end time cannot be earlier than start time.",
+            //         Data = null
+            //     };
+            // }
 
             detail.ActualEndTime = actualEndUtc;
             await _repository.UpdateAsync(detail);
