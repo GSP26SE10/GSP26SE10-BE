@@ -9,6 +9,7 @@ using BookfetSystem.Services.Models.Response;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -23,6 +24,7 @@ namespace BookfetSystem.Services.Implement
         private readonly StaffGroupMemberRepository _staffGroupMemberRepository;
         private readonly INotificationService _notificationService;
         private readonly IStaffTaskOverdueSchedulerService _staffTaskOverdueSchedulerService;
+        private readonly IImageStorageService _imageStorageService;
 
         public OrderDetailStaffTaskService(
             OrderDetailStaffTaskRepository taskRepository,
@@ -32,7 +34,8 @@ namespace BookfetSystem.Services.Implement
             StaffGroupRepository staffGroupRepository,
             StaffGroupMemberRepository staffGroupMemberRepository,
             INotificationService notificationService,
-            IStaffTaskOverdueSchedulerService staffTaskOverdueSchedulerService)
+            IStaffTaskOverdueSchedulerService staffTaskOverdueSchedulerService,
+            IImageStorageService imageStorageService)
         {
             _taskRepository = taskRepository;
             _orderDetailRepository = orderDetailRepository;
@@ -42,6 +45,7 @@ namespace BookfetSystem.Services.Implement
             _staffGroupMemberRepository = staffGroupMemberRepository;
             _notificationService = notificationService;
             _staffTaskOverdueSchedulerService = staffTaskOverdueSchedulerService;
+            _imageStorageService = imageStorageService;
         }
 
         public async Task<PagedResponse<StaffMyTaskResponse>> GetMyTasksAsync(int staffId, int page, int pageSize)
@@ -82,6 +86,10 @@ namespace BookfetSystem.Services.Implement
                 .ToListAsync();
 
             var items = data.Adapt<List<OrderDetailStaffTaskResponse>>();
+            foreach (var item in items)
+            {
+                item.Img = ReadImageUrlFromJson(item.Img);
+            }
 
             return new PagedResponse<OrderDetailStaffTaskResponse>
             {
@@ -159,20 +167,11 @@ namespace BookfetSystem.Services.Implement
 
             var taskTemplate = await ResolveTemplateByTaskNameAsync(taskName)
                                ?? await ResolveDefaultActiveTemplateAsync();
-            if (taskTemplate == null)
-            {
-                return new ApiResponse<OrderDetailStaffTaskResponse>
-                {
-                    Success = false,
-                    Message = "Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.",
-                    Data = null
-                };
-            }
 
             var entity = new OrderDetailStaffTask
             {
                 OrderDetailId = request.OrderDetailId,
-                TaskTemplateId = taskTemplate.TaskTemplateId,
+                TaskTemplateId = taskTemplate?.TaskTemplateId,
                 TaskName = taskName,
                 StaffId = request.StaffId,
                 TaskStatus = StaffTaskStatus.PENDING.ToString(),
@@ -194,6 +193,7 @@ namespace BookfetSystem.Services.Implement
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note ?? string.Empty,
+                    Img = ReadImageUrlFromJson(entity.Img),
                     StaffName = staff.FullName ?? string.Empty
                 };
 
@@ -297,6 +297,7 @@ namespace BookfetSystem.Services.Implement
                     StartTime = entity.StartTime,
                     EndTime = entity.EndTime,
                     Note = entity.Note ?? string.Empty,
+                    Img = ReadImageUrlFromJson(entity.Img),
                     StaffName = staff.FullName ?? string.Empty
                 };
 
@@ -313,6 +314,132 @@ namespace BookfetSystem.Services.Implement
                 Success = false,
                 Message = "Không thể cập nhật công việc.",
                 Data = null
+            };
+        }
+
+        public async Task<ApiResponse<OrderDetailStaffTaskResponse>> AcceptMyTaskAsync(int taskId, int staffId)
+        {
+            var request = new StaffUpdateTaskStatusRequest
+            {
+                TaskStatus = StaffTaskStatus.IN_PROGRESS
+            };
+
+            return await UpdateMyTaskStatusAsync(taskId, staffId, request);
+        }
+
+        public async Task<ApiResponse<OrderDetailStaffTaskResponse>> CompleteMyTaskAsync(int taskId, int staffId, StaffCompleteTaskRequest request)
+        {
+            if (request?.CompletionImage == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Vui lòng tải lên ảnh hoàn thành công việc.",
+                    Data = null
+                };
+            }
+
+            await MarkOverdueTasksAndNotifyLeadersAsync();
+
+            var entity = await _taskRepository.GetByIdAsync(taskId);
+            if (entity == null)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy công việc.",
+                    Data = null
+                };
+            }
+
+            if (entity.StaffId != staffId)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Bạn không có quyền cập nhật công việc này.",
+                    Data = null
+                };
+            }
+
+            var currentStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus);
+            if (currentStatus != (int)StaffTaskStatus.IN_PROGRESS && currentStatus != (int)StaffTaskStatus.OVERDUE)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Chỉ có thể hoàn thành công việc khi trạng thái là IN_PROGRESS hoặc OVERDUE.",
+                    Data = null
+                };
+            }
+
+            var uploadedUrl = await _imageStorageService.UploadImageAsync(request.CompletionImage, CloudinaryFolder.Task, taskId);
+
+            entity.Img = WriteImageUrlAsJson(uploadedUrl);
+            entity.TaskStatus = StaffTaskStatus.COMPLETED.ToString();
+            if (!string.IsNullOrWhiteSpace(request.Note))
+            {
+                entity.Note = request.Note.Trim();
+            }
+
+            var affected = await _taskRepository.UpdateAsync(entity);
+            if (affected <= 0)
+            {
+                return new ApiResponse<OrderDetailStaffTaskResponse>
+                {
+                    Success = false,
+                    Message = "Không thể cập nhật trạng thái công việc.",
+                    Data = null
+                };
+            }
+
+            var staff = await _userRepository.GetByIdAsync(staffId);
+            var staffDisplayName = staff?.FullName ?? "Một nhân viên";
+            var taskName = GetTaskDisplayName(entity);
+
+            if (entity.OrderDetailId.HasValue)
+            {
+                var orderDetail = await _orderDetailRepository.GetByIdAsync(entity.OrderDetailId.Value);
+                if (orderDetail?.StaffGroupId.HasValue == true)
+                {
+                    var staffGroup = await _staffGroupRepository.GetByIdAsync(orderDetail.StaffGroupId.Value);
+                    if (staffGroup?.LeaderId.HasValue == true)
+                    {
+                        await _notificationService.SendToUserAsync(
+                            staffGroup.LeaderId.Value,
+                            $"{staffDisplayName} đã hoàn thành công việc",
+                            $"{staffDisplayName} đã hoàn thành nhiệm vụ '{taskName}'.",
+                            NotificationType.Task,
+                            new Dictionary<string, string>
+                            {
+                                ["taskId"] = entity.TaskId.ToString(),
+                                ["orderDetailId"] = entity.OrderDetailId.Value.ToString(),
+                                ["staffId"] = staffId.ToString(),
+                                ["taskStatus"] = StaffTaskStatus.COMPLETED.ToString()
+                            });
+                    }
+                }
+            }
+
+            var response = new OrderDetailStaffTaskResponse
+            {
+                TaskId = entity.TaskId,
+                OrderDetailId = entity.OrderDetailId,
+                StaffId = entity.StaffId,
+                TaskName = taskName,
+                TaskStatus = EnumHelper.TryParseToInt<StaffTaskStatus>(entity.TaskStatus),
+                StartTime = entity.StartTime,
+                EndTime = entity.EndTime,
+                Note = entity.Note ?? string.Empty,
+                Img = ReadImageUrlFromJson(entity.Img),
+                StaffName = staff?.FullName ?? string.Empty
+            };
+
+            return new ApiResponse<OrderDetailStaffTaskResponse>
+            {
+                Success = true,
+                Message = "Hoàn thành công việc thành công.",
+                Data = response
             };
         }
 
@@ -380,6 +507,7 @@ namespace BookfetSystem.Services.Implement
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
                 Note = entity.Note ?? string.Empty,
+                Img = ReadImageUrlFromJson(entity.Img),
                 StaffName = staff?.FullName ?? string.Empty
             };
 
@@ -508,6 +636,41 @@ namespace BookfetSystem.Services.Implement
         {
             var trimmed = value?.Trim();
             return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        }
+
+        private static string? WriteImageUrlAsJson(string? imageUrl)
+        {
+            var trimmed = imageUrl?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Serialize(trimmed);
+        }
+
+        private static string? ReadImageUrlFromJson(string? rawValue)
+        {
+            var trimmed = rawValue?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            try
+            {
+                var value = JsonSerializer.Deserialize<string>(trimmed);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+            catch
+            {
+                // Fallback for legacy rows that may already store plain string values.
+            }
+
+            return trimmed;
         }
 
         private Task<TaskTemplate?> ResolveTemplateByTaskNameAsync(string taskName)

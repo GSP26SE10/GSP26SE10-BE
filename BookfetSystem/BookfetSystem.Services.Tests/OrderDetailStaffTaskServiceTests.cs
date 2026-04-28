@@ -8,7 +8,10 @@ using BookfetSystem.Services.Models.Request;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Moq;
+using System.Text.Json;
+using System.Threading;
 
 namespace BookfetSystem.Services.Tests;
 
@@ -19,6 +22,7 @@ public class OrderDetailStaffTaskServiceTests
     private OrderDetailStaffTaskService _sut = null!;
     private Mock<INotificationService> _notificationServiceMock = null!;
     private Mock<IStaffTaskOverdueSchedulerService> _schedulerMock = null!;
+    private Mock<IImageStorageService> _imageStorageServiceMock = null!;
 
     [TestInitialize]
     public async Task SetupAsync()
@@ -45,6 +49,11 @@ public class OrderDetailStaffTaskServiceTests
         _schedulerMock.Setup(x => x.ScheduleTaskOverdueCheckAsync(It.IsAny<int>(), It.IsAny<DateTime?>()))
             .Returns(Task.CompletedTask);
 
+        _imageStorageServiceMock = new Mock<IImageStorageService>();
+        _imageStorageServiceMock
+            .Setup(x => x.UploadImageAsync(It.IsAny<IFormFile>(), It.IsAny<CloudinaryFolder>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+
         _sut = new OrderDetailStaffTaskService(
             new OrderDetailStaffTaskRepository(_dbContext),
             new OrderDetailRepository(_dbContext),
@@ -53,7 +62,8 @@ public class OrderDetailStaffTaskServiceTests
             new StaffGroupRepository(_dbContext),
             new StaffGroupMemberRepository(_dbContext),
             _notificationServiceMock.Object,
-            _schedulerMock.Object);
+            _schedulerMock.Object,
+            _imageStorageServiceMock.Object);
 
         await SeedTaskWorkflowDataAsync();
     }
@@ -229,8 +239,8 @@ public class OrderDetailStaffTaskServiceTests
     }
     #endregion
 
-    #region Function 90 - Create Task Validation
-    //Function 90 - TC1
+    #region Function 89 - Create Task Validation
+    //Function 89 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenLeaderHasNoActiveStaffGroup_ShouldFail()
     {
@@ -250,7 +260,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 90 - TC2
+    //Function 89 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -270,7 +280,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 90 - TC3
+    //Function 89 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailNotInLeadersGroup_ShouldFail()
     {
@@ -306,7 +316,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 90 - TC4
+    //Function 89 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenStaffNotFound_ShouldFail()
     {
@@ -326,7 +336,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 90 - TC5
+    //Function 89 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenStaffNotInLeadersGroup_ShouldFail()
     {
@@ -346,9 +356,9 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 90 - TC6
+    //Function 89 - TC6
     [TestMethod]
-    public async Task CreateAsync_WhenNoActiveTaskTemplate_ShouldFail()
+    public async Task CreateAsync_WhenNoActiveTaskTemplate_ShouldStillCreateWithoutTemplate()
     {
         var templates = await _dbContext.TaskTemplates.ToListAsync();
         _dbContext.TaskTemplates.RemoveRange(templates);
@@ -365,12 +375,17 @@ public class OrderDetailStaffTaskServiceTests
 
         var result = await _sut.CreateAsync(request, leaderId: 2);
 
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.");
-        result.Data.Should().BeNull();
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("Tạo công việc thành công.");
+        result.Data.Should().NotBeNull();
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking()
+            .FirstAsync(t => t.TaskId == result.Data!.TaskId);
+        saved.TaskTemplateId.Should().BeNull();
+        saved.TaskName.Should().Be("Công việc lạ");
     }
 
-    //Function 90 - TC7
+    //Function 89 - TC7
     [TestMethod]
     public async Task CreateAsync_WhenOrderDetailHasNoStaffGroup_ShouldFail()
     {
@@ -404,34 +419,10 @@ public class OrderDetailStaffTaskServiceTests
         result.Message.Should().Be("Chi tiết đơn tiệc không thuộc nhóm của bạn.");
         result.Data.Should().BeNull();
     }
-
-    //Function 90 - TC8
-    [TestMethod]
-    public async Task CreateAsync_WhenNoTaskNameAndNoDefaultActiveTemplate_ShouldFail()
-    {
-        var template = await _dbContext.TaskTemplates.FirstAsync(x => x.TaskTemplateId == 1);
-        template.IsActive = false;
-        await _dbContext.SaveChangesAsync();
-
-        var request = new OrderDetailStaffTaskCreateRequest
-        {
-            OrderDetailId = 9001,
-            TaskName = "   ",
-            StaffId = 3,
-            StartTime = DateTime.UtcNow,
-            EndTime = DateTime.UtcNow.AddDays(1)
-        };
-
-        var result = await _sut.CreateAsync(request, leaderId: 2);
-
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Không tìm thấy mẫu công việc đang hoạt động để gán cho công việc.");
-        result.Data.Should().BeNull();
-    }
     #endregion
 
-    #region Function 91 - Assign Task to Staff
-    //Function 91 - TC1
+    #region Function 90 - Assign Task to Staff
+    //Function 90 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldAssignToStaffNotifyAndScheduleOverdueCheck()
     {
@@ -473,7 +464,7 @@ public class OrderDetailStaffTaskServiceTests
         _schedulerMock.Verify(x => x.ScheduleTaskOverdueCheckAsync(saved.TaskId, end), Times.Once());
     }
 
-    //Function 91 - TC2
+    //Function 90 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenTaskNameIsBlank_ShouldFallbackToCongViecAndStillCreate()
     {
@@ -513,7 +504,7 @@ public class OrderDetailStaffTaskServiceTests
         _schedulerMock.Verify(x => x.ScheduleTaskOverdueCheckAsync(saved.TaskId, end), Times.Once());
     }
 
-    //Function 91 - TC3
+    //Function 90 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenTaskNameNotInTemplate_ShouldUseDefaultTemplateAndKeepTaskName()
     {
@@ -539,8 +530,8 @@ public class OrderDetailStaffTaskServiceTests
     }
     #endregion
 
-    #region Function 92 - Update Task
-    //Function 92 - TC1
+    #region Function 91 - Update Task
+    //Function 91 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenTaskNotFound_ShouldFail()
     {
@@ -556,7 +547,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 92 - TC2
+    //Function 91 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -585,7 +576,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 92 - TC3
+    //Function 91 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenStaffNotFound_ShouldFail()
     {
@@ -614,7 +605,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 92 - TC4
+    //Function 91 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldPersistAndRescheduleOverdueCheck()
     {
@@ -656,7 +647,7 @@ public class OrderDetailStaffTaskServiceTests
         _schedulerMock.Verify(x => x.ScheduleTaskOverdueCheckAsync(7103, newEnd), Times.Once());
     }
 
-    //Function 92 - TC5
+    //Function 91 - TC5
     [TestMethod]
     public async Task UpdateAsync_WhenTaskNameNotMatchTemplate_ShouldKeepOldTemplateId()
     {
@@ -689,7 +680,7 @@ public class OrderDetailStaffTaskServiceTests
         saved.TaskName.Should().Be("Tên lạ không có template");
     }
 
-    //Function 92 - TC6
+    //Function 91 - TC6
     [TestMethod]
     public async Task UpdateAsync_WhenTaskStatusNull_ShouldKeepCurrentStatus()
     {
@@ -724,7 +715,7 @@ public class OrderDetailStaffTaskServiceTests
         saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
     }
 
-    //Function 92 - TC7
+    //Function 91 - TC7
     [TestMethod]
     public async Task UpdateAsync_WhenTaskNameWhitespace_ShouldFallbackToExistingTaskName()
     {
@@ -763,8 +754,8 @@ public class OrderDetailStaffTaskServiceTests
     }
     #endregion
 
-    #region Function 96 - Staff View Assigned Task
-    //Function 96 - TC1
+    #region Function 94 - Staff View Assigned Task
+    //Function 94 - TC1
     [TestMethod]
     public async Task GetMyTasksAsync_WhenNoTaskAssigned_ShouldReturnEmpty()
     {
@@ -776,7 +767,7 @@ public class OrderDetailStaffTaskServiceTests
         result.PageSize.Should().Be(10);
     }
 
-    //Function 96 - TC2
+    //Function 94 - TC2
     [TestMethod]
     public async Task GetMyTasksAsync_WhenTasksExist_ShouldReturnOnlyCurrentStaffTasksWithPaging()
     {
@@ -794,7 +785,7 @@ public class OrderDetailStaffTaskServiceTests
         result.PageSize.Should().Be(1);
     }
 
-    //Function 96 - TC3
+    //Function 94 - TC3
     [TestMethod]
     public async Task GetMyTasksAsync_WhenHasOverdueTask_ShouldAutoMarkOverdueAndNotifyLeader()
     {
@@ -822,8 +813,8 @@ public class OrderDetailStaffTaskServiceTests
     }
     #endregion
 
-    #region Function 97 - Staff Update Task Status
-    //Function 97 - TC1
+    #region Function 95 - Staff Update Task Status
+    //Function 95 - TC1
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenTaskNotFound_ShouldFail()
     {
@@ -837,7 +828,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 97 - TC2
+    //Function 95 - TC2
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenTaskBelongsToAnotherStaff_ShouldFail()
     {
@@ -853,7 +844,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 97 - TC3
+    //Function 95 - TC3
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenMarkCompleted_ShouldUpdateAndNotifyLeader()
     {
@@ -885,7 +876,7 @@ public class OrderDetailStaffTaskServiceTests
             Times.Once());
     }
 
-    //Function 97 - TC4
+    //Function 95 - TC4
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenRequestInProgressAndStatusUnchanged_ShouldStillNotifyLeader()
     {
@@ -914,7 +905,7 @@ public class OrderDetailStaffTaskServiceTests
             Times.Once());
     }
 
-    //Function 97 - TC5
+    //Function 95 - TC5
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenTaskOverdueAndRequestNotCompleted_ShouldSetOverdue()
     {
@@ -933,7 +924,7 @@ public class OrderDetailStaffTaskServiceTests
         saved.TaskStatus.Should().Be(StaffTaskStatus.OVERDUE.ToString());
     }
 
-    //Function 97 - TC6
+    //Function 95 - TC6
     [TestMethod]
     public async Task UpdateMyTaskStatusAsync_WhenTaskOverdueButRequestCompleted_ShouldAllowCompleted()
     {
@@ -953,8 +944,72 @@ public class OrderDetailStaffTaskServiceTests
     }
     #endregion
 
-    #region Function 93 - Delete Task
-    //Function 93 - TC1
+    #region Staff Accept/Complete Task
+    [TestMethod]
+    public async Task AcceptMyTaskAsync_WhenTaskBelongsToStaff_ShouldMoveToInProgress()
+    {
+        await SeedTaskAsync(7801, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(2), "Accept me");
+
+        var result = await _sut.AcceptMyTaskAsync(7801, 3);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.IN_PROGRESS);
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7801);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.IN_PROGRESS.ToString());
+    }
+
+    [TestMethod]
+    public async Task CompleteMyTaskAsync_WhenValid_ShouldUploadEvidenceAndMarkCompleted()
+    {
+        await SeedTaskAsync(7802, 3, StaffTaskStatus.IN_PROGRESS, DateTime.UtcNow.AddHours(2), "Complete me");
+
+        var formFileMock = new Mock<IFormFile>();
+        var request = new StaffCompleteTaskRequest
+        {
+            CompletionImage = formFileMock.Object,
+            Note = "Đã hoàn tất"
+        };
+
+        var result = await _sut.CompleteMyTaskAsync(7802, 3, request);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.TaskStatus.Should().Be((int)StaffTaskStatus.COMPLETED);
+        result.Data.Img.Should().Be("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg");
+
+        var saved = await _dbContext.OrderDetailStaffTasks.AsNoTracking().FirstAsync(x => x.TaskId == 7802);
+        saved.TaskStatus.Should().Be(StaffTaskStatus.COMPLETED.ToString());
+        saved.Img.Should().Be(JsonSerializer.Serialize("https://res.cloudinary.com/demo/image/upload/task/evidence.jpg"));
+
+        _imageStorageServiceMock.Verify(x => x.UploadImageAsync(
+                formFileMock.Object,
+                CloudinaryFolder.Task,
+                7802,
+                It.IsAny<CancellationToken>()),
+            Times.Once());
+    }
+
+    [TestMethod]
+    public async Task CompleteMyTaskAsync_WhenTaskNotInProgressOrOverdue_ShouldFail()
+    {
+        await SeedTaskAsync(7803, 3, StaffTaskStatus.PENDING, DateTime.UtcNow.AddHours(2), "Not started");
+
+        var request = new StaffCompleteTaskRequest
+        {
+            CompletionImage = new Mock<IFormFile>().Object
+        };
+
+        var result = await _sut.CompleteMyTaskAsync(7803, 3, request);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Chỉ có thể hoàn thành công việc khi trạng thái là IN_PROGRESS hoặc OVERDUE.");
+    }
+    #endregion
+
+    #region Function 92 - Delete Task
+    //Function 92 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenTaskNotFound_ShouldFail()
     {
@@ -965,7 +1020,7 @@ public class OrderDetailStaffTaskServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 93 - TC2
+    //Function 92 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldRemoveTask()
     {
@@ -991,7 +1046,7 @@ public class OrderDetailStaffTaskServiceTests
         (await _dbContext.OrderDetailStaffTasks.AnyAsync(t => t.TaskId == 7201)).Should().BeFalse();
     }
 
-    //Function 93 - TC3
+    //Function 92 - TC3
     [TestMethod]
     public async Task DeleteAsync_WhenDeleteTwice_ShouldFailOnSecondDelete()
     {

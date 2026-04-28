@@ -34,6 +34,8 @@ namespace BookfetSystem.Services.Implement
                 var (start, end) = GetRange(normalizedGroupBy);
                 var now = DateTime.UtcNow;
                 var completedStatus = OrderStatus.COMPLETED.ToString().ToLower();
+                var cancelledStatus = OrderStatus.CANCELLED.ToString().ToLower();
+                var depositPaymentType = PaymentType.DEPOSIT.ToString().ToLower();
 
                 var payments = await _paymentRepository.GetPaidPayments()
                     .Where(p =>
@@ -41,7 +43,12 @@ namespace BookfetSystem.Services.Implement
                         p.PaidAt <= end &&
                         p.Order != null &&
                         p.Order.Status != null &&
-                        p.Order.Status.ToLower() == completedStatus)
+                        (
+                            p.Order.Status.ToLower() == completedStatus ||
+                            (p.Order.Status.ToLower() == cancelledStatus &&
+                             p.PaymentType != null &&
+                             p.PaymentType.ToLower() == depositPaymentType)
+                        ))
                     .ToListAsync();
 
                 var data = normalizedGroupBy == "day"
@@ -124,7 +131,8 @@ namespace BookfetSystem.Services.Implement
                                 ? SnapshotParser.TryParseJsonToObject(x.ImgUrl)
                                 : snapshot?.ImgUrl,
                             TotalOrders = x.TotalOrders,
-                            TotalGuests = x.TotalGuests
+                            TotalGuests = x.TotalGuests,
+                            SoldQuantity = x.TotalGuests
                         };
                     }).ToList()
                 };

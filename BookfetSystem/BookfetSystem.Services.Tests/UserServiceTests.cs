@@ -95,8 +95,8 @@ public class UserServiceTests
         RoleId = 4
     };
 
-    #region Function 52 - GetAllUsersFiltered
-    //Function 52 - TC1
+    #region Function 51 - GetAllUsersFiltered
+    //Function 51 - TC1
     [TestMethod]
     public async Task GetAllUserFilteredAsync_WhenFilterByStatus_ShouldReturnMatchedRows()
     {
@@ -111,7 +111,7 @@ public class UserServiceTests
         result.Items.First().Status.Should().Be((int)UserStatus.ACTIVE);
     }
 
-    //Function 52 - TC2
+    //Function 51 - TC2
     [TestMethod]
     public async Task GetAllUserFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
     {
@@ -123,8 +123,8 @@ public class UserServiceTests
     }
     #endregion
 
-    #region Function 53 - CreateUser
-    //Function 53 - TC1
+    #region Function 52 - CreateUser
+    //Function 52 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenRoleNotExist_ShouldFail()
     {
@@ -138,7 +138,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 53 - TC2
+    //Function 52 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenUsernameExisted_ShouldFail()
     {
@@ -152,7 +152,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 53 - TC3
+    //Function 52 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenEmailExisted_ShouldFail()
     {
@@ -166,7 +166,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 53 - TC4
+    //Function 52 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenAvatarUploadFails_ShouldFail()
     {
@@ -187,7 +187,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 53 - TC5
+    //Function 52 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldCreateSuccessfully()
     {
@@ -207,8 +207,8 @@ public class UserServiceTests
     }
     #endregion
 
-    #region Function 54 - UpdateUser
-    //Function 54 - TC1
+    #region Function 53 - UpdateUser
+    //Function 53 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenUserNotFound_ShouldFail()
     {
@@ -219,7 +219,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 54 - TC2
+    //Function 53 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenEmailExisted_ShouldFail()
     {
@@ -249,7 +249,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 54 - TC3
+    //Function 53 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenAvatarUploadFails_ShouldFail()
     {
@@ -271,7 +271,7 @@ public class UserServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 54 - TC4
+    //Function 53 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -299,8 +299,8 @@ public class UserServiceTests
     }
     #endregion
 
-    #region Function 55 - DeleteUser
-    //Function 55 - TC1
+    #region Function 54 - DeleteUser
+    //Function 54 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenUserNotFound_ShouldFail()
     {
@@ -311,7 +311,7 @@ public class UserServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 55 - TC2
+    //Function 54 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
     {

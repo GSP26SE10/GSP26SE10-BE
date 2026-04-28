@@ -48,8 +48,8 @@ public class PaymentServiceTests
         await SeedBaseDataAsync();
     }
 
-    #region Function 82 - Pay Deposit (CreateDepositQR)
-    //Function 82 - TC1
+    #region Function 81 - Pay Deposit (CreateDepositQR)
+    //Function 81 - TC1
     [TestMethod]
     public async Task CreateDepositQR_WhenOrderNotFound_ShouldFail()
     {
@@ -59,7 +59,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Order not found");
     }
 
-    //Function 82 - TC2
+    //Function 81 - TC2
     [TestMethod]
     public async Task CreateDepositQR_WhenPaymentMethodCash_ShouldFail()
     {
@@ -71,7 +71,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Cash payment is not supported for deposit. Please choose BANK_TRANSFER or ZALOPAY.");
     }
 
-    //Function 82 - TC3
+    //Function 81 - TC3
     [TestMethod]
     public async Task CreateDepositQR_WhenUnpaidBankTransferAlreadyExists_ShouldReuseExistingQr()
     {
@@ -96,7 +96,7 @@ public class PaymentServiceTests
         afterCount.Should().Be(beforeCount);
     }
 
-    //Function 82 - TC4
+    //Function 81 - TC4
     [TestMethod]
     public async Task CreateDepositQR_WhenUnpaidZaloPayExistsAndRequestBankTransfer_ShouldCancelOldAndCreateNew()
     {
@@ -127,7 +127,7 @@ public class PaymentServiceTests
             x.Amount == 500_000m);
     }
 
-    //Function 82 - TC5
+    //Function 81 - TC5
     [TestMethod]
     public async Task CreateDepositQR_WhenUnpaidOtherMethodExists_ShouldFail()
     {
@@ -149,7 +149,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("An unpaid deposit already exists with method UNKNOWN_METHOD. Please complete or cancel that payment first.");
     }
 
-    //Function 82 - TC6
+    //Function 81 - TC6
     [TestMethod]
     public async Task CreateDepositQR_WhenValidBankTransfer_ShouldCreateDepositPaymentAtFiftyPercent()
     {
@@ -167,7 +167,7 @@ public class PaymentServiceTests
         payment.Amount.Should().Be(450_000m);
     }
 
-    //Function 82 - TC7
+    //Function 81 - TC7
     [TestMethod]
     public async Task CreateDepositQR_WhenZaloPayWithoutRequiredConfig_ShouldFailEarly()
     {
@@ -188,8 +188,8 @@ public class PaymentServiceTests
     }
     #endregion
 
-    #region Function 83 - Pay Full (CreateFullQR)
-    //Function 83 - TC1
+    #region Function 82 - Pay Full (CreateFullQR)
+    //Function 82 - TC1
     [TestMethod]
     public async Task CreateFullQR_WhenOrderNotFound_ShouldFail()
     {
@@ -199,7 +199,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Order not found");
     }
 
-    //Function 83 - TC2
+    //Function 82 - TC2
     [TestMethod]
     public async Task CreateFullQR_WhenOrderNotBilling_ShouldFail()
     {
@@ -211,7 +211,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Order must be BILLING before creating full payment QR.");
     }
 
-    //Function 83 - TC3
+    //Function 82 - TC3
     [TestMethod]
     public async Task CreateFullQR_WhenNoRemainingAndNoExtraCharge_ShouldFail()
     {
@@ -223,7 +223,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Order has no remaining amount to pay.");
     }
 
-    //Function 83 - TC4
+    //Function 82 - TC4
     [TestMethod]
     public async Task CreateFullQR_WhenAlreadyPaidFull_ShouldFail()
     {
@@ -246,7 +246,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Order is already fully paid.");
     }
 
-    //Function 83 - TC5
+    //Function 82 - TC5
     [TestMethod]
     public async Task CreateFullQR_WhenPaymentMethodCash_ShouldFail()
     {
@@ -258,7 +258,7 @@ public class PaymentServiceTests
         result.Message.Should().Be("Cash method is not supported in full QR. Use BANK_TRANSFER or ZALOPAY, or call create-full-cash endpoint.");
     }
 
-    //Function 83 - TC6
+    //Function 82 - TC6
     [TestMethod]
     public async Task CreateFullQR_WhenValidBankTransfer_ShouldCreateWithRemainingPlusExtraCharge()
     {
@@ -277,7 +277,7 @@ public class PaymentServiceTests
         payment.Amount.Should().Be(820_000m);
     }
 
-    //Function 83 - TC7
+    //Function 82 - TC7
     [TestMethod]
     public async Task CreateFullQR_WhenUnpaidBankTransferExists_ShouldUpdateAmountAndReuse()
     {
@@ -304,7 +304,7 @@ public class PaymentServiceTests
         payments.Single().Amount.Should().Be(750_000m);
     }
 
-    //Function 83 - TC8
+    //Function 82 - TC8
     [TestMethod]
     public async Task CreateFullQR_WhenUnpaidZaloExistsAndRequestBankTransfer_ShouldCancelOldAndCreateNew()
     {
@@ -330,7 +330,7 @@ public class PaymentServiceTests
         payments.Should().Contain(x => x.PaymentMethod == PaymentMethod.BANK_TRANSFER.ToString() && x.PaymentStatus == PaymentStatus.UNPAID.ToString());
     }
 
-    //Function 83 - TC9
+    //Function 82 - TC9
     [TestMethod]
     public async Task CreateFullQR_WhenUnpaidOtherMethodExists_ShouldFail()
     {

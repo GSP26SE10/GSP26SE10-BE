@@ -46,8 +46,8 @@ public class FeedbackServiceServiceTests
         await SeedBaseDataAsync();
     }
 
-    #region Function 85 - Feedback Service
-    //Function 85 - TC1
+    #region Function 84 - Feedback Service
+    //Function 84 - TC1
     [TestMethod]
     public async Task CreateFeedbackService_WhenOrderNotFound_ShouldFail()
     {
@@ -60,7 +60,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Order not found.");
     }
 
-    //Function 85 - TC2
+    //Function 84 - TC2
     [TestMethod]
     public async Task CreateFeedbackService_WhenServiceNotFound_ShouldFail()
     {
@@ -73,7 +73,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Service not found.");
     }
 
-    //Function 85 - TC3
+    //Function 84 - TC3
     [TestMethod]
     public async Task CreateFeedbackService_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -86,7 +86,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Order detail not found.");
     }
 
-    //Function 85 - TC4
+    //Function 84 - TC4
     [TestMethod]
     public async Task CreateFeedbackService_WhenOrderDetailNotBelongOrder_ShouldFail()
     {
@@ -108,7 +108,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Order detail does not belong to the specified order.");
     }
 
-    //Function 85 - TC5
+    //Function 84 - TC5
     [TestMethod]
     public async Task CreateFeedbackService_WhenServiceNotBelongOrderDetail_ShouldFail()
     {
@@ -132,7 +132,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Service does not belong to the specified order detail.");
     }
 
-    //Function 85 - TC6
+    //Function 84 - TC6
     [TestMethod]
     public async Task CreateFeedbackService_WhenCustomerNotFound_ShouldFail()
     {
@@ -145,7 +145,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Be("Customer not found.");
     }
 
-    //Function 85 - TC7
+    //Function 84 - TC7
     [TestMethod]
     public async Task CreateFeedbackService_WhenUploadMoreThanThreeImages_ShouldFail()
     {
@@ -161,7 +161,7 @@ public class FeedbackServiceServiceTests
         result.Message.Should().Contain("You can upload up to 3 images at once.");
     }
 
-    //Function 85 - TC8
+    //Function 84 - TC8
     [TestMethod]
     public async Task CreateFeedbackService_WhenUploadImageThrows_ShouldFail()
     {

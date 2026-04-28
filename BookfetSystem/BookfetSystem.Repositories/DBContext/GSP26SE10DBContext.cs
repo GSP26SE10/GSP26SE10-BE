@@ -728,7 +728,7 @@ public partial class GSP26SE10DBContext : DbContext
 
             entity.HasOne(d => d.TaskTemplate).WithMany(p => p.OrderDetailStaffTasks)
                 .HasForeignKey(d => d.TaskTemplateId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("order_detail_staff_task_task_template_id_fkey");
         });
 
