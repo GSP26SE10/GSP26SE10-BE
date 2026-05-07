@@ -1,4 +1,5 @@
 using BookfetSystem.Services.Enum;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -49,5 +50,13 @@ namespace BookfetSystem.Services.Models.Request
     public class StaffUpdateTaskStatusRequest
     {
         public StaffTaskStatus TaskStatus { get; set; }
+    }
+
+    public class StaffCompleteTaskRequest
+    {
+        [Required(ErrorMessage = "Completion image is required.")]
+        public IFormFile? CompletionImage { get; set; }
+
+        public string? Note { get; set; }
     }
 }

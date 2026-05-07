@@ -12,6 +12,7 @@ namespace BookfetSystem.Services.Models.Response
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public string? Note { get; set; }
+        public string? Img { get; set; }
         public string? StaffName { get; set; }
     }
 }

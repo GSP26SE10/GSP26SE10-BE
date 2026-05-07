@@ -59,6 +59,54 @@ namespace BookfetSystem.API.Controllers
         }
 
         [Authorize]
+        [HttpPatch("{id}/accept")]
+        public async Task<ActionResult> AcceptMyTask(int id)
+        {
+            var staffIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(staffIdValue, out var staffId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing staff id." });
+            }
+
+            var result = await _orderDetailStaffTaskService.AcceptMyTaskAsync(id, staffId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Task not found." || result.Message == "Không tìm thấy công việc.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpPatch("{id}/complete")]
+        public async Task<ActionResult> CompleteMyTask(int id, [FromForm] StaffCompleteTaskRequest request)
+        {
+            var staffIdValue = User.FindFirst("Id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(staffIdValue, out var staffId))
+            {
+                return Unauthorized(new { Message = "Invalid token: missing staff id." });
+            }
+
+            var result = await _orderDetailStaffTaskService.CompleteMyTaskAsync(id, staffId, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            if (result.Message == "Task not found." || result.Message == "Không tìm thấy công việc.")
+            {
+                return NotFound(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [Authorize]
         [HttpPatch("{id}/staff-task-status")]
         public async Task<ActionResult> UpdateMyTaskStatus(int id, [FromBody] StaffUpdateTaskStatusRequest request)
         {

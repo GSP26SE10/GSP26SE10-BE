@@ -90,8 +90,8 @@ public class PostServiceTests
         return new FormFile(stream, 0, stream.Length, "CoverImageFiles", name);
     }
 
-    #region Function 67 - GetAllPostsFiltered
-    //Function 67 - TC1
+    #region Function 66 - GetAllPostsFiltered
+    //Function 66 - TC1
     [TestMethod]
     public async Task GetAllPostFilteredAsync_WhenFilterByStatus_ShouldReturnMatchedRows()
     {
@@ -106,7 +106,7 @@ public class PostServiceTests
         result.Items.First().Status.Should().Be(PostStatus.Published.ToString());
     }
 
-    //Function 67 - TC2
+    //Function 66 - TC2
     [TestMethod]
     public async Task GetAllPostFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
     {
@@ -121,8 +121,8 @@ public class PostServiceTests
     }
     #endregion
 
-    #region Function 68 - CreatePost
-    //Function 68 - TC1
+    #region Function 67 - CreatePost
+    //Function 67 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenSlugMissing_ShouldFail()
     {
@@ -139,7 +139,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC2
+    //Function 67 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenTitleMissing_ShouldFail()
     {
@@ -156,7 +156,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC3
+    //Function 67 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenBlogCategoryNotFound_ShouldFail()
     {
@@ -173,7 +173,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC4
+    //Function 67 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenSlugDuplicated_ShouldFail()
     {
@@ -190,7 +190,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC5
+    //Function 67 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenCoverImageTooMany_ShouldFail()
     {
@@ -212,7 +212,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC6
+    //Function 67 - TC6
     [TestMethod]
     public async Task CreateAsync_WhenUploadImageFails_ShouldFail()
     {
@@ -237,7 +237,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 68 - TC7
+    //Function 67 - TC7
     [TestMethod]
     public async Task CreateAsync_WhenValidPublished_ShouldCreateWithPublishedAt()
     {
@@ -260,8 +260,8 @@ public class PostServiceTests
     }
     #endregion
 
-    #region Function 69 - UpdatePost
-    //Function 69 - TC1
+    #region Function 68 - UpdatePost
+    //Function 68 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenPostNotFound_ShouldFail()
     {
@@ -278,7 +278,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 69 - TC2
+    //Function 68 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenSlugMissing_ShouldFail()
     {
@@ -295,7 +295,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 69 - TC3
+    //Function 68 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenTitleMissing_ShouldFail()
     {
@@ -312,7 +312,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 69 - TC4
+    //Function 68 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenCategoryNotFound_ShouldFail()
     {
@@ -329,7 +329,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 69 - TC5
+    //Function 68 - TC5
     [TestMethod]
     public async Task UpdateAsync_WhenSlugDuplicated_ShouldFail()
     {
@@ -346,7 +346,7 @@ public class PostServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 69 - TC6
+    //Function 68 - TC6
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -370,8 +370,8 @@ public class PostServiceTests
     }
     #endregion
 
-    #region Function 70 - DeletePost
-    //Function 70 - TC1
+    #region Function 69 - DeletePost
+    //Function 69 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenPostNotFound_ShouldFail()
     {
@@ -382,7 +382,7 @@ public class PostServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 70 - TC2
+    //Function 69 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
     {

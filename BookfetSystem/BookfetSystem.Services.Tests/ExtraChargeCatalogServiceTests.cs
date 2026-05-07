@@ -72,8 +72,8 @@ public class ExtraChargeCatalogServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 63 - GetAllExtraChargeCatalogsFiltered
-    //Function 63 - TC1
+    #region Function 62 - GetAllExtraChargeCatalogsFiltered
+    //Function 62 - TC1
     [TestMethod]
     public async Task GetAllFilteredAsync_WhenFilterByStatus_ShouldReturnMatchedRows()
     {
@@ -88,7 +88,7 @@ public class ExtraChargeCatalogServiceTests
         result.Items.First().Status.Should().Be("INACTIVE");
     }
 
-    //Function 63 - TC2
+    //Function 62 - TC2
     [TestMethod]
     public async Task GetAllFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
     {
@@ -103,8 +103,8 @@ public class ExtraChargeCatalogServiceTests
     }
     #endregion
 
-    #region Function 64 - CreateExtraChargeCatalog
-    //Function 64 - TC1
+    #region Function 63 - CreateExtraChargeCatalog
+    //Function 63 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenRequiredFieldsMissing_ShouldFail()
     {
@@ -120,7 +120,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 64 - TC2
+    //Function 63 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenDuplicatedByChargeTypeAndTitle_ShouldFail()
     {
@@ -137,7 +137,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 64 - TC3
+    //Function 63 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldCreateSuccessfully()
     {
@@ -165,8 +165,8 @@ public class ExtraChargeCatalogServiceTests
     }
     #endregion
 
-    #region Function 65 - UpdateExtraChargeCatalog
-    //Function 65 - TC1
+    #region Function 64 - UpdateExtraChargeCatalog
+    //Function 64 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenCatalogNotFound_ShouldFail()
     {
@@ -183,7 +183,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 65 - TC2
+    //Function 64 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenRequiredFieldsMissing_ShouldFail()
     {
@@ -200,7 +200,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 65 - TC3
+    //Function 64 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenDuplicatedByChargeTypeAndTitle_ShouldFail()
     {
@@ -218,7 +218,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 65 - TC4
+    //Function 64 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -246,8 +246,8 @@ public class ExtraChargeCatalogServiceTests
     }
     #endregion
 
-    #region Function 66 - DeleteExtraChargeCatalog
-    //Function 66 - TC1
+    #region Function 65 - DeleteExtraChargeCatalog
+    //Function 65 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenCatalogNotFound_ShouldFail()
     {
@@ -258,7 +258,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 66 - TC2
+    //Function 65 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenCatalogHasRelatedData_ShouldFail()
     {
@@ -269,7 +269,7 @@ public class ExtraChargeCatalogServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 66 - TC3
+    //Function 65 - TC3
     [TestMethod]
     public async Task DeleteAsync_WhenCatalogNotInUse_ShouldDeleteSuccessfully()
     {

@@ -135,8 +135,8 @@ public class StaffGroupMemberServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 75 - GetAllStaffGroupMembersFiltered
-    //Function 75 - TC1
+    #region Function 74 - GetAllStaffGroupMembersFiltered
+    //Function 74 - TC1
     [TestMethod]
     public async Task GetAllStaffGroupMemberFilteredAsync_WhenFilterByStaffGroup_ShouldReturnMatchedRows()
     {
@@ -152,7 +152,7 @@ public class StaffGroupMemberServiceTests
         result.Items.First().StaffGroupName.Should().Be("Team A");
     }
 
-    //Function 75 - TC2
+    //Function 74 - TC2
     [TestMethod]
     public async Task GetAllStaffGroupMemberFilteredAsync_WhenPaged_ShouldReturnExpectedPage()
     {
@@ -167,8 +167,8 @@ public class StaffGroupMemberServiceTests
     }
     #endregion
 
-    #region Function 76 - CreateStaffGroupMember
-    //Function 76 - TC1
+    #region Function 75 - CreateStaffGroupMember
+    //Function 75 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenStaffGroupNotFound_ShouldFail()
     {
@@ -183,7 +183,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 76 - TC2
+    //Function 75 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenStaffNotFound_ShouldFail()
     {
@@ -198,7 +198,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 76 - TC3
+    //Function 75 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenUserRoleInvalid_ShouldFail()
     {
@@ -213,7 +213,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 76 - TC4
+    //Function 75 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenAlreadyInSameGroup_ShouldFail()
     {
@@ -228,7 +228,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 76 - TC5
+    //Function 75 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenStaffAlreadyInAnotherGroup_ShouldFail()
     {
@@ -243,7 +243,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 76 - TC6
+    //Function 75 - TC6
     [TestMethod]
     public async Task CreateAsync_WhenValid_ShouldCreateSuccessfully()
     {
@@ -279,8 +279,8 @@ public class StaffGroupMemberServiceTests
     }
     #endregion
 
-    #region Function 77 - UpdateStaffGroupMember
-    //Function 77 - TC1
+    #region Function 76 - UpdateStaffGroupMember
+    //Function 76 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenStaffGroupMemberNotFound_ShouldFail()
     {
@@ -296,7 +296,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC2
+    //Function 76 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenStaffGroupNotFound_ShouldFail()
     {
@@ -312,7 +312,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC3
+    //Function 76 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenStaffNotFound_ShouldFail()
     {
@@ -328,7 +328,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC4
+    //Function 76 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenStaffRoleInvalid_ShouldFail()
     {
@@ -344,7 +344,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC5
+    //Function 76 - TC5
     [TestMethod]
     public async Task UpdateAsync_WhenDuplicateInSameGroup_ShouldFail()
     {
@@ -383,7 +383,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC6
+    //Function 76 - TC6
     [TestMethod]
     public async Task UpdateAsync_WhenStaffAlreadyInAnyGroup_ShouldFail()
     {
@@ -422,7 +422,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 77 - TC7
+    //Function 76 - TC7
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -447,8 +447,8 @@ public class StaffGroupMemberServiceTests
     }
     #endregion
 
-    #region Function 78 - DeleteStaffGroupMember
-    //Function 78 - TC1
+    #region Function 77 - DeleteStaffGroupMember
+    //Function 77 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenStaffGroupMemberNotFound_ShouldFail()
     {
@@ -459,7 +459,7 @@ public class StaffGroupMemberServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 78 - TC2
+    //Function 77 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenValid_ShouldDeleteSuccessfully()
     {

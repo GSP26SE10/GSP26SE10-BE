@@ -87,8 +87,8 @@ public class OrderDetailServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 95 - Leader End Party Early
-    //Function 95 - TC1
+    #region Function 96 - Leader End Party Early
+    //Function 96 - TC1
     [TestMethod]
     public async Task EndEarlyByLeaderAsync_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -99,7 +99,7 @@ public class OrderDetailServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 95 - TC2
+    //Function 96 - TC2
     [TestMethod]
     public async Task EndEarlyByLeaderAsync_WhenDetailStatusIsNotInProgress_ShouldFail()
     {
@@ -123,7 +123,7 @@ public class OrderDetailServiceTests
         saved.Status.Should().Be(OrderDetailStatus.PREPARING.ToString());
     }
 
-    //Function 95 - TC3
+    //Function 96 - TC3
     [TestMethod]
     public async Task EndEarlyByLeaderAsync_WhenStillHasOtherIncompleteDetails_ShouldKeepOrderInProgress()
     {
@@ -165,7 +165,7 @@ public class OrderDetailServiceTests
         order.Status.Should().Be(OrderStatus.IN_PROGRESS.ToString());
     }
 
-    //Function 95 - TC4
+    //Function 96 - TC4
     [TestMethod]
     public async Task EndEarlyByLeaderAsync_WhenAllDetailsCompleted_ShouldMoveOrderToBilling()
     {
@@ -208,7 +208,8 @@ public class OrderDetailServiceTests
     }
     #endregion
 
-    #region Function 96 - Leader Update Actual End Time
+    #region Function 97 - Leader Update Actual End Time
+    //Function 97 - TC1
     [TestMethod]
     public async Task UpdateActualEndTimeByLeaderAsync_WhenOrderDetailNotFound_ShouldFail()
     {
@@ -218,7 +219,7 @@ public class OrderDetailServiceTests
         result.Message.Should().Be("Order detail not found.");
         result.Data.Should().BeNull();
     }
-
+ //Function 97 - TC2
     [TestMethod]
     public async Task UpdateActualEndTimeByLeaderAsync_WhenOrderDetailNotInLeaderGroup_ShouldFail()
     {
@@ -247,7 +248,7 @@ public class OrderDetailServiceTests
         result.Message.Should().Be("Order detail does not belong to your staff group.");
         result.Data.Should().BeNull();
     }
-
+//Function 97 - TC3 
     [TestMethod]
     public async Task UpdateActualEndTimeByLeaderAsync_WhenStatusIsNotInProgressOrCompleted_ShouldFail()
     {
@@ -276,7 +277,7 @@ public class OrderDetailServiceTests
         result.Message.Should().Be("Actual end time can only be updated when order detail is IN_PROGRESS or COMPLETED.");
         result.Data.Should().BeNull();
     }
-
+//Function 97 - TC4
     [TestMethod]
     public async Task UpdateActualEndTimeByLeaderAsync_WhenValid_ShouldUpdateActualEndTime()
     {

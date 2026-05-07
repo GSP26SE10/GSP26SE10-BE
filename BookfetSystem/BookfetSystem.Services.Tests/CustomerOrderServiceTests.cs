@@ -93,8 +93,8 @@ public class CustomerOrderServiceTests
         await SeedBaseDataAsync();
     }
 
-    #region Function 79 - Create Order (Customer)
-    //Function 79 - TC1
+    #region Function 78 - Create Order (Customer)
+    //Function 78 - TC1
     [TestMethod]
     public async Task CreateOrderAsync_WhenCustomerNotFound_ShouldFail()
     {
@@ -111,7 +111,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC2
+    //Function 78 - TC2
     [TestMethod]
     public async Task CreateOrderAsync_WhenNoItems_ShouldFail()
     {
@@ -128,7 +128,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC3
+    //Function 78 - TC3
     [TestMethod]
     public async Task CreateOrderAsync_WhenPartyDateLessThanThreeDays_ShouldFail()
     {
@@ -156,7 +156,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC4
+    //Function 78 - TC4
     [TestMethod]
     public async Task CreateOrderAsync_WhenEndTimeLessThanOrEqualStartTime_OnPrecheck_ShouldFail()
     {
@@ -170,7 +170,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC5
+    //Function 78 - TC5
     [TestMethod]
     public async Task CreateOrderAsync_WhenPartyDatesTooFarFromFirstParty_ShouldFail()
     {
@@ -192,7 +192,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC6
+    //Function 78 - TC6
     [TestMethod]
     public async Task CreateOrderAsync_WhenMenuIdInvalid_ShouldFail()
     {
@@ -206,7 +206,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC7
+    //Function 78 - TC7
     [TestMethod]
     public async Task CreateOrderAsync_WhenNumberOfGuestsInvalid_ShouldFail()
     {
@@ -220,7 +220,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC8
+    //Function 78 - TC8
     [TestMethod]
     public async Task CreateOrderAsync_WhenMenuNotFound_ShouldFail()
     {
@@ -234,7 +234,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC9
+    //Function 78 - TC9
     [TestMethod]
     public async Task CreateOrderAsync_WhenPartyCategoryIdInvalid_ShouldFail()
     {
@@ -248,7 +248,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC10
+    //Function 78 - TC10
     [TestMethod]
     public async Task CreateOrderAsync_WhenPartyCategoryNotFound_ShouldFail()
     {
@@ -262,7 +262,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC11
+    //Function 78 - TC11
     [TestMethod]
     public async Task CreateOrderAsync_WhenGuestsLessThanPartyCategoryRequirement_ShouldFail()
     {
@@ -277,7 +277,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC12
+    //Function 78 - TC12
     [TestMethod]
     public async Task CreateOrderAsync_WhenCustomDishAlreadyInMenu_ShouldFail()
     {
@@ -294,7 +294,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().Be(0);
     }
 
-    //Function 79 - TC13
+    //Function 78 - TC13
     [TestMethod]
     public async Task CreateOrderAsync_WhenValidRequest_ShouldSucceed()
     {
@@ -319,8 +319,8 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
-    #region Function 86 - Get Order List
-    //Function 86 - TC1
+    #region Function 85 - Get Order List
+    //Function 85 - TC1
     [TestMethod]
     public async Task GetAllFilteredAsync_WhenNoFilter_ShouldReturnAllOrders()
     {
@@ -334,7 +334,7 @@ public class CustomerOrderServiceTests
         result.PageSize.Should().Be(10);
     }
 
-    //Function 86 - TC2
+    //Function 85 - TC2
     [TestMethod]
     public async Task GetAllFilteredAsync_WithPageAndPageSize_ShouldReturnPagedItems()
     {
@@ -348,7 +348,7 @@ public class CustomerOrderServiceTests
         result.PageSize.Should().Be(2);
     }
 
-    //Function 86 - TC3
+    //Function 85 - TC3
     [TestMethod]
     public async Task GetAllFilteredAsync_WhenPageOrPageSizeInvalid_ShouldNormalizeLikeApi()
     {
@@ -365,7 +365,7 @@ public class CustomerOrderServiceTests
         result.TotalCount.Should().Be(3);
     }
 
-    //Function 86 - TC4
+    //Function 85 - TC4
     [TestMethod]
     public async Task GetAllFilteredAsync_WithStatusPending_ShouldReturnMatched()
     {
@@ -381,7 +381,7 @@ public class CustomerOrderServiceTests
         result.Items.First().Status.Should().Be((int)OrderStatus.PENDING);
     }
 
-    //Function 86 - TC5
+    //Function 85 - TC5
     [TestMethod]
     public async Task GetAllFilteredAsync_WithNotFoundOrderId_ShouldReturnEmpty()
     {
@@ -397,8 +397,8 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
-    #region Function 87 - Accept / Reject Order (Review)
-    //Function 87 - TC1
+    #region Function 86 - Accept / Reject Order (Review)
+    //Function 86 - TC1
     [TestMethod]
     public async Task ReviewOrderAsync_WhenReviewerInvalid_ShouldFail()
     {
@@ -409,7 +409,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 87 - TC2
+    //Function 86 - TC2
     [TestMethod]
     public async Task ReviewOrderAsync_WhenStatusNotDefined_ShouldFail()
     {
@@ -420,7 +420,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 87 - TC3
+    //Function 86 - TC3
     [TestMethod]
     public async Task ReviewOrderAsync_WhenStatusNotApprovedOrRejected_ShouldFail()
     {
@@ -431,7 +431,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 87 - TC4
+    //Function 86 - TC4
     [TestMethod]
     public async Task ReviewOrderAsync_WhenOrderNotFound_ShouldFail()
     {
@@ -442,7 +442,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 87 - TC5
+    //Function 86 - TC5
     [TestMethod]
     public async Task ReviewOrderAsync_WhenOrderNotPending_ShouldFail()
     {
@@ -455,7 +455,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 87 - TC6
+    //Function 86 - TC6
     [TestMethod]
     public async Task ReviewOrderAsync_WhenRejectAndRefundFails_ShouldNotUpdateOrder()
     {
@@ -494,7 +494,7 @@ public class CustomerOrderServiceTests
             Times.Never());
     }
 
-    //Function 87 - TC7
+    //Function 86 - TC7
     [TestMethod]
     public async Task ReviewOrderAsync_WhenRejectAndRefundSucceeds_ShouldUpdateOrderAndDetails()
     {
@@ -539,7 +539,7 @@ public class CustomerOrderServiceTests
             Times.Once());
     }
 
-    //Function 87 - TC8
+    //Function 86 - TC8
     [TestMethod]
     public async Task ReviewOrderAsync_WhenApprove_ShouldUpdateOrderAndNotifyCustomer()
     {
@@ -580,8 +580,8 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
-    #region Function 88 - Assign Order to Staff Group
-    //Function 88 - TC1
+    #region Function 87 - Assign Order to Staff Group
+    //Function 87 - TC1
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupIdInvalid_ShouldFail()
     {
@@ -592,7 +592,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC2
+    //Function 87 - TC2
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenOrderNotFound_ShouldFail()
     {
@@ -605,7 +605,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC3
+    //Function 87 - TC3
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenOrderNotApproved_ShouldFail()
     {
@@ -619,7 +619,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC4
+    //Function 87 - TC4
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenNotDeposited_ShouldFail()
     {
@@ -633,7 +633,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC5
+    //Function 87 - TC5
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupInactive_ShouldFail()
     {
@@ -647,7 +647,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC6
+    //Function 87 - TC6
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenStaffGroupHasNoLeader_ShouldFail()
     {
@@ -661,7 +661,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC7
+    //Function 87 - TC7
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenOrderHasNoDetails_ShouldFail()
     {
@@ -684,7 +684,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC8
+    //Function 87 - TC8
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenAlreadyAssigned_ShouldFail()
     {
@@ -701,7 +701,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 88 - TC9
+    //Function 87 - TC9
     [TestMethod]
     public async Task AssignOrderToStaffGroupAsync_WhenValid_ShouldAssignDetailsNotifyLeaderAndSetPreparing()
     {
@@ -733,8 +733,8 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
-    #region Function 80 - Cancel Customer Order
-    //Function 80 - TC1
+    #region Function 79 - Cancel Customer Order
+    //Function 79 - TC1
     [TestMethod]
     public async Task CancelOrderAsync_WhenOrderNotFound_ShouldFail()
     {
@@ -745,7 +745,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 80 - TC2
+    //Function 79 - TC2
     [TestMethod]
     public async Task CancelOrderAsync_WhenNoPermission_ShouldFail()
     {
@@ -766,7 +766,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 80 - TC3
+    //Function 79 - TC3
     [TestMethod]
     public async Task CancelOrderAsync_WhenOrderAlreadyCancelled_ShouldReturnSuccess()
     {
@@ -780,7 +780,7 @@ public class CustomerOrderServiceTests
         result.Data!.OrderId.Should().Be(201);
     }
 
-    //Function 80 - TC4
+    //Function 79 - TC4
     [TestMethod]
     public async Task CancelOrderAsync_WhenOrderCompleted_ShouldFail()
     {
@@ -793,7 +793,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 80 - TC5
+    //Function 79 - TC5
     [TestMethod]
     public async Task CancelOrderAsync_WhenAnyDetailInProgress_ShouldFail()
     {
@@ -810,7 +810,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 80 - TC6
+    //Function 79 - TC6
     [TestMethod]
     public async Task CancelOrderAsync_WhenNoValidPartySchedule_ShouldFail()
     {
@@ -845,7 +845,7 @@ public class CustomerOrderServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 80 - TC7
+    //Function 79 - TC7
     [TestMethod]
     public async Task CancelOrderAsync_WhenCustomerCancelsPendingOrder_ShouldRefund100PercentWithoutPaymentCall()
     {
@@ -861,7 +861,7 @@ public class CustomerOrderServiceTests
             Times.Never());
     }
 
-    //Function 80 - TC8
+    //Function 79 - TC8
     [TestMethod]
     public async Task CancelOrderAsync_WhenApprovedAndBetween3To7Days_ShouldRequest50PercentRefund()
     {
@@ -888,7 +888,7 @@ public class CustomerOrderServiceTests
             Times.Once());
     }
 
-    //Function 80 - TC9
+    //Function 79 - TC9
     [TestMethod]
     public async Task CancelOrderAsync_WhenApprovedAndLessThan3Days_ShouldRefundZero()
     {
@@ -915,7 +915,7 @@ public class CustomerOrderServiceTests
             Times.Never());
     }
 
-    //Function 80 - TC10
+    //Function 79 - TC10
     [TestMethod]
     public async Task CancelOrderAsync_WhenRefundFails_ShouldReturnFailure()
     {
@@ -947,8 +947,8 @@ public class CustomerOrderServiceTests
     }
     #endregion
 
-    #region Function 81 - View Order Detail
-    //Function 81 - TC1
+    #region Function 80 - View Order Detail
+    //Function 80 - TC1
     [TestMethod]
     public async Task GetById_WhenOrderNotFound_ShouldReturnNull()
     {
@@ -957,7 +957,7 @@ public class CustomerOrderServiceTests
         result.Should().BeNull();
     }
 
-    //Function 81 - TC2
+    //Function 80 - TC2
     [TestMethod]
     public async Task GetById_WhenOrderExists_ShouldReturnBasicInfo()
     {

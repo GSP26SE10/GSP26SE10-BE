@@ -70,8 +70,8 @@ public class TaskTemplateServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 48 - GetAllTaskTemplatesFiltered
-    //Function 48 - TC1
+    #region Function 47 - GetAllTaskTemplatesFiltered
+    //Function 47 - TC1
     [TestMethod]
     public async Task GetTaskTemplatesAsync_WhenFilterByIsActive_ShouldReturnMatchedRows()
     {
@@ -85,7 +85,7 @@ public class TaskTemplateServiceTests
         result.Items.Should().OnlyContain(x => x.IsActive == true);
     }
 
-    //Function 48 - TC2
+    //Function 47 - TC2
     [TestMethod]
     public async Task GetTaskTemplatesAsync_WhenPaged_ShouldReturnCorrectPage()
     {
@@ -100,8 +100,8 @@ public class TaskTemplateServiceTests
     }
     #endregion
 
-    #region Function 49 - CreateTaskTemplate
-    //Function 49 - TC1
+    #region Function 48 - CreateTaskTemplate
+    //Function 48 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenTaskNameMissing_ShouldFail()
     {
@@ -116,7 +116,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 49 - TC2
+    //Function 48 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenTaskNameDuplicatedIgnoringCase_ShouldFail()
     {
@@ -131,7 +131,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 49 - TC3
+    //Function 48 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenValidAndIsActiveNull_ShouldCreateWithDefaultActiveTrue()
     {
@@ -154,8 +154,8 @@ public class TaskTemplateServiceTests
     }
     #endregion
 
-    #region Function 50 - UpdateTaskTemplate
-    //Function 50 - TC1
+    #region Function 49 - UpdateTaskTemplate
+    //Function 49 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenTaskTemplateNotFound_ShouldFail()
     {
@@ -170,7 +170,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 50 - TC2
+    //Function 49 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenTaskNameMissing_ShouldFail()
     {
@@ -185,7 +185,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 50 - TC3
+    //Function 49 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenTaskNameDuplicatedIgnoringCase_ShouldFail()
     {
@@ -200,7 +200,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 50 - TC4
+    //Function 49 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
@@ -225,8 +225,8 @@ public class TaskTemplateServiceTests
     }
     #endregion
 
-    #region Function 51 - DeleteTaskTemplate
-    //Function 51 - TC1
+    #region Function 50 - DeleteTaskTemplate
+    //Function 50 - TC1
     [TestMethod]
     public async Task DeleteAsync_WhenTaskTemplateNotFound_ShouldFail()
     {
@@ -237,7 +237,7 @@ public class TaskTemplateServiceTests
         result.Data.Should().BeFalse();
     }
 
-    //Function 51 - TC2
+    //Function 50 - TC2
     [TestMethod]
     public async Task DeleteAsync_WhenTemplateInUse_ShouldDeactivateInsteadOfDelete()
     {
@@ -251,7 +251,7 @@ public class TaskTemplateServiceTests
         saved.IsActive.Should().BeFalse();
     }
 
-    //Function 51 - TC3
+    //Function 50 - TC3
     [TestMethod]
     public async Task DeleteAsync_WhenTemplateNotInUse_ShouldDeleteSuccessfully()
     {

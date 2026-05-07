@@ -9,6 +9,7 @@ namespace BookfetSystem.Services.Models.Response
         public object? ImgUrl { get; set; }
         public int TotalOrders { get; set; }
         public int TotalGuests { get; set; }
+        public int SoldQuantity { get; set; }
     }
 
     public class OwnerTopSellingMenuResponse

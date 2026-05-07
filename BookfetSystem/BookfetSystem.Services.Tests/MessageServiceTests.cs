@@ -171,8 +171,8 @@ public class MessageServiceTests
         await _dbContext.SaveChangesAsync();
     }
 
-    #region Function 60 - GetAllMessagesFiltered
-    //Function 60 - TC1
+    #region Function 59 - GetAllMessagesFiltered
+    //Function 59 - TC1
     [TestMethod]
     public async Task GetAllMessageFilteredAsync_WhenFilterBySender_ShouldReturnMatchedRows()
     {
@@ -187,7 +187,7 @@ public class MessageServiceTests
         result.Items.First().SenderName.Should().Be("Customer One");
     }
 
-    //Function 60 - TC2
+    //Function 59 - TC2
     [TestMethod]
     public async Task GetAllMessageFilteredAsync_WhenPaged_ShouldReturnCorrectPage()
     {
@@ -202,8 +202,8 @@ public class MessageServiceTests
     }
     #endregion
 
-    #region Function 61 - CreateMessage
-    //Function 61 - TC1
+    #region Function 60 - CreateMessage
+    //Function 60 - TC1
     [TestMethod]
     public async Task CreateAsync_WhenConversationNotFound_ShouldFail()
     {
@@ -220,7 +220,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC2
+    //Function 60 - TC2
     [TestMethod]
     public async Task CreateAsync_WhenSenderNotFound_ShouldFail()
     {
@@ -237,7 +237,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC3
+    //Function 60 - TC3
     [TestMethod]
     public async Task CreateAsync_WhenSenderNotInConversation_ShouldFail()
     {
@@ -254,7 +254,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC4
+    //Function 60 - TC4
     [TestMethod]
     public async Task CreateAsync_WhenTextWithoutContent_ShouldFail()
     {
@@ -271,7 +271,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC5
+    //Function 60 - TC5
     [TestMethod]
     public async Task CreateAsync_WhenMenuMessageWithoutMenuId_ShouldFail()
     {
@@ -289,7 +289,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC6
+    //Function 60 - TC6
     [TestMethod]
     public async Task CreateAsync_WhenMenuMessageWithInvalidMenu_ShouldFail()
     {
@@ -307,7 +307,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 61 - TC7
+    //Function 60 - TC7
     [TestMethod]
     public async Task CreateAsync_WhenValidTextMessage_ShouldCreateAndPushRealtime()
     {
@@ -341,8 +341,8 @@ public class MessageServiceTests
     }
     #endregion
 
-    #region Function 62 - UpdateMessage
-    //Function 62 - TC1
+    #region Function 61 - UpdateMessage
+    //Function 61 - TC1
     [TestMethod]
     public async Task UpdateAsync_WhenMessageNotFound_ShouldFail()
     {
@@ -358,7 +358,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 62 - TC2
+    //Function 61 - TC2
     [TestMethod]
     public async Task UpdateAsync_WhenConversationNotFound_ShouldFail()
     {
@@ -374,7 +374,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 62 - TC3
+    //Function 61 - TC3
     [TestMethod]
     public async Task UpdateAsync_WhenSenderNotFound_ShouldFail()
     {
@@ -390,7 +390,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 62 - TC4
+    //Function 61 - TC4
     [TestMethod]
     public async Task UpdateAsync_WhenSenderNotBelongConversation_ShouldFail()
     {
@@ -406,7 +406,7 @@ public class MessageServiceTests
         result.Data.Should().BeNull();
     }
 
-    //Function 62 - TC5
+    //Function 61 - TC5
     [TestMethod]
     public async Task UpdateAsync_WhenValid_ShouldUpdateSuccessfully()
     {
