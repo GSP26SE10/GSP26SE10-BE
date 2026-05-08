@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookfetSystem.Services.Implement
@@ -35,7 +36,6 @@ namespace BookfetSystem.Services.Implement
                 var now = DateTime.UtcNow;
                 var completedStatus = OrderStatus.COMPLETED.ToString().ToLower();
                 var cancelledStatus = OrderStatus.CANCELLED.ToString().ToLower();
-                var depositPaymentType = PaymentType.DEPOSIT.ToString().ToLower();
 
                 var payments = await _paymentRepository.GetPaidPayments()
                     .Where(p =>
@@ -45,11 +45,12 @@ namespace BookfetSystem.Services.Implement
                         p.Order.Status != null &&
                         (
                             p.Order.Status.ToLower() == completedStatus ||
-                            (p.Order.Status.ToLower() == cancelledStatus &&
-                             p.PaymentType != null &&
-                             p.PaymentType.ToLower() == depositPaymentType)
+                            p.Order.Status.ToLower() == cancelledStatus
                         ))
+                    .Include(p => p.Order)
                     .ToListAsync();
+
+                var orderRevenues = BuildOrderRevenues(payments);
 
                 var data = normalizedGroupBy == "day"
                     ? BuildDailyData(payments, start)
@@ -59,14 +60,13 @@ namespace BookfetSystem.Services.Implement
                 {
                     GroupBy = normalizedGroupBy,
                     Data = data,
+                    Orders = orderRevenues
+                        .OrderByDescending(x => x.Amount)
+                        .ToList(),
                     Summary = new OwnerRevenueSummaryResponse
                     {
-                        TotalRevenue = payments.Sum(p => p.Amount ?? 0m),
-                        TotalOrders = payments
-                            .Where(p => p.OrderId != null)
-                            .Select(p => p.OrderId ?? 0)
-                            .Distinct()
-                            .Count()
+                        TotalRevenue = orderRevenues.Sum(x => x.Amount),
+                        TotalOrders = orderRevenues.Count
                     }
                 };
 
@@ -187,7 +187,7 @@ namespace BookfetSystem.Services.Implement
                 .ToList();
         }
 
-            private static List<OwnerRevenueItemResponse> BuildMonthlyData(List<BookfetSystem.Repositories.Entities.Payment> payments, int year, int maxMonth)
+        private static List<OwnerRevenueItemResponse> BuildMonthlyData(List<BookfetSystem.Repositories.Entities.Payment> payments, int year, int maxMonth)
         {
             var grouped = payments
                 .Where(p => p.PaidAt.HasValue)
@@ -201,6 +201,158 @@ namespace BookfetSystem.Services.Implement
                     Revenue = grouped.TryGetValue((year, month), out var revenue) ? revenue : 0m
                 })
                 .ToList();
+        }
+
+        private static List<OwnerRevenueOrderResponse> BuildOrderRevenues(List<BookfetSystem.Repositories.Entities.Payment> payments)
+        {
+            var completedStatus = OrderStatus.COMPLETED.ToString();
+            var cancelledStatus = OrderStatus.CANCELLED.ToString();
+
+            return payments
+                .Where(p => p.OrderId.HasValue)
+                .GroupBy(p => p.OrderId!.Value)
+                .Select(g =>
+                {
+                    var order = g.Select(x => x.Order).FirstOrDefault();
+                    var orderStatus = order?.Status ?? string.Empty;
+                    var latestPaidAt = g.Max(x => x.PaidAt);
+
+                    decimal revenue;
+                    DateTime? revenueAt = latestPaidAt;
+
+                    if (string.Equals(orderStatus, completedStatus, StringComparison.OrdinalIgnoreCase))
+                    {
+                        revenue = order?.TotalPrice ?? g.Sum(x => x.Amount ?? 0m);
+                    }
+                    else if (string.Equals(orderStatus, cancelledStatus, StringComparison.OrdinalIgnoreCase))
+                    {
+                        revenue = GetRefundAmountFromOrderMetadata(order?.MtdZlp);
+                        revenueAt = GetLatestRefundCreatedAt(order?.MtdZlp) ?? latestPaidAt;
+
+                        if (revenue <= 0m)
+                        {
+                            revenue = g.Sum(x => x.Amount ?? 0m);
+                        }
+                    }
+                    else
+                    {
+                        revenue = g.Sum(x => x.Amount ?? 0m);
+                    }
+
+                    return new OwnerRevenueOrderResponse
+                    {
+                        OrderId = g.Key,
+                        Amount = revenue,
+                        OrderStatus = orderStatus
+                    };
+                })
+                .ToList();
+        }
+
+        private static decimal GetRefundAmountFromOrderMetadata(string? rawMetadata)
+        {
+            if (string.IsNullOrWhiteSpace(rawMetadata))
+            {
+                return 0m;
+            }
+
+            try
+            {
+                using var json = JsonDocument.Parse(rawMetadata);
+                if (!json.RootElement.TryGetProperty("Payments", out var paymentsElement) || paymentsElement.ValueKind != JsonValueKind.Array)
+                {
+                    return 0m;
+                }
+
+                decimal totalRefundAmount = 0m;
+
+                foreach (var paymentElement in paymentsElement.EnumerateArray())
+                {
+                    if (!paymentElement.TryGetProperty("Refunds", out var refundsElement) || refundsElement.ValueKind != JsonValueKind.Array)
+                    {
+                        continue;
+                    }
+
+                    foreach (var refundElement in refundsElement.EnumerateArray())
+                    {
+                        if (!refundElement.TryGetProperty("Amount", out var amountElement))
+                        {
+                            continue;
+                        }
+
+                        decimal parsedAmount;
+
+                        if (amountElement.ValueKind == JsonValueKind.Number && amountElement.TryGetDecimal(out parsedAmount))
+                        {
+                            totalRefundAmount += parsedAmount;
+                            continue;
+                        }
+
+                        if (amountElement.ValueKind == JsonValueKind.String &&
+                            decimal.TryParse(amountElement.GetString(), out parsedAmount))
+                        {
+                            totalRefundAmount += parsedAmount;
+                        }
+                    }
+                }
+
+                return totalRefundAmount;
+            }
+            catch
+            {
+                return 0m;
+            }
+        }
+
+        private static DateTime? GetLatestRefundCreatedAt(string? rawMetadata)
+        {
+            if (string.IsNullOrWhiteSpace(rawMetadata))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var json = JsonDocument.Parse(rawMetadata);
+                if (!json.RootElement.TryGetProperty("Payments", out var paymentsElement) || paymentsElement.ValueKind != JsonValueKind.Array)
+                {
+                    return null;
+                }
+
+                DateTime? latestCreatedAt = null;
+
+                foreach (var paymentElement in paymentsElement.EnumerateArray())
+                {
+                    if (!paymentElement.TryGetProperty("Refunds", out var refundsElement) || refundsElement.ValueKind != JsonValueKind.Array)
+                    {
+                        continue;
+                    }
+
+                    foreach (var refundElement in refundsElement.EnumerateArray())
+                    {
+                        if (!refundElement.TryGetProperty("CreatedAt", out var createdAtElement))
+                        {
+                            continue;
+                        }
+
+                        DateTime createdAt;
+
+                        if (createdAtElement.ValueKind == JsonValueKind.String && DateTime.TryParse(createdAtElement.GetString(), out createdAt))
+                        {
+                            if (!latestCreatedAt.HasValue || createdAt > latestCreatedAt.Value)
+                            {
+                                latestCreatedAt = createdAt;
+                            }
+                        }
+                    }
+                }
+
+                return latestCreatedAt;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
