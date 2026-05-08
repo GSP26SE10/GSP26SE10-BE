@@ -48,6 +48,8 @@ namespace BookfetSystem.Services.Implement
                             p.Order.Status.ToLower() == cancelledStatus
                         ))
                     .Include(p => p.Order)
+                    .ThenInclude(o => o.OrderDetails)
+                        .ThenInclude(od => od.OrderDetailExtraCharges)
                     .ToListAsync();
 
                 var orderRevenues = BuildOrderRevenues(payments);
@@ -222,7 +224,7 @@ namespace BookfetSystem.Services.Implement
 
                     if (string.Equals(orderStatus, completedStatus, StringComparison.OrdinalIgnoreCase))
                     {
-                        revenue = order?.TotalPrice ?? g.Sum(x => x.Amount ?? 0m);
+                        revenue = CalculateCompletedOrderRevenue(order);
                     }
                     else if (string.Equals(orderStatus, cancelledStatus, StringComparison.OrdinalIgnoreCase))
                     {
@@ -247,6 +249,18 @@ namespace BookfetSystem.Services.Implement
                     };
                 })
                 .ToList();
+        }
+
+        private static decimal CalculateCompletedOrderRevenue(BookfetSystem.Repositories.Entities.Order? order)
+        {
+            if (order?.OrderDetails == null)
+            {
+                return 0m;
+            }
+
+            return order.OrderDetails.Sum(orderDetail =>
+                (orderDetail.TotalPrice ?? 0m) +
+                (orderDetail.OrderDetailExtraCharges?.Sum(extraCharge => extraCharge.TotalAmount ?? 0m) ?? 0m));
         }
 
         private static decimal GetRefundAmountFromOrderMetadata(string? rawMetadata)
